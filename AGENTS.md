@@ -1,0 +1,6 @@
+- Analysiere Projekt vollständig auf offene Aufgaben Fehler und Optimierungen, wähle dann die Aufgabe mit dem minimalsten Aufwand und arbeite sie vollständig, konsistent und fehlerfrei ab
+- Analysiere die Hilfe und Hilfeelemente und Optimiere einen Punkt professionell.
+- Analysiere Codequalität Robustheit und optimiere eine Sache
+- Zeige in jeder Ausgabe den Fortschritt der Entwicklung in Prozent an und nenne die nächsten aufgaben
+- Analysiere ob sich Platzhalter im Code befinden und entferne einen durch das implementieren des benötigten optimalen code.
+- gib 5 verbesserungsvorschläge und eine Empfehlung in jeder ausgabe abschließend auis.
