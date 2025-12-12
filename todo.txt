@@ -7,6 +7,7 @@
 - [x] Automatische Tests (Linting, HTML-Validierung) an `./start.sh --test` anbinden und Feedback laienfreundlich ausgeben.
 - [x] Barrierefreie Farbschemata erweitern (mehrere Themes mit AA-Kontrast) und in gemeinsame CSS-Datei auslagern. (aus Inputpool)
 - [x] Gemeinsame UI-Bibliothek anlegen (Buttons, Panels, Fokus-Stile) und in allen HTML-Tools referenzieren. (aus Inputpool)
+- [x] Songtext-Tool: Tooltips und Hilfetexte vereinheitlicht (data-help), barrierefrei gemacht und mit Klartext-Schritten ergänzt.
 - [ ] Automatisches Logging-Dashboard ergänzen, das erfolgreiche Aktionen pro Tool zählt und exportiert. (aus Inputpool)
 - [ ] Import/Export-Funktion mit Klartext- und JSON-Format in jedem Tool anbieten. (aus Inputpool)
 - [ ] Drag-and-Drop-Layoutsteuerung (Bereiche flexibel verschiebbar) als optionales Modul vorsehen. (aus Inputpool)
