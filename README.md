@@ -32,27 +32,28 @@
 2. Ausführbarkeit sicherstellen (Rechte): `chmod +x start.sh`.
 3. (Optional) Virtuelle Umgebung vorbereiten: `python -m venv .venv && source .venv/bin/activate`.
 4. Abhängigkeiten (Dependencies) prüfen/auflösen: `./start.sh --check-only` (Alias: `--health`) führt die automatischen Prüfungen aus (Linting + Accessibility) und beendet sich danach.
+5. Nur Tests fahren: `./start.sh --test` ruft `npm run check` mit laienfreundlichen Statusmeldungen auf (Linting + HTML + Accessibility) und beendet sich nach den Prüfungen.
 
 ## Nutzung
 1. Start-Routine ausführen: `./start.sh` prüft Abhängigkeiten automatisch, löst fehlende Pakete, führt Checks aus und startet die Oberfläche mit Fortschrittsmeldungen.
 2. Alternativ die HTML-Module direkt im Browser öffnen (Doppelklick auf `GenresTool.html` oder `SONGTEXTTOOL.html`).
-3. Theme wechseln (geplant): Schalter im Kopfbereich jeder Seite; wähle z. B. „Hoher Kontrast“ oder „Dunkel“.
+3. Theme wechseln: Schalter im Kopfbereich jeder Seite, gespeist aus `config/themes.json` (AA-konform) und geladen über `assets/themes.css`.
 4. Barrierefreiheit (Accessibility): Nutze Tab-Taste zur Navigation, achte auf sichtbare Fokus-Ränder, und aktiviere Screenreader-Hinweise (ARIA-Labels), sobald ergänzt.
 
 ## Barrierefreiheit & Themes
-- Hoher Kontrast und Farbwahl: Verwende Theme-Varianten mit AA/AAA-Kontrast; dokumentiere Farbwerte in `config/themes.json` (geplant).
+- Hoher Kontrast und Farbwahl: Die AA-Farbwerte liegen zentral in `config/themes.json` und werden per `assets/themes.css` und `assets/ui-library.css` in allen Seiten aktiviert.
 - Tastaturbedienung: Alle interaktiven Elemente sollen mit Tab erreichbar sein und Fokus-Ringe (Focus Outlines) zeigen.
 - Klare Sprache: Fachbegriffe werden in Klammern erklärt, Labels sind kurz und eindeutig.
 - Tooltips (Kurz-Hilfetexte) und Beispieldaten ergänzen die Eingabefelder.
 
 ## Debugging & Logging
-- Startparameter: `./start.sh --debug` aktiviert erweitertes Logging (Protokollierung) nach `logs/start.log`.
+- Startparameter: `./start.sh --debug` aktiviert erweitertes Logging (Protokollierung) nach `logs/app.log` und zeigt Detail-Statusmeldungen.
 - Eingaben werden validiert (geprüft) und Ausgaben auf Erfolg kontrolliert; bitte Validation pro Funktion einplanen.
 - Logging-Level (Protokollstufe) wird in `config/start.conf` gesetzt.
 - Log-Pfad und Netzwerkangaben (Host/Port) prüft die Startroutine jetzt automatisch und legt fehlende Ordner an, damit die Protokolle zuverlässig geschrieben werden.
 
 ## Automatische Prüfungen & Tests
-- Automatische Routine: `./start.sh` löst fehlende Abhängigkeiten auf und führt `npm run check` (Linting + Accessibility) aus. Für reine Prüfungen kann `./start.sh --check-only` bzw. `--health` genutzt werden.
+- Automatische Routine: `./start.sh` löst fehlende Abhängigkeiten auf und führt `npm run check` (Linting + Accessibility) aus. Für reine Prüfungen kann `./start.sh --check-only` bzw. `--health` genutzt werden, `./start.sh --test` liefert zusätzlich laienfreundliche Statusmeldungen.
 - Manuelle Ergänzung: Bei Bedarf zusätzlich HTML mit externen Validatoren prüfen, um neue Module abzusichern.
 
 ## Tests (manuell)
@@ -111,8 +112,9 @@ Dieses Repository bündelt mehrere Tools (z. B. Songtext-, Genre- und Index-Ge
 1. Startroutine ausführbar machen (falls nötig): `chmod +x start.sh`
 2. Start mit automatischer Prüfung: `./start.sh`
     * `--check-only` / `--health`: Nur Prüfungen (Linting + Accessibility, Port-Check) ohne Serverstart.
+    * `--test`: Alias für `--check-only` mit laienfreundlichen Hinweisen zu Linting, HTML-Validierung und Accessibility.
    * `--no-tests`: Überspringt die Checks (nur sinnvoll für schnelle Demos).
-   * `--debug`: Ausführliches Logging in `logs/start.log` aktivieren.
+   * `--debug`: Ausführliches Logging in `logs/app.log` aktivieren.
 
 Die Routine liest `config/start.conf`, legt fehlende Ordner (`config/`, `logs/`, `data/`) automatisch an, installiert Node-Abhängigkeiten, führt `npm run check` aus und startet danach einen lokalen `http-server` auf Port 5000. Anschließend erfolgt ein kurzer Verfügbarkeits-Check per `curl`.
 Ein übersichtliches Werkzeug-Paket mit statischen HTML-Tools. Ziel ist maximale Barrierefreiheit, klare Bedienung und ein vollautomatischer Start.

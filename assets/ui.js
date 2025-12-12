@@ -2,8 +2,42 @@
   const THEME_KEY = 'multitool_theme';
   const FONT_KEY = 'multitool_fontsize';
   const ariaAnnouncerId = 'global-aria-live';
-  const themes = ['light', 'dark', 'contrast', 'solar'];
+  const CONFIG_THEMES_URL = 'config/themes.json';
+  const defaultThemes = [
+    { id: 'light', label: 'Hell' },
+    { id: 'dark', label: 'Dunkel' },
+    { id: 'contrast', label: 'Kontrast' },
+    { id: 'solar', label: 'Solar' }
+  ];
+  let themes = defaultThemes.map((t) => t.id);
+  let themeLabels = Object.fromEntries(defaultThemes.map((t) => [t.id, t.label]));
   const fontSizes = ['small', 'base', 'large'];
+
+  async function loadThemeConfig(){
+    try {
+      const response = await fetch(CONFIG_THEMES_URL, { cache: 'no-store' });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      const config = await response.json();
+      if (config && Array.isArray(config.themes) && config.themes.length > 0) {
+        themes = config.themes
+          .map((entry) => (entry && typeof entry.id === 'string' ? entry.id.trim() : ''))
+          .filter((id) => id);
+        themeLabels = {};
+        config.themes.forEach((entry) => {
+          if (entry && typeof entry.id === 'string') {
+            themeLabels[entry.id] = entry.label || entry.id;
+          }
+        });
+      }
+    } catch (error) {
+      console.warn('Theme-Konfiguration konnte nicht geladen werden – Standardwerte werden genutzt.', error);
+      themes = defaultThemes.map((t) => t.id);
+      themeLabels = Object.fromEntries(defaultThemes.map((t) => [t.id, t.label]));
+    }
+    return themes;
+  }
 
   function getPreferredTheme(){
     const stored = localStorage.getItem(THEME_KEY);
@@ -44,11 +78,25 @@
   function syncThemeSelect(value){
     document.querySelectorAll('[data-theme-select]').forEach(sel => {
       if(sel.value !== value) sel.value = value;
-      sel.setAttribute('aria-label', `Farbschema wählen (aktuell: ${value})`);
+      const label = themeLabels[value] || value;
+      sel.setAttribute('aria-label', `Farbschema wählen (aktuell: ${label})`);
     });
     document.querySelectorAll('[data-theme-toggle]').forEach(btn => {
       btn.setAttribute('aria-pressed', 'false');
-      btn.setAttribute('aria-label', `Theme wechseln (aktuell: ${value})`);
+      const label = themeLabels[value] || value;
+      btn.setAttribute('aria-label', `Theme wechseln (aktuell: ${label})`);
+    });
+  }
+
+  function renderThemeOptions(){
+    document.querySelectorAll('[data-theme-select]').forEach(sel => {
+      while (sel.firstChild) sel.removeChild(sel.firstChild);
+      themes.forEach((theme) => {
+        const option = document.createElement('option');
+        option.value = theme;
+        option.textContent = themeLabels[theme] || theme;
+        sel.appendChild(option);
+      });
     });
   }
 
@@ -122,7 +170,9 @@
     });
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', async () => {
+    await loadThemeConfig();
+    renderThemeOptions();
     const initialTheme = applyTheme(getPreferredTheme());
     syncThemeSelect(initialTheme);
     bindThemeControls();
