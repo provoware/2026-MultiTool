@@ -1,2 +1,3 @@
+# Füge hier projektbezogene Python-Abhängigkeiten hinzu.
 # Anforderungen für 2026-MultiTool
 # Wird aktuell nur für den Standard-Webserver genutzt; weitere Pakete hier ergänzen.

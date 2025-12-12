@@ -1,3 +1,5 @@
+# Inputpool
+# Alle neuen Detailanforderungen bitte hier sammeln. Aktuell keine offenen Einträge; Inhalte werden nach todo.txt verschoben.
 # Inputpool – neue Ideen und Anforderungen (bitte bei Bedarf ergänzen)
 
 - Barrierefreie Farbschemata erweitern (mehrere Themes mit AA-Kontrast) und in gemeinsame CSS-Datei auslagern.
