@@ -38,16 +38,16 @@
           <option value="base" selected>A</option>
           <option value="large">A+</option>
         </select>
-        <button class="icon-button" id="toggleLeftSidebarBtn" title="Linke Sidebar ein- oder ausblenden" aria-label="Linke Sidebar ein- oder ausblenden">
+        <button class="icon-button" id="toggleLeftSidebarBtn" title="Linke Sidebar ein- oder ausblenden" aria-label="Linke Sidebar ein- oder ausblenden" data-help="Blendet Bereiche, Templates und Schnellhilfe ein oder aus. Nützlich für fokussiertes Schreiben.">
           <span class="icon">🧱</span><span>Links</span>
         </button>
-        <button class="icon-button" id="toggleRightSidebarBtn" title="Rechte Sidebar ein- oder ausblenden" aria-label="Rechte Sidebar ein- oder ausblenden">
+        <button class="icon-button" id="toggleRightSidebarBtn" title="Rechte Sidebar ein- oder ausblenden" aria-label="Rechte Sidebar ein- oder ausblenden" data-help="Öffnet oder schließt die Kontextinfos mit Dateien, Profilen und Sicherungen.">
           <span class="icon">📁</span><span>Rechts</span>
         </button>
-        <button class="icon-button" id="backupExportBtn" title="Backup exportieren" aria-label="Backup exportieren">
+        <button class="icon-button" id="backupExportBtn" title="Backup exportieren" aria-label="Backup exportieren" data-help="Exportiert alle Songs, Profile und Einstellungen als JSON-Backup. Sicher abspeichern!">
           <span class="icon">💾</span><span>Backup</span>
         </button>
-        <button class="icon-button" id="backupImportBtn" title="Backup importieren" aria-label="Backup importieren">
+        <button class="icon-button" id="backupImportBtn" title="Backup importieren" aria-label="Backup importieren" data-help="Lädt ein zuvor exportiertes Backup und überschreibt den aktuellen Stand nach Bestätigung.">
           <span class="icon">📥</span><span>Import</span>
         </button>
         <input type="file" id="backupImportFile" class="hidden-input" accept=".json" aria-label="Backup-Datei auswählen" />
@@ -76,15 +76,15 @@
           </div>
           <div class="field-content">
             <div class="field-row">
-              <input type="text" id="templateNameInput" placeholder="Template-Name (z.B. Pop-Standard)" aria-label="Template-Name" />
-              <button class="btn btn-primary" id="saveTemplateBtn">Speichern</button>
+              <input type="text" id="templateNameInput" placeholder="Template-Name (z.B. Pop-Standard)" aria-label="Template-Name" data-help="Gib einen eindeutigen Namen an, damit du das Template später wiederfindest." />
+              <button class="btn btn-primary" id="saveTemplateBtn" data-help="Speichert das aktuelle Template lokal ab. Es bleibt auch nach dem Schließen des Browsers erhalten.">Speichern</button>
             </div>
             <textarea id="templateContentInput" class="text-zoom-area" placeholder="z.B. Intro:\nStrophe 1:\nRefrain: ..." aria-label="Template-Inhalt"></textarea>
             <div class="field-row">
               <select id="templateSelect" aria-label="Template auswählen">
                 <option value="">Template wählen…</option>
               </select>
-              <button class="btn" id="applyTemplateToSongBtn">In Song einfügen</button>
+              <button class="btn" id="applyTemplateToSongBtn" data-help="Setzt die gewählte Struktur in den aktuellen Song ein, ohne bestehende Texte zu überschreiben.">In Song einfügen</button>
             </div>
           </div>
         </div>
@@ -93,8 +93,12 @@
       <div class="sidebar-section">
         <h3>Hilfe kurz</h3>
         <div class="help-text">
-          <p><b>Bereiche</b> wie <i>Intro:</i>, <i>Strophe:</i>, <i>Bridge:</i> frei anlegen. Templates speichern komplette Song-Strukturen – ein Bereich pro Zeile.</p>
-          <p>Per Klick kannst du ein Template in den aktuellen Song übernehmen. Alle Eingaben sind per Tastatur und Screenreader zugänglich.</p>
+          <ul class="help-list" aria-label="Kurzanleitung Songtext-Workbench">
+            <li><strong>Schritt 1:</strong> Songtitel eintragen – er wird als Dateiname genutzt und alle 5 Minuten automatisch gesichert.</li>
+            <li><strong>Schritt 2:</strong> Bereiche wie <em>Intro:</em> oder <em>Strophe 1:</em> einfügen. Jede Zeile im Template wird als Bereich übernommen.</li>
+            <li><strong>Schritt 3:</strong> Mit <kbd>Strg+S</kbd> speichern und mit <kbd>Strg+Z</kbd> rückgängig machen. Export/Import nutzt JSON und TXT.</li>
+            <li><strong>Barrierefrei:</strong> Alle Buttons sind per Tastatur fokussierbar, Screenreader erhalten zu jedem Bedienelement einen Klartext-Hinweis.</li>
+          </ul>
         </div>
       </div>
     </aside>
@@ -106,7 +110,7 @@
             <div class="column-header-title">Song-Erarbeitung</div>
             <div class="column-header-sub">Bereiche, Text, Titel & Workflow</div>
           </div>
-          <button class="btn btn-primary" id="newSongBtn">➕ Neuer Song</button>
+          <button class="btn btn-primary" id="newSongBtn" data-help="Leert das Formular, legt einen neuen Song an und aktiviert das Autosave.">➕ Neuer Song</button>
         </div>
         <div class="column-body">
           <div class="scroll-section">
@@ -127,8 +131,8 @@
               </div>
               <div class="field-content">
                 <div class="field-row">
-                  <input type="text" id="sectionNameInput" placeholder="z.B. Strophe 1:" aria-label="Name des neuen Bereichs" />
-                  <button class="btn" id="insertSectionBtn">In Song einfügen</button>
+                  <input type="text" id="sectionNameInput" placeholder="z.B. Strophe 1:" aria-label="Name des neuen Bereichs" data-help="Jeder Bereich endet mit einem Doppelpunkt, damit er klar vom Text getrennt bleibt." />
+                  <button class="btn" id="insertSectionBtn" data-help="Fügt den Bereich oberhalb des Editors hinzu, ohne bestehenden Inhalt zu löschen.">In Song einfügen</button>
                 </div>
               </div>
             </div>
@@ -150,8 +154,8 @@
               </div>
               <div class="field-content">
                 <div class="field-row">
-                  <button class="btn" id="insertGenresIntoSongBtn">Genres/Stimmungen in Song einfügen</button>
-                  <button class="btn" id="exportSongTxtBtn">als TXT exportieren</button>
+                  <button class="btn" id="insertGenresIntoSongBtn" data-help="Übernimmt Genres und Tags als separate Zeilen in den Songtext – praktisch für Promotexte.">Genres/Stimmungen in Song einfügen</button>
+                  <button class="btn" id="exportSongTxtBtn" data-help="Exportiert den sichtbaren Song als Textdatei. Keine Cloud nötig, alles bleibt lokal.">als TXT exportieren</button>
                 </div>
               </div>
             </div>
