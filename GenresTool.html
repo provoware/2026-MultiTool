@@ -4,124 +4,11 @@
   <meta charset="UTF-8">
   <title>Musiktool v6</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <!-- Roboto -->
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --bg: #f4f4f4; --fg: #222;
-      --accent: #0066cc; --accent-hover: #005bb5;
-      --panel-bg: #fff; --panel-shadow: rgba(0,0,0,0.05);
-      --font: 'Roboto', sans-serif;
-      --gap: 12px; --radius: 6px;
-    }
-    body.dark {
-      --bg: #1e1e1e; --fg: #ddd;
-      --accent: #cc6600; --accent-hover: #b35a00;
-      --panel-bg: #2b2b2b; --panel-shadow: rgba(0,0,0,0.5);
-    }
-    html, body {
-      height: 100%; margin:0; overflow:hidden;
-    }
-    body {
-      display:grid;
-      grid-template-rows:auto 1fr;
-      grid-template-columns:200px 1fr;
-      grid-template-areas:
-        "header header"
-        "sidebar content";
-      font-family:var(--font);
-      background:var(--bg);
-      color:var(--fg);
-      transition:.3s;
-    }
-    header {
-      grid-area:header;
-      background:var(--accent);
-      color:#fff;
-      padding:var(--gap);
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-    }
-    aside {
-      grid-area:sidebar;
-      background:var(--panel-bg);
-      padding:var(--gap);
-      box-shadow:2px 0 6px var(--panel-shadow);
-      display:flex;
-      flex-direction:column;
-      gap:var(--gap);
-      overflow-y:auto;
-    }
-    main {
-      grid-area:content;
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      grid-template-rows:1fr 1fr;
-      gap:var(--gap);
-      padding:var(--gap);
-      min-height:0;
-    }
-    .panel {
-      background:var(--panel-bg);
-      padding:var(--gap);
-      border-radius:var(--radius);
-      box-shadow:0 2px 6px var(--panel-shadow);
-      display:flex;
-      flex-direction:column;
-      overflow:hidden;
-      min-height:0;
-    }
-    .panel h2 {
-      margin:0 0 var(--gap) 0;
-      font-size:1.1rem;
-    }
-    .panel-controls {
-      display:flex;
-      flex-wrap:wrap;
-      gap:6px;
-      align-items:center;
-      margin-bottom:var(--gap);
-    }
-    .panel-content {
-      flex:1;
-      overflow-y:auto;
-      min-height:0;
-    }
-    input, select, button {
-      font-family:var(--font);
-    }
-    .btn {
-      background:var(--accent);
-      color:#fff;
-      border:none;
-      padding:8px;
-      border-radius:var(--radius);
-      cursor:pointer;
-      transition:.2s;
-    }
-    .btn:hover { background:var(--accent-hover); }
-    ul { list-style:none; padding:0; margin:0 0 var(--gap) 0; }
-    ul li {
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      padding:4px 8px;
-      border-bottom:1px solid #ddd;
-      font-size:0.9em;
-    }
-    ul li:last-child { border-bottom:none; }
-    .logs-entry {
-      padding:4px 0;
-      border-bottom:1px solid #ddd;
-      font-size:0.85em;
-    }
-    .logs-entry:last-child { border-bottom:none; }
-    .counts { font-size:0.9em; margin-bottom:var(--gap); }
-    span.editable { cursor:text; }
-  </style>
+  <link rel="stylesheet" href="assets/styles.css">
+  <script src="assets/ui.js"></script>
 </head>
-<body>
+<body data-page="genres" data-theme="light" aria-label="Genre- und Stimmungstool">
   <!-- HEADER -->
   <header>
     <div>🎵 <strong>Musiktool v6</strong></div>
@@ -130,14 +17,15 @@
 
   <!-- SIDEBAR -->
   <aside>
-    <select id="profileSelect"></select>
+    <label class="muted" for="profileSelect">Profil wählen</label>
+    <select id="profileSelect" aria-label="Profil auswählen"></select>
     <button id="newProfile" class="btn">+ Profil</button>
     <button id="deleteProfile" class="btn">– Profil</button>
     <button id="duplicateProfile" class="btn">Profil duplizieren</button>
     <hr>
     <button id="exportData" class="btn">Export</button>
     <button id="importData" class="btn">Import</button>
-    <button id="toggleDark" class="btn">Dark Mode</button>
+    <button id="toggleDark" class="btn" data-theme-toggle aria-label="Theme wechseln">Theme wechseln</button>
     <button id="logoutBtn" class="btn">Logout</button>
   </aside>
 
@@ -147,15 +35,15 @@
     <section id="randomPanel" class="panel">
       <h2>Zufall 🎲</h2>
       <div class="panel-controls">
-        <label><input type="checkbox" id="incGenres" checked> Genres</label>
-        <label><input type="checkbox" id="incMoods" checked> Stimmungen</label>
-        <label><input type="checkbox" id="incStyles" checked> Stile</label>
+        <label><input type="checkbox" id="incGenres" checked aria-label="Genres einbeziehen"> Genres</label>
+        <label><input type="checkbox" id="incMoods" checked aria-label="Stimmungen einbeziehen"> Stimmungen</label>
+        <label><input type="checkbox" id="incStyles" checked aria-label="Stile einbeziehen"> Stile</label>
       </div>
       <div class="panel-controls">
         <button data-count="1" class="btn">1</button>
         <button data-count="3" class="btn">3</button>
         <button data-count="5" class="btn">5</button>
-        <input id="customCount" type="number" min="1" placeholder="..." style="width:60px;" />
+        <input id="customCount" type="number" min="1" placeholder="Anzahl" class="input-compact" aria-label="Individuelle Anzahl" />
         <button id="genRandom" class="btn">Los</button>
       </div>
       <div id="randomResults" class="panel-content"></div>
@@ -164,11 +52,11 @@
     <!-- 2: Eingabe (oben rechts) -->
     <section id="inputPanel" class="panel">
       <h2>Eingabe 🎶</h2>
-      <div class="panel-controls" style="flex-direction:column; align-items:stretch;">
-        <input id="inputGenres" placeholder="Genres, getrennt" />
-        <input id="inputMoods" placeholder="Stimmungen, getrennt" />
-        <input id="inputStyles" placeholder="Stile, getrennt" />
-        <small>Enter → Speichern</small>
+      <div class="panel-controls stacked">
+        <input id="inputGenres" placeholder="Genres, getrennt" aria-label="Genres eingeben" />
+        <input id="inputMoods" placeholder="Stimmungen, getrennt" aria-label="Stimmungen eingeben" />
+        <input id="inputStyles" placeholder="Stile, getrennt" aria-label="Stile eingeben" />
+        <small class="muted">Enter → Speichern</small>
       </div>
     </section>
 
@@ -201,11 +89,11 @@
     </section>
   </main>
 
-  <input type="file" id="importFile" accept=".json" style="display:none;">
+  <input type="file" id="importFile" accept=".json" class="hidden-input">
 
   <script>
     // --- Datenmodell & Storage ---
-    let data = {profiles:{}, active:null, settings:{darkMode:false}};
+    let data = {profiles:{}, active:null, settings:{theme:null}};
     const KEY = 'musiktool_v6';
     function save(){ localStorage.setItem(KEY, JSON.stringify(data)); }
     function load(){ const d = localStorage.getItem(KEY); if(d) data = JSON.parse(d); }
@@ -218,7 +106,7 @@
     function editItem(cat,i,span){
       const old = span.textContent;
       const inp = document.createElement('input');
-      inp.value = old; inp.style.width = '80%';
+      inp.value = old; inp.classList.add('edit-input');
       span.replaceWith(inp);
       inp.focus();
       inp.onblur = ()=>{
@@ -444,8 +332,8 @@
 
     // --- Dark Mode ---
     darkBtn.onclick = ()=>{
-      data.settings.darkMode = !data.settings.darkMode;
-      document.body.classList.toggle('dark', data.settings.darkMode);
+      const theme = SharedUI.cycleTheme();
+      data.settings.theme = theme;
       save();
     };
 
@@ -463,7 +351,7 @@
       data.profiles['Profil 1'] = {Genres:[],Moods:[],Styles:[],Logs:[]};
       data.active = 'Profil 1'; save();
     }
-    if(data.settings.darkMode) document.body.classList.add('dark');
+    if(data.settings.theme) SharedUI.applyTheme(data.settings.theme);
     refreshProfiles();
   </script>
 </body>

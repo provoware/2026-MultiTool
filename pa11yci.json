@@ -1,0 +1,17 @@
+{
+  "defaults": {
+    "standard": "WCAG2A",
+    "includeNotices": false,
+    "includeWarnings": false,
+    "timeout": 120000,
+    "chromeLaunchConfig": {
+      "args": ["--no-sandbox", "--disable-setuid-sandbox"]
+    }
+  },
+  "threshold": 20,
+  "urls": [
+    "http://localhost:5000/GenresTool.html",
+    "http://localhost:5000/SONGTEXTTOOL.html",
+    "http://localhost:5000/index_templates_tool.html"
+  ]
+}

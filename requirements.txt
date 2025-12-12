@@ -1,0 +1,5 @@
+# No Python dependencies are required for the current frontend toolchain.
+# Add entries here if Python-based tooling is introduced later.
+# Füge hier projektbezogene Python-Abhängigkeiten hinzu.
+# Anforderungen für 2026-MultiTool
+# Wird aktuell nur für den Standard-Webserver genutzt; weitere Pakete hier ergänzen.
