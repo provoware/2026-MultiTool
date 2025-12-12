@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Musiktool v6</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <!-- Roboto -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f4f4f4; --fg: #222;
+      --accent: #0066cc; --accent-hover: #005bb5;
+      --panel-bg: #fff; --panel-shadow: rgba(0,0,0,0.05);
+      --font: 'Roboto', sans-serif;
+      --gap: 12px; --radius: 6px;
+    }
+    body.dark {
+      --bg: #1e1e1e; --fg: #ddd;
+      --accent: #cc6600; --accent-hover: #b35a00;
+      --panel-bg: #2b2b2b; --panel-shadow: rgba(0,0,0,0.5);
+    }
+    html, body {
+      height: 100%; margin:0; overflow:hidden;
+    }
+    body {
+      display:grid;
+      grid-template-rows:auto 1fr;
+      grid-template-columns:200px 1fr;
+      grid-template-areas:
+        "header header"
+        "sidebar content";
+      font-family:var(--font);
+      background:var(--bg);
+      color:var(--fg);
+      transition:.3s;
+    }
+    header {
+      grid-area:header;
+      background:var(--accent);
+      color:#fff;
+      padding:var(--gap);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+    }
+    aside {
+      grid-area:sidebar;
+      background:var(--panel-bg);
+      padding:var(--gap);
+      box-shadow:2px 0 6px var(--panel-shadow);
+      display:flex;
+      flex-direction:column;
+      gap:var(--gap);
+      overflow-y:auto;
+    }
+    main {
+      grid-area:content;
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      grid-template-rows:1fr 1fr;
+      gap:var(--gap);
+      padding:var(--gap);
+      min-height:0;
+    }
+    .panel {
+      background:var(--panel-bg);
+      padding:var(--gap);
+      border-radius:var(--radius);
+      box-shadow:0 2px 6px var(--panel-shadow);
+      display:flex;
+      flex-direction:column;
+      overflow:hidden;
+      min-height:0;
+    }
+    .panel h2 {
+      margin:0 0 var(--gap) 0;
+      font-size:1.1rem;
+    }
+    .panel-controls {
+      display:flex;
+      flex-wrap:wrap;
+      gap:6px;
+      align-items:center;
+      margin-bottom:var(--gap);
+    }
+    .panel-content {
+      flex:1;
+      overflow-y:auto;
+      min-height:0;
+    }
+    input, select, button {
+      font-family:var(--font);
+    }
+    .btn {
+      background:var(--accent);
+      color:#fff;
+      border:none;
+      padding:8px;
+      border-radius:var(--radius);
+      cursor:pointer;
+      transition:.2s;
+    }
+    .btn:hover { background:var(--accent-hover); }
+    ul { list-style:none; padding:0; margin:0 0 var(--gap) 0; }
+    ul li {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding:4px 8px;
+      border-bottom:1px solid #ddd;
+      font-size:0.9em;
+    }
+    ul li:last-child { border-bottom:none; }
+    .logs-entry {
+      padding:4px 0;
+      border-bottom:1px solid #ddd;
+      font-size:0.85em;
+    }
+    .logs-entry:last-child { border-bottom:none; }
+    .counts { font-size:0.9em; margin-bottom:var(--gap); }
+    span.editable { cursor:text; }
+  </style>
+</head>
+<body>
+  <!-- HEADER -->
+  <header>
+    <div>🎵 <strong>Musiktool v6</strong></div>
+    <div>Profil: <span id="profileLabel">–</span></div>
+  </header>
+
+  <!-- SIDEBAR -->
+  <aside>
+    <select id="profileSelect"></select>
+    <button id="newProfile" class="btn">+ Profil</button>
+    <button id="deleteProfile" class="btn">– Profil</button>
+    <button id="duplicateProfile" class="btn">Profil duplizieren</button>
+    <hr>
+    <button id="exportData" class="btn">Export</button>
+    <button id="importData" class="btn">Import</button>
+    <button id="toggleDark" class="btn">Dark Mode</button>
+    <button id="logoutBtn" class="btn">Logout</button>
+  </aside>
+
+  <!-- MAIN: 4 gleich große Bereiche -->
+  <main>
+    <!-- 1: Zufall (oben links) -->
+    <section id="randomPanel" class="panel">
+      <h2>Zufall 🎲</h2>
+      <div class="panel-controls">
+        <label><input type="checkbox" id="incGenres" checked> Genres</label>
+        <label><input type="checkbox" id="incMoods" checked> Stimmungen</label>
+        <label><input type="checkbox" id="incStyles" checked> Stile</label>
+      </div>
+      <div class="panel-controls">
+        <button data-count="1" class="btn">1</button>
+        <button data-count="3" class="btn">3</button>
+        <button data-count="5" class="btn">5</button>
+        <input id="customCount" type="number" min="1" placeholder="..." style="width:60px;" />
+        <button id="genRandom" class="btn">Los</button>
+      </div>
+      <div id="randomResults" class="panel-content"></div>
+    </section>
+
+    <!-- 2: Eingabe (oben rechts) -->
+    <section id="inputPanel" class="panel">
+      <h2>Eingabe 🎶</h2>
+      <div class="panel-controls" style="flex-direction:column; align-items:stretch;">
+        <input id="inputGenres" placeholder="Genres, getrennt" />
+        <input id="inputMoods" placeholder="Stimmungen, getrennt" />
+        <input id="inputStyles" placeholder="Stile, getrennt" />
+        <small>Enter → Speichern</small>
+      </div>
+    </section>
+
+    <!-- 3: Archiv (unten links) -->
+    <section id="archivePanel" class="panel">
+      <h2>Archiv 📂</h2>
+      <div class="panel-controls">
+        <button id="exportArchive" class="btn">Archiv exportieren</button>
+      </div>
+      <div class="counts">
+        Genres: <span id="countGenres">0</span>,
+        Stimmungen: <span id="countMoods">0</span>,
+        Stile: <span id="countStyles">0</span>
+      </div>
+      <div class="panel-content">
+        <h3>Genres</h3><ul id="listGenres"></ul>
+        <h3>Stimmungen</h3><ul id="listMoods"></ul>
+        <h3>Stile</h3><ul id="listStyles"></ul>
+      </div>
+    </section>
+
+    <!-- 4: Logs (unten rechts) -->
+    <section id="logsPanel" class="panel">
+      <h2>Logs 📜</h2>
+      <div class="panel-controls">
+        <button id="clearLogs" class="btn">Alle löschen</button>
+        <button id="exportLogs" class="btn">Logs exportieren</button>
+      </div>
+      <div id="logsList" class="panel-content"></div>
+    </section>
+  </main>
+
+  <input type="file" id="importFile" accept=".json" style="display:none;">
+
+  <script>
+    // --- Datenmodell & Storage ---
+    let data = {profiles:{}, active:null, settings:{darkMode:false}};
+    const KEY = 'musiktool_v6';
+    function save(){ localStorage.setItem(KEY, JSON.stringify(data)); }
+    function load(){ const d = localStorage.getItem(KEY); if(d) data = JSON.parse(d); }
+    function uniqIgnore(arr,val){
+      if(arr.map(x=>x.toLowerCase()).includes(val.toLowerCase())) return false;
+      arr.push(val); return true;
+    }
+
+    // --- Edit-Item-Funktion ---
+    function editItem(cat,i,span){
+      const old = span.textContent;
+      const inp = document.createElement('input');
+      inp.value = old; inp.style.width = '80%';
+      span.replaceWith(inp);
+      inp.focus();
+      inp.onblur = ()=>{
+        const v = inp.value.trim();
+        if(v) data.profiles[data.active][cat][i] = v;
+        save(); renderArchive();
+      };
+      inp.onkeydown = e=>{ if(e.key==='Enter') inp.blur(); };
+    }
+
+    // --- UI-Elemente ---
+    const profileSelect      = document.getElementById('profileSelect'),
+          profileLabel       = document.getElementById('profileLabel'),
+          newProf            = document.getElementById('newProfile'),
+          delProf            = document.getElementById('deleteProfile'),
+          dupProf            = document.getElementById('duplicateProfile'),
+          exportBtn          = document.getElementById('exportData'),
+          importBtn          = document.getElementById('importData'),
+          importFile         = document.getElementById('importFile'),
+          darkBtn            = document.getElementById('toggleDark'),
+          logoutBtn          = document.getElementById('logoutBtn'),
+          ig                 = document.getElementById('inputGenres'),
+          im                 = document.getElementById('inputMoods'),
+          is                 = document.getElementById('inputStyles'),
+          lists              = {
+            Genres: document.getElementById('listGenres'),
+            Moods:  document.getElementById('listMoods'),
+            Styles: document.getElementById('listStyles')
+          },
+          countSpans         = {
+            Genres: document.getElementById('countGenres'),
+            Moods:  document.getElementById('countMoods'),
+            Styles: document.getElementById('countStyles')
+          },
+          incG               = document.getElementById('incGenres'),
+          incM               = document.getElementById('incMoods'),
+          incS               = document.getElementById('incStyles'),
+          genBtn             = document.getElementById('genRandom'),
+          randomRes          = document.getElementById('randomResults'),
+          exportLogsBtn      = document.getElementById('exportLogs'),
+          clearLogsBtn       = document.getElementById('clearLogs'),
+          exportArchiveBtn   = document.getElementById('exportArchive'),
+          customCount        = document.getElementById('customCount'),
+          countBtns          = document.querySelectorAll('[data-count]'),
+          logsList           = document.getElementById('logsList');
+
+    // --- Profile Funktionen ---
+    function refreshProfiles(){
+      profileSelect.innerHTML = '';
+      Object.keys(data.profiles).forEach(p=>
+        profileSelect.add(new Option(p,p))
+      );
+      if(!data.active || !data.profiles[data.active]){
+        data.active = Object.keys(data.profiles)[0] || null;
+      }
+      profileSelect.value = data.active;
+      profileLabel.textContent = data.active || '–';
+      renderArchive();
+      renderLogs();
+    }
+    newProf.onclick = ()=>{
+      const name = prompt('Name für neues Profil?','Profil '+(Object.keys(data.profiles).length+1));
+      if(name && !data.profiles[name]){
+        data.profiles[name] = {Genres:[],Moods:[],Styles:[],Logs:[]};
+        data.active = name; save(); refreshProfiles();
+      }
+    };
+    delProf.onclick = ()=>{
+      if(data.active && confirm(`Profil "${data.active}" löschen?`)){
+        delete data.profiles[data.active];
+        data.active = null; save(); refreshProfiles();
+      }
+    };
+    dupProf.onclick = ()=>{
+      if(!data.active) return;
+      const src = data.active;
+      const name = prompt('Name für Duplikat?', src + '_copy');
+      if(name && !data.profiles[name]){
+        data.profiles[name] = JSON.parse(JSON.stringify(data.profiles[src]));
+        data.active = name; save(); refreshProfiles();
+      }
+    };
+    profileSelect.onchange = ()=>{
+      data.active = profileSelect.value; save(); refreshProfiles();
+    };
+
+    // --- Eingabe ---
+    [[ig,'Genres'],[im,'Moods'],[is,'Styles']].forEach(([inp,cat])=>{
+      inp.addEventListener('keydown', e=>{
+        if(e.key==='Enter'){
+          inp.value.split(',')
+            .map(s=>s.trim())
+            .filter(Boolean)
+            .forEach(v=>uniqIgnore(data.profiles[data.active][cat],v));
+          inp.value=''; save(); renderArchive();
+        }
+      });
+    });
+
+    // --- Archiv & Zähler ---
+    function renderArchive(){
+      if(!data.active) return;
+      ['Genres','Moods','Styles'].forEach(cat=>{
+        const arr = data.profiles[data.active][cat];
+        countSpans[cat].textContent = arr.length;
+        const ul = lists[cat];
+        ul.innerHTML = '';
+        arr.forEach((it,i)=>{
+          const li = document.createElement('li');
+          const span = document.createElement('span');
+          span.textContent = it;
+          span.classList.add('editable');
+          span.onclick = ()=> editItem(cat,i,span);
+          const del = document.createElement('button');
+          del.textContent = '✖';
+          del.onclick = ()=>{ arr.splice(i,1); save(); renderArchive(); };
+          li.append(span, del);
+          ul.append(li);
+        });
+      });
+    }
+
+    // --- Zufall ohne Duplikate ---
+    countBtns.forEach(b=>b.onclick = ()=> customCount.value = b.dataset.count);
+    genBtn.onclick = ()=>{
+      if(!data.active) return;
+      const n = parseInt(customCount.value)||1;
+      let out = [];
+      ['Genres','Moods','Styles'].forEach(cat=>{
+        if((cat==='Genres'&&incG.checked)||
+           (cat==='Moods' &&incM.checked)||
+           (cat==='Styles'&&incS.checked)){
+          let arr = [...data.profiles[data.active][cat]];
+          for(let i=arr.length-1;i>0;i--){
+            const j = Math.floor(Math.random()*(i+1));
+            [arr[i],arr[j]]=[arr[j],arr[i]];
+          }
+          out.push(...arr.slice(0,n));
+        }
+      });
+      const unique = out.filter((v,i,a)=>a.indexOf(v)===i);
+      randomRes.textContent = unique.join(', ');
+      navigator.clipboard.writeText(unique.join(', '));
+      const time = new Date().toLocaleTimeString();
+      data.profiles[data.active].Logs.unshift(`${time}: ${unique.join(', ')}`);
+      if(data.profiles[data.active].Logs.length>20)
+        data.profiles[data.active].Logs.pop();
+      save(); renderLogs();
+    };
+
+    // --- Logs rendern & löschen ---
+    function renderLogs(){
+      logsList.innerHTML = '';
+      if(!data.active) return;
+      data.profiles[data.active].Logs.forEach(l=>{
+        const d = document.createElement('div');
+        d.className = 'logs-entry';
+        d.textContent = l;
+        logsList.append(d);
+      });
+    }
+    clearLogsBtn.onclick = ()=>{
+      if(confirm('Alle Logs löschen?')){
+        data.profiles[data.active].Logs = [];
+        save(); renderLogs();
+      }
+    };
+
+    // --- Logs exportieren ---
+    exportLogsBtn.onclick = ()=>{
+      if(!data.active) return;
+      const lines = data.profiles[data.active].Logs.join('\n');
+      const blob = new Blob([lines], {type:'text/plain;charset=utf-8'});
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      const fn   = `logs_${data.active.replace(/\s+/g,'_')}.txt`;
+      a.href = url; a.download = fn; a.click();
+      URL.revokeObjectURL(url);
+    };
+
+    // --- Archiv exportieren ---
+    exportArchiveBtn.onclick = ()=>{
+      if(!data.active) return;
+      const prof = data.profiles[data.active];
+      const lines = [
+        `Profil: ${data.active}`, '',
+        'Genres:', ...prof.Genres,
+        '', 'Stimmungen:', ...prof.Moods,
+        '', 'Stile:',     ...prof.Styles
+      ];
+      const blob = new Blob([lines.join('\n')], {type:'text/plain;charset=utf-8'});
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      const fn   = `archive_${data.active.replace(/\s+/g,'_')}.txt`;
+      a.href = url; a.download = fn; a.click();
+      URL.revokeObjectURL(url);
+    };
+
+    // --- Export / Import ---
+    exportBtn.onclick = ()=>{
+      const blob = new Blob([localStorage.getItem(KEY)],{type:'application/json'});
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href=url; a.download='musiktool_backup.json'; a.click();
+      URL.revokeObjectURL(url);
+    };
+    importBtn.onclick = ()=> importFile.click();
+    importFile.onchange = e=>{
+      const f = e.target.files[0];
+      if(!f) return;
+      const r = new FileReader();
+      r.onload = ev=>{
+        try {
+          localStorage.setItem(KEY, ev.target.result);
+          load(); refreshProfiles();
+          alert('Import erfolgreich');
+        } catch {
+          alert('Ungültiges JSON');
+        }
+      };
+      r.readAsText(f);
+    };
+
+    // --- Dark Mode ---
+    darkBtn.onclick = ()=>{
+      data.settings.darkMode = !data.settings.darkMode;
+      document.body.classList.toggle('dark', data.settings.darkMode);
+      save();
+    };
+
+    // --- Logout ---
+    logoutBtn.onclick = ()=>{
+      if(confirm('Seite schließen?')){
+        save();
+        window.close();
+      }
+    };
+
+    // --- Init ---
+    load();
+    if(!Object.keys(data.profiles).length){
+      data.profiles['Profil 1'] = {Genres:[],Moods:[],Styles:[],Logs:[]};
+      data.active = 'Profil 1'; save();
+    }
+    if(data.settings.darkMode) document.body.classList.add('dark');
+    refreshProfiles();
+  </script>
+</body>
+</html>

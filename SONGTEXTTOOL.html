@@ -1,0 +1,2115 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>Songtext-Workbench Plus</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    :root {
+      --ui-zoom: 1;
+      --text-zoom: 1;
+
+      --font-size-base: 16px;
+
+      /* Default (dark) fallback */
+      --color-bg: #0b1020;
+      --color-bg-soft: #141827;
+      --color-bg-softer: #1d2334;
+      --color-border: #343b4f;
+      --color-accent: #4fd1c5;
+      --color-accent-soft: rgba(79, 209, 197, 0.15);
+      --color-text: #f9fafb;
+      --color-text-soft: #a5b4fc;
+      --color-danger: #f97373;
+      --color-warning: #fbbf24;
+      --shadow-soft: 0 12px 35px rgba(15, 23, 42, 0.8);
+      --radius-lg: 12px;
+    }
+
+    /* Theme: Dark */
+    body[data-theme="dark"] {
+      --color-bg: #050816;
+      --color-bg-soft: #0f172a;
+      --color-bg-softer: #111827;
+      --color-border: #374151;
+      --color-accent: #38bdf8;
+      --color-accent-soft: rgba(56, 189, 248, 0.2);
+      --color-text: #e5e7eb;
+      --color-text-soft: #9ca3af;
+      --shadow-soft: 0 14px 40px rgba(15, 23, 42, 0.85);
+    }
+
+    /* Theme: Light */
+    body[data-theme="light"] {
+      --color-bg: #f3f4f6;
+      --color-bg-soft: #ffffff;
+      --color-bg-softer: #e5e7eb;
+      --color-border: #d1d5db;
+      --color-accent: #2563eb;
+      --color-accent-soft: rgba(37, 99, 235, 0.12);
+      --color-text: #111827;
+      --color-text-soft: #4b5563;
+      --shadow-soft: 0 12px 30px rgba(148, 163, 184, 0.6);
+    }
+
+    /* Theme: Solar */
+    body[data-theme="solar"] {
+      --color-bg: #002b36;
+      --color-bg-soft: #073642;
+      --color-bg-softer: #0a3c4a;
+      --color-border: #586e75;
+      --color-accent: #b58900;
+      --color-accent-soft: rgba(181, 137, 0, 0.25);
+      --color-text: #fdf6e3;
+      --color-text-soft: #93a1a1;
+      --shadow-soft: 0 14px 40px rgba(0, 43, 54, 0.9);
+    }
+
+    /* Theme: High Contrast */
+    body[data-theme="contrast"] {
+      --color-bg: #000000;
+      --color-bg-soft: #111111;
+      --color-bg-softer: #1f1f1f;
+      --color-border: #f5f5f5;
+      --color-accent: #00ff90;
+      --color-accent-soft: rgba(0, 255, 144, 0.12);
+      --color-text: #ffffff;
+      --color-text-soft: #f0f0f0;
+      --shadow-soft: 0 0 0 2px #ffffff;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: var(--font-size-base);
+      background: radial-gradient(circle at top, #1f2937 0, var(--color-bg) 50%);
+      color: var(--color-text);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      overflow: hidden;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    body, .app-root {
+      transform-origin: top left;
+      transform: scale(var(--ui-zoom));
+    }
+
+    :focus-visible {
+      outline: 2px solid var(--color-accent);
+      outline-offset: 2px;
+    }
+
+    button, input, select, textarea {
+      font-family: inherit;
+      font-size: inherit;
+    }
+
+    .app-root {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    header.app-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.5rem 0.9rem;
+      border-bottom: 1px solid var(--color-border);
+      background: linear-gradient(90deg, rgba(79,209,197,0.18), transparent);
+      backdrop-filter: blur(14px);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+
+    .app-title-group {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+    }
+
+    .app-logo {
+      width: 28px;
+      height: 28px;
+      border-radius: 10px;
+      background: radial-gradient(circle at 30% 0, #ffffff, var(--color-accent));
+      box-shadow: 0 0 18px rgba(79, 209, 197, 0.8);
+    }
+
+    .app-title {
+      font-weight: 600;
+      letter-spacing: 0.04em;
+    }
+
+    .app-subtitle {
+      font-size: 0.75rem;
+      color: var(--color-text-soft);
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      font-size: 0.7rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 999px;
+      border: 1px solid var(--color-border);
+      background: var(--color-bg-soft);
+      color: var(--color-text-soft);
+      white-space: nowrap;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.2rem 0.55rem;
+      border-radius: 999px;
+      border: 1px solid var(--color-border);
+      font-size: 0.7rem;
+      background: var(--color-bg-soft);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--color-accent);
+      box-shadow: 0 0 8px rgba(79, 209, 197, 0.9);
+    }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .icon-button {
+      border-radius: 999px;
+      border: 1px solid var(--color-border);
+      background: var(--color-bg-soft);
+      padding: 0.2rem 0.55rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      color: var(--color-text-soft);
+      transition: background 0.12s ease, transform 0.05s ease, box-shadow 0.12s ease;
+    }
+
+    .icon-button:hover {
+      background: var(--color-bg-softer);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .icon-button span.icon {
+      font-size: 0.9rem;
+    }
+
+    .header-select {
+      padding: 0.2rem 0.5rem;
+      border-radius: 999px;
+      border: 1px solid var(--color-border);
+      background: var(--color-bg-soft);
+      color: var(--color-text-soft);
+    }
+
+    .app-layout {
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr) 260px;
+      height: calc(100vh - 52px);
+      overflow: hidden;
+    }
+
+    @media (max-width: 1200px) {
+      .app-layout {
+        grid-template-columns: 240px minmax(0, 1fr);
+      }
+      #rightSidebar {
+        display: none;
+      }
+    }
+
+    @media (max-width: 900px) {
+      .app-layout {
+        grid-template-columns: minmax(0, 1fr);
+      }
+      #leftSidebar, #rightSidebar {
+        position: absolute;
+        top: 52px;
+        bottom: 0;
+        z-index: 30;
+        height: calc(100vh - 52px);
+      }
+      #leftSidebar {
+        left: 0;
+      }
+      #rightSidebar {
+        right: 0;
+      }
+    }
+
+    .sidebar {
+      background: linear-gradient(180deg, var(--color-bg-soft), var(--color-bg));
+      border-right: 1px solid var(--color-border);
+      padding: 0.6rem;
+      overflow-y: auto;
+      box-shadow: 4px 0 22px rgba(0,0,0,0.5);
+    }
+
+    .sidebar-right {
+      border-right: none;
+      border-left: 1px solid var(--color-border);
+    }
+
+    .sidebar.collapsed {
+      width: 0;
+      padding: 0;
+      border: none;
+      overflow: hidden;
+    }
+
+    .sidebar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+    }
+
+    .sidebar-title {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--color-text-soft);
+    }
+
+    .sidebar-section {
+      margin-bottom: 0.75rem;
+      padding: 0.45rem;
+      border-radius: var(--radius-lg);
+      background: radial-gradient(circle at top left, var(--color-accent-soft), transparent 60%);
+      border: 1px solid var(--color-border);
+    }
+
+    .sidebar-section h3 {
+      font-size: 0.8rem;
+      margin: 0 0 0.3rem 0;
+      color: var(--color-text-soft);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    .main {
+      background: radial-gradient(circle at top, rgba(79,209,197,0.08), transparent 40%), var(--color-bg);
+      display: flex;
+      flex-direction: row;
+      gap: 0.55rem;
+      padding: 0.6rem 0.6rem 0.9rem;
+      overflow: hidden;
+    }
+
+    .column {
+      background: rgba(0,0,0,0.22);
+      border-radius: 16px;
+      border: 1px solid rgba(148,163,184,0.35);
+      padding: 0.6rem;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      flex: 1 1 0;
+      box-shadow: var(--shadow-soft);
+    }
+
+    .col-resizer {
+      width: 5px;
+      cursor: col-resize;
+      flex: 0 0 5px;
+      position: relative;
+    }
+
+    .col-resizer::before {
+      content: "";
+      position: absolute;
+      top: 10%;
+      bottom: 10%;
+      left: 2px;
+      width: 1px;
+      background: rgba(148, 163, 184, 0.6);
+    }
+
+    .column-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.35rem;
+      gap: 0.4rem;
+    }
+
+    .column-header-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .column-header-sub {
+      font-size: 0.75rem;
+      color: var(--color-text-soft);
+    }
+
+    .column-body {
+      flex: 1;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .scroll-section {
+      flex: 1;
+      overflow: auto;
+      padding-right: 0.2rem;
+    }
+
+    .field-group {
+      margin-bottom: 0.4rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+      position: relative;
+    }
+
+    .field-group.disabled {
+      opacity: 0.4;
+    }
+
+    .field-label {
+      font-size: 0.75rem;
+      color: var(--color-text-soft);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .field-label span.meta {
+      font-size: 0.7rem;
+      opacity: 0.7;
+    }
+
+    .field-actions {
+      display: inline-flex;
+      gap: 0.2rem;
+      align-items: center;
+    }
+
+    .field-action-btn {
+      border-radius: 999px;
+      border: 1px solid var(--color-border);
+      background: var(--color-bg-soft);
+      padding: 0.05rem 0.25rem;
+      cursor: pointer;
+      font-size: 0.65rem;
+      color: var(--color-text-soft);
+    }
+
+    .field-group.minimized .field-content {
+      display: none;
+    }
+
+    .field-group.maximized {
+      z-index: 40;
+    }
+
+    .field-group.maximized .field-content textarea,
+    .field-group.maximized .field-content input[type="text"] {
+      min-height: 50vh;
+    }
+
+    .field-content {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+
+    input[type="text"],
+    textarea,
+    select {
+      width: 100%;
+      padding: 0.35rem 0.45rem;
+      border-radius: 8px;
+      border: 1px solid var(--color-border);
+      background: var(--color-bg-soft);
+      color: var(--color-text);
+      outline: none;
+      transition: border-color 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+      max-height: 260px;
+    }
+
+    .text-zoom-area {
+      font-size: calc(1rem * var(--text-zoom));
+    }
+
+    input[type="text"]:focus,
+    textarea:focus,
+    select:focus {
+      border-color: var(--color-accent);
+      box-shadow: 0 0 0 1px rgba(79,209,197,0.35);
+      background: var(--color-bg-softer);
+    }
+
+    .field-row {
+      display: flex;
+      gap: 0.35rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 0.3rem 0.6rem;
+      border-radius: 999px;
+      border: 1px solid var(--color-border);
+      background: var(--color-bg-soft);
+      color: var(--color-text-soft);
+      cursor: pointer;
+      font-size: 0.8rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      transition: background 0.12s ease, transform 0.05s ease, box-shadow 0.12s ease;
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      background: var(--color-bg-softer);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .btn-primary {
+      border-color: var(--color-accent);
+      background: var(--color-accent-soft);
+      color: var(--color-accent);
+      font-weight: 500;
+    }
+
+    .btn-danger {
+      border-color: var(--color-danger);
+      color: var(--color-danger);
+      background: rgba(248,113,113,0.1);
+    }
+
+    .btn-ghost {
+      background: transparent;
+    }
+
+    .badge-mini {
+      padding: 0.1rem 0.45rem;
+      border-radius: 999px;
+      border: 1px solid var(--color-border);
+      font-size: 0.7rem;
+      color: var(--color-text-soft);
+    }
+
+    .song-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      font-size: 0.8rem;
+      max-height: 210px;
+      overflow-y: auto;
+    }
+
+    .song-list-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.22rem 0.3rem;
+      border-radius: 8px;
+      cursor: pointer;
+      border: 1px solid transparent;
+    }
+
+    .song-list-item:hover {
+      background: var(--color-bg-softer);
+    }
+
+    .song-list-item.active {
+      border-color: var(--color-accent);
+      background: var(--color-accent-soft);
+      color: var(--color-accent);
+    }
+
+    .song-list-item-title {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 120px;
+    }
+
+    .song-list-item-meta {
+      font-size: 0.7rem;
+      color: var(--color-text-soft);
+    }
+
+    .profiles-list,
+    .archive-list {
+      max-height: 120px;
+      overflow-y: auto;
+      font-size: 0.78rem;
+      border-radius: 8px;
+      border: 1px solid var(--color-border);
+      padding: 0.2rem;
+      background: rgba(15,23,42,0.35);
+    }
+
+    .profiles-list-row,
+    .archive-list-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.4rem;
+      padding: 0.15rem 0.3rem;
+      border-radius: 6px;
+    }
+
+    .profiles-list-row:nth-child(odd),
+    .archive-list-row:nth-child(odd) {
+      background: rgba(148,163,184,0.07);
+    }
+
+    .profiles-list-row-title {
+      font-weight: 500;
+      max-width: 100px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .preview-text {
+      flex: 1;
+      overflow: auto;
+      padding: 0.4rem;
+      border-radius: 10px;
+      border: 1px solid var(--color-border);
+      background: rgba(15,23,42,0.4);
+      white-space: pre-wrap;
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: calc(0.8rem * var(--text-zoom));
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.3rem;
+      margin-top: 0.35rem;
+    }
+
+    .stat-card {
+      border-radius: 10px;
+      border: 1px solid var(--color-border);
+      padding: 0.3rem 0.4rem;
+      background: radial-gradient(circle at top, rgba(148,163,184,0.22), transparent 60%);
+      font-size: 0.74rem;
+    }
+
+    .stat-label {
+      color: var(--color-text-soft);
+      margin-bottom: 0.1rem;
+    }
+
+    .stat-value {
+      font-weight: 600;
+      font-size: 0.85rem;
+    }
+
+    .log-panel {
+      margin-top: 0.4rem;
+      border-radius: 10px;
+      border: 1px solid var(--color-border);
+      padding: 0.3rem;
+      background: rgba(15,23,42,0.45);
+      font-size: 0.75rem;
+      max-height: 90px;
+      overflow-y: auto;
+    }
+
+    .log-entry {
+      margin-bottom: 0.15rem;
+      color: var(--color-text-soft);
+    }
+
+    .log-entry span.time {
+      opacity: 0.7;
+      font-size: 0.7rem;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      padding: 0.4rem 0.7rem;
+      border-radius: 999px;
+      background: var(--color-bg-soft);
+      border: 1px solid var(--color-border);
+      color: var(--color-text-soft);
+      font-size: 0.78rem;
+      box-shadow: var(--shadow-soft);
+      display: none;
+      z-index: 80;
+    }
+
+    .toast.show {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .toast span.icon {
+      font-size: 0.9rem;
+    }
+
+    .tab-bar {
+      display: flex;
+      gap: 0.3rem;
+      margin-bottom: 0.35rem;
+      flex-wrap: wrap;
+    }
+
+    .tab {
+      padding: 0.25rem 0.6rem;
+      border-radius: 999px;
+      border: 1px solid var(--color-border);
+      font-size: 0.75rem;
+      cursor: pointer;
+      background: var(--color-bg-soft);
+      color: var(--color-text-soft);
+    }
+
+    .tab.active {
+      border-color: var(--color-accent);
+      background: var(--color-accent-soft);
+      color: var(--color-accent);
+      font-weight: 500;
+    }
+
+    .help-text {
+      font-size: 0.75rem;
+      color: var(--color-text-soft);
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body data-theme="dark" aria-label="Songtext-Workbench" data-font-size="base">
+<div class="app-root">
+  <header class="app-header" role="banner">
+    <div class="app-title-group">
+      <div class="app-logo" aria-hidden="true"></div>
+      <div>
+        <div class="app-title">Songtext-Workbench</div>
+        <div class="app-subtitle">Brainstorming & Struktur für Lyrics</div>
+      </div>
+      <span class="badge" aria-label="Autosave und Dateiformate">Autosave 5 min · JSON/TXT · Backup</span>
+    </div>
+    <div class="header-right" aria-label="Status und Einstellungen">
+      <div class="status-pill" aria-live="polite">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span id="statusText">Bereit</span>
+      </div>
+      <div id="clockBadge" class="badge" aria-label="Datum und Uhrzeit">--:--</div>
+      <div class="header-controls">
+        <select id="themeSelect" class="header-select" aria-label="Farbschema wählen">
+          <option value="dark">Dark</option>
+          <option value="light">Light</option>
+          <option value="solar">Solar</option>
+          <option value="contrast">High Contrast</option>
+        </select>
+        <select id="fontSizeSelect" class="header-select" aria-label="Grundschriftgröße wählen">
+          <option value="small">A-</option>
+          <option value="base" selected>A</option>
+          <option value="large">A+</option>
+        </select>
+        <button class="icon-button" id="toggleLeftSidebarBtn" title="Linke Sidebar ein- oder ausblenden" aria-label="Linke Sidebar ein- oder ausblenden">
+          <span class="icon">🧱</span><span>Links</span>
+        </button>
+        <button class="icon-button" id="toggleRightSidebarBtn" title="Rechte Sidebar ein- oder ausblenden" aria-label="Rechte Sidebar ein- oder ausblenden">
+          <span class="icon">📁</span><span>Rechts</span>
+        </button>
+        <button class="icon-button" id="backupExportBtn" title="Backup exportieren" aria-label="Backup exportieren">
+          <span class="icon">💾</span><span>Backup</span>
+        </button>
+        <button class="icon-button" id="backupImportBtn" title="Backup importieren" aria-label="Backup importieren">
+          <span class="icon">📥</span><span>Import</span>
+        </button>
+        <input type="file" id="backupImportFile" style="display:none;" accept=".json" />
+      </div>
+    </div>
+  </header>
+
+  <div class="app-layout">
+    <aside class="sidebar sidebar-left" id="leftSidebar" role="complementary" aria-label="Bereiche und Templates">
+      <div class="sidebar-header">
+        <span class="sidebar-title">Bereiche & Templates</span>
+        <button class="btn btn-ghost" id="addSectionBtn" title="Neuen Songbereich hinzufügen">+ Bereich</button>
+      </div>
+
+      <div class="sidebar-section">
+        <h3>Song-Bereiche</h3>
+        <ul id="sectionList" class="song-list" aria-label="Liste der Songbereiche"></ul>
+      </div>
+
+      <div class="sidebar-section">
+        <h3>Templates</h3>
+        <div class="field-group" data-field-group>
+          <div class="field-label">
+            <span>Template</span>
+            <span class="meta">Strukturen speichern & laden</span>
+          </div>
+          <div class="field-content">
+            <div class="field-row">
+              <input type="text" id="templateNameInput" placeholder="Template-Name (z.B. Pop-Standard)" aria-label="Template-Name" />
+              <button class="btn btn-primary" id="saveTemplateBtn">Speichern</button>
+            </div>
+            <textarea id="templateContentInput" class="text-zoom-area" placeholder="z.B. Intro:\nStrophe 1:\nRefrain: ..." aria-label="Template-Inhalt"></textarea>
+            <div class="field-row">
+              <select id="templateSelect" aria-label="Template auswählen">
+                <option value="">Template wählen…</option>
+              </select>
+              <button class="btn" id="applyTemplateToSongBtn">In Song einfügen</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <h3>Hilfe kurz</h3>
+        <div class="help-text">
+          <p><b>Bereiche</b> wie <i>Intro:</i>, <i>Strophe:</i>, <i>Bridge:</i> frei anlegen. Templates speichern komplette Song-Strukturen – ein Bereich pro Zeile.</p>
+          <p>Per Klick kannst du ein Template in den aktuellen Song übernehmen. Alle Eingaben sind per Tastatur und Screenreader zugänglich.</p>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main" role="main" aria-label="Hauptarbeitsbereich">
+      <section class="column col-1" aria-label="Song-Erarbeitung">
+        <div class="column-header">
+          <div>
+            <div class="column-header-title">Song-Erarbeitung</div>
+            <div class="column-header-sub">Bereiche, Text, Titel & Workflow</div>
+          </div>
+          <button class="btn btn-primary" id="newSongBtn">➕ Neuer Song</button>
+        </div>
+        <div class="column-body">
+          <div class="scroll-section">
+            <div class="field-group" data-field-group>
+              <div class="field-label">
+                <span>Song-Titel</span>
+                <span class="meta">wird Dateiname</span>
+              </div>
+              <div class="field-content">
+                <input type="text" id="songTitleInput" placeholder="Arbeitstitel eingeben…" aria-label="Songtitel" />
+              </div>
+            </div>
+
+            <div class="field-group" data-field-group>
+              <div class="field-label">
+                <span>Bereich hinzufügen</span>
+                <span class="meta">z.B. Intro:, Strophe 1:, Bridge:</span>
+              </div>
+              <div class="field-content">
+                <div class="field-row">
+                  <input type="text" id="sectionNameInput" placeholder="z.B. Strophe 1:" aria-label="Name des neuen Bereichs" />
+                  <button class="btn" id="insertSectionBtn">In Song einfügen</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="field-group" data-field-group>
+              <div class="field-label">
+                <span>Songtext-Arbeitsbereich</span>
+                <span class="meta">Strg+S speichert</span>
+              </div>
+              <div class="field-content">
+                <textarea id="songEditor" class="text-zoom-area" aria-label="Songtext bearbeiten" placeholder="Hier deinen Songtext mit Bereichen ausarbeiten…"></textarea>
+              </div>
+            </div>
+
+            <div class="field-group" data-field-group>
+              <div class="field-label">
+                <span>Schnellaktionen</span>
+                <span class="meta">Genres & Export</span>
+              </div>
+              <div class="field-content">
+                <div class="field-row">
+                  <button class="btn" id="insertGenresIntoSongBtn">Genres/Stimmungen in Song einfügen</button>
+                  <button class="btn" id="exportSongTxtBtn">als TXT exportieren</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="col-resizer" data-resizer="1" aria-hidden="true"></div>
+
+      <section class="column col-2" aria-label="Zusatzinfos und Profile">
+        <div class="column-header">
+          <div>
+            <div class="column-header-title">Zusatzinfos & Profile</div>
+            <div class="column-header-sub">Genres, Tags, Hashtags, Profile & Zufall</div>
+          </div>
+        </div>
+        <div class="column-body">
+          <div class="scroll-section" style="max-height: 50%;">
+            <div class="field-group" data-field-group>
+              <div class="field-label">
+                <span>Genres</span>
+                <span class="meta">Kommagetrennt, Duplikate werden ignoriert</span>
+              </div>
+              <div class="field-content">
+                <textarea id="genresInput" class="text-zoom-area" aria-label="Genres" placeholder="Techno, House, Ambient, ..."></textarea>
+              </div>
+            </div>
+
+            <div class="field-group" data-field-group>
+              <div class="field-label">
+                <span>Tags & Hashtags</span>
+                <span class="meta">z.B. emotional, #nightdrive</span>
+              </div>
+              <div class="field-content">
+                <textarea id="tagsInput" class="text-zoom-area" aria-label="Tags und Hashtags" placeholder="emotional, #nightdrive, story-telling, ..."></textarea>
+              </div>
+            </div>
+
+            <div class="field-group" data-field-group>
+              <div class="field-label">
+                <span>Cover-Ideen & Sonstiges</span>
+                <span class="meta">Freie Notizen</span>
+              </div>
+              <div class="field-content">
+                <textarea id="coverIdeasInput" class="text-zoom-area" aria-label="Coverideen und Sonstiges" placeholder="Cover-Motive, Farben, Story, ..."></textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="scroll-section" style="border-top: 1px solid var(--color-border); padding-top: 0.35rem; margin-top: 0.3rem;">
+            <div class="tab-bar" role="tablist">
+              <button class="tab active" data-tab="profilesTab" role="tab" aria-selected="true">Profile</button>
+              <button class="tab" data-tab="archiveTab" role="tab" aria-selected="false">Archiv</button>
+            </div>
+
+            <div id="profilesTab" class="tab-content" role="tabpanel">
+              <div class="field-group" data-field-group>
+                <div class="field-label">
+                  <span>Profil erstellen</span>
+                  <span class="meta">z.B. Techno, Hörspiel …</span>
+                </div>
+                <div class="field-content">
+                  <input type="text" id="profileNameInput" placeholder="Profilname" aria-label="Profilname" />
+                </div>
+              </div>
+
+              <div class="field-group" data-field-group>
+                <div class="field-label">
+                  <span>Genres (Profil)</span>
+                  <span class="meta">Kommagetrennt</span>
+                </div>
+                <div class="field-content">
+                  <textarea id="profileGenresInput" class="text-zoom-area" aria-label="Profil-Genres" placeholder="Techno, Dub Techno, Detroit, ..."></textarea>
+                </div>
+              </div>
+
+              <div class="field-group" data-field-group>
+                <div class="field-label">
+                  <span>Stimmung</span>
+                  <span class="meta">Kommagetrennt</span>
+                </div>
+                <div class="field-content">
+                  <textarea id="profileMoodsInput" class="text-zoom-area" aria-label="Profil-Stimmungen" placeholder="dunkel, treibend, hypnotisch, ..."></textarea>
+                </div>
+              </div>
+
+              <div class="field-group" data-field-group>
+                <div class="field-label">
+                  <span>Besondere Effekte / Stil</span>
+                  <span class="meta">Kommagetrennt</span>
+                </div>
+                <div class="field-content">
+                  <textarea id="profileEffectsInput" class="text-zoom-area" aria-label="Besondere Effekte oder Stil" placeholder="Fieldrecordings, verzerrte Vocals, ..."></textarea>
+                </div>
+              </div>
+
+              <div class="field-group" data-field-group>
+                <div class="field-label">
+                  <span>Profil-Aktionen</span>
+                  <span class="meta">Speichern & Import/Export</span>
+                </div>
+                <div class="field-content">
+                  <div class="field-row">
+                    <button class="btn btn-primary" id="saveProfileBtn">Profil speichern</button>
+                    <button class="btn" id="exportProfilesBtn">Profile exportieren (JSON)</button>
+                    <button class="btn" id="importProfilesBtn">Importieren</button>
+                    <input type="file" id="importProfilesFile" style="display:none;" accept=".json" />
+                  </div>
+                </div>
+              </div>
+
+              <div class="field-group" data-field-group>
+                <div class="field-label">
+                  <span>Profile im Archiv</span>
+                  <span class="meta" id="profileCountMeta">0 Profile</span>
+                </div>
+                <div class="field-content">
+                  <div class="profiles-list" id="profilesList"></div>
+                </div>
+              </div>
+
+              <div class="field-group" data-field-group>
+                <div class="field-label">
+                  <span>Zufallsgenerator</span>
+                  <span class="meta">ohne Duplikate · log-persistent</span>
+                </div>
+                <div class="field-content">
+                  <div class="field-row">
+                    <select id="profileSelectForRandom" aria-label="Profil für Zufallsgenerator wählen">
+                      <option value="">Profil wählen…</option>
+                    </select>
+                    <select id="randomAmountSelect" aria-label="Anzahl der zufälligen Einträge wählen">
+                      <option value="4">4</option>
+                      <option value="8">8</option>
+                      <option value="12">12</option>
+                      <option value="16">16</option>
+                      <option value="20">20</option>
+                    </select>
+                    <button class="btn btn-primary" id="generateRandomBtn">🎲 Genres</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="field-group" data-field-group>
+                <div class="field-label">
+                  <span>Zufalls-Ergebnis</span>
+                  <span class="meta">wird in Genres-Feld übernommen</span>
+                </div>
+                <div class="field-content">
+                  <textarea id="randomResultOutput" class="text-zoom-area" readonly aria-label="Zufallsausgabe"></textarea>
+                </div>
+              </div>
+            </div>
+
+            <div id="archiveTab" class="tab-content" style="display:none;" role="tabpanel">
+              <div class="field-group" data-field-group>
+                <div class="field-label">
+                  <span>Archivierte Begriffe</span>
+                  <span class="meta" id="archiveStatsMeta">0 Einträge</span>
+                </div>
+                <div class="field-content">
+                  <div class="archive-list" id="archiveList"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="col-resizer" data-resizer="2" aria-hidden="true"></div>
+
+      <section class="column col-3" aria-label="Vorschau und Dashboard">
+        <div class="column-header">
+          <div>
+            <div class="column-header-title">Vorschau & Dashboard</div>
+            <div class="column-header-sub">Gesamttext, Statistiken & Speicher</div>
+          </div>
+          <button class="btn" id="refreshPreviewBtn">🔄 Aktualisieren</button>
+        </div>
+        <div class="column-body">
+          <div class="scroll-section">
+            <div class="field-group" data-field-group>
+              <div class="field-label">
+                <span>Song-Vorschau</span>
+                <span class="meta">Nur Anzeige – bearbeitet wird links</span>
+              </div>
+              <div class="field-content">
+                <div id="songPreview" class="preview-text text-zoom-area" aria-label="Songvorschau"></div>
+              </div>
+            </div>
+
+            <div class="stats-grid" aria-label="Statistik des Songs">
+              <div class="stat-card">
+                <div class="stat-label">Zeichen</div>
+                <div class="stat-value" id="charCountStat">0</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Wörter</div>
+                <div class="stat-value" id="wordCountStat">0</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Abschnitte</div>
+                <div class="stat-value" id="sectionCountStat">0</div>
+              </div>
+            </div>
+
+            <div class="field-group" data-field-group style="margin-top:0.35rem;">
+              <div class="field-label">
+                <span>Song-Archiv-Steuerung</span>
+                <span class="meta">Buttons & Dialoge</span>
+              </div>
+              <div class="field-content">
+                <div class="field-row">
+                  <button class="btn btn-primary" id="saveSongToArchiveBtn">💾 Song im Archiv speichern</button>
+                  <button class="btn" id="duplicateSongBtn">📄 Duplizieren</button>
+                  <button class="btn btn-danger" id="deleteSongBtn">🗑 Löschen</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="field-group" data-field-group>
+              <div class="field-label">
+                <span>Song-Archiv (Projekt)</span>
+                <span class="meta" id="songArchiveCountMeta">0 Songs</span>
+              </div>
+              <div class="field-content">
+                <ul class="song-list" id="songArchiveList" aria-label="Gespeicherte Songs"></ul>
+              </div>
+            </div>
+
+            <div class="field-group" data-field-group>
+              <div class="field-label">
+                <span>System-Log</span>
+                <span class="meta">Ereignisse in Echtzeit</span>
+              </div>
+              <div class="field-content">
+                <div class="log-panel" id="logPanel" aria-live="polite"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <aside class="sidebar sidebar-right" id="rightSidebar" role="complementary" aria-label="Projekt-Songs">
+      <div class="sidebar-header">
+        <span class="sidebar-title">Projekt-Songs</span>
+        <span class="badge-mini" id="projectSongCount">0</span>
+      </div>
+
+      <div class="sidebar-section">
+        <h3>Songliste</h3>
+        <ul id="projectSongList" class="song-list" aria-label="Songliste im Projekt"></ul>
+      </div>
+
+      <div class="sidebar-section">
+        <h3>Editieren</h3>
+        <div class="field-group" data-field-group>
+          <div class="field-label">
+            <span>Aktiver Song</span>
+          </div>
+          <div class="field-content">
+            <input type="text" id="activeSongFileName" readonly aria-label="Aktiver Dateiname" />
+          </div>
+        </div>
+        <div class="field-group" data-field-group>
+          <div class="field-label">
+            <span>Datei-Aktionen</span>
+          </div>
+          <div class="field-content">
+            <div class="field-row">
+              <button class="btn" id="renameSongBtn">Umbenennen</button>
+              <button class="btn btn-danger" id="removeFromProjectBtn">Aus Projekt entfernen</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <h3>Hinweis</h3>
+        <div class="help-text">
+          Songs, Profile und Einstellungen werden lokal (Browser) als JSON gesichert. Mit den Backup-Funktionen kannst du alles exportieren und später wieder importieren.
+        </div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite">
+  <span class="icon">✅</span>
+  <span id="toastMessage">Gespeichert</span>
+</div>
+
+<script>
+  const STORAGE_KEY = "songworkbench_state_v2";
+
+  const initialState = {
+    songs: {},
+    currentSongId: null,
+    sections: [],
+    templates: {},
+    profiles: {},
+    archiveTerms: {},
+    randomLogs: [],
+    settings: {
+      theme: "dark",
+      fontSize: "base",
+      autosaveMinutes: 5,
+      uiZoom: 1,
+      textZoom: 1
+    }
+  };
+
+  let appState = clone(initialState);
+  let autosaveTimer = null;
+
+  function clone(obj) {
+    return JSON.parse(JSON.stringify(obj));
+  }
+
+  function handleError(err, context) {
+    console.error("Fehler in Kontext:", context, err);
+    showToast("Fehler: " + context + " – versuche Wiederherstellung", true);
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        appState = Object.assign(clone(initialState), parsed);
+        renderAll();
+        showToast("Letzten bekannten Stand geladen.", false);
+      }
+    } catch (e) {
+      console.error("Recovery failed:", e);
+      showToast("Recovery fehlgeschlagen – neuer sauberer Zustand.", true);
+      appState = clone(initialState);
+      renderAll();
+      saveState();
+    }
+  }
+
+  function saveState() {
+    try {
+      const toSave = clone(appState);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+      logEvent("State gespeichert.");
+    } catch (err) {
+      handleError(err, "saveState");
+    }
+  }
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) {
+        appState = clone(initialState);
+        return;
+      }
+      const parsed = JSON.parse(raw);
+      appState = Object.assign(clone(initialState), parsed);
+    } catch (err) {
+      handleError(err, "loadState");
+    }
+  }
+
+  function showToast(message, isError) {
+    const toast = document.getElementById("toast");
+    const msgEl = document.getElementById("toastMessage");
+    const iconEl = toast.querySelector(".icon");
+    msgEl.textContent = message;
+    iconEl.textContent = isError ? "⚠️" : "✅";
+    toast.classList.add("show");
+    setTimeout(() => toast.classList.remove("show"), 2600);
+  }
+
+  function logEvent(text) {
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString();
+    const logPanel = document.getElementById("logPanel");
+    if (!logPanel) return;
+    const entry = document.createElement("div");
+    entry.className = "log-entry";
+    entry.innerHTML = "<span class=\"time\">" + timeStr + "</span> – " + text;
+    logPanel.prepend(entry);
+  }
+
+  function updateClock() {
+    const el = document.getElementById("clockBadge");
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+    const dateStr = now.toLocaleDateString("de-DE");
+    if (el) el.textContent = dateStr + " · " + timeStr;
+  }
+
+  function setStatus(text) {
+    const el = document.getElementById("statusText");
+    if (el) el.textContent = text;
+  }
+
+  function debounce(fn, delay) {
+    let t;
+    return (...args) => {
+      clearTimeout(t);
+      t = setTimeout(() => fn(...args), delay);
+    };
+  }
+
+  function renderAll() {
+    applySettingsToDOM();
+    renderSectionsSidebar();
+    renderTemplates();
+    renderProfiles();
+    renderArchiveTerms();
+    renderCurrentSong();
+    renderSongArchive();
+    renderStats();
+    renderPreview();
+    renderProjectSidebar();
+    enhanceFieldGroups();
+  }
+
+  function applySettingsToDOM() {
+    document.body.setAttribute("data-theme", appState.settings.theme || "dark");
+    document.body.setAttribute("data-font-size", appState.settings.fontSize || "base");
+    document.documentElement.style.setProperty("--ui-zoom", appState.settings.uiZoom || 1);
+    document.documentElement.style.setProperty("--text-zoom", appState.settings.textZoom || 1);
+
+    document.getElementById("themeSelect").value = appState.settings.theme || "dark";
+    document.getElementById("fontSizeSelect").value = appState.settings.fontSize || "base";
+  }
+
+  function renderSectionsSidebar() {
+    const list = document.getElementById("sectionList");
+    list.innerHTML = "";
+    appState.sections.forEach((name, index) => {
+      const li = document.createElement("li");
+      li.className = "song-list-item";
+      li.innerHTML = "<span class=\"song-list-item-title\">" + name + "</span>" +
+                     "<span class=\"song-list-item-meta\">#" + (index + 1) + "</span>";
+      li.addEventListener("click", () => {
+        insertTextIntoSongEditor(name + "\n");
+      });
+      list.appendChild(li);
+    });
+  }
+
+  function renderTemplates() {
+    const select = document.getElementById("templateSelect");
+    select.innerHTML = '<option value="">Template wählen…</option>';
+    Object.keys(appState.templates).forEach((name) => {
+      const opt = document.createElement("option");
+      opt.value = name;
+      opt.textContent = name;
+      select.appendChild(opt);
+    });
+  }
+
+  function renderProfiles() {
+    const profilesList = document.getElementById("profilesList");
+    const profileSelect = document.getElementById("profileSelectForRandom");
+    profilesList.innerHTML = "";
+    profileSelect.innerHTML = '<option value="">Profil wählen…</option>';
+
+    const names = Object.keys(appState.profiles).sort();
+    document.getElementById("profileCountMeta").textContent = names.length + " Profile";
+
+    names.forEach((name) => {
+      const p = appState.profiles[name];
+      const row = document.createElement("div");
+      row.className = "profiles-list-row";
+      const totalCount = (p.genres.length + p.moods.length + p.effects.length);
+      row.innerHTML = "<span class=\"profiles-list-row-title\">" + name + "</span>" +
+                      "<span>" + totalCount + " Einträge</span>";
+      profilesList.appendChild(row);
+
+      const opt = document.createElement("option");
+      opt.value = name;
+      opt.textContent = name + " (" + totalCount + ")";
+      profileSelect.appendChild(opt);
+    });
+  }
+
+  function renderArchiveTerms() {
+    const archiveList = document.getElementById("archiveList");
+    const statsMeta = document.getElementById("archiveStatsMeta");
+    archiveList.innerHTML = "";
+
+    const entries = Object.entries(appState.archiveTerms);
+    statsMeta.textContent = entries.length + " Einträge";
+
+    entries
+      .sort((a, b) => b[1].count - a[1].count)
+      .forEach(([term, info]) => {
+        const row = document.createElement("div");
+        row.className = "archive-list-row";
+        row.innerHTML = "<span>" + term + "</span>" +
+                        "<span>" + info.type + " · x" + info.count + "</span>";
+        archiveList.appendChild(row);
+      });
+  }
+
+  function renderCurrentSong() {
+    const song = appState.currentSongId ? appState.songs[appState.currentSongId] : null;
+    const titleInput = document.getElementById("songTitleInput");
+    const editor = document.getElementById("songEditor");
+    const genresInput = document.getElementById("genresInput");
+    const tagsInput = document.getElementById("tagsInput");
+    const coverIdeasInput = document.getElementById("coverIdeasInput");
+    const fileNameDisplay = document.getElementById("activeSongFileName");
+
+    if (!song) {
+      titleInput.value = "";
+      editor.value = "";
+      genresInput.value = "";
+      tagsInput.value = "";
+      coverIdeasInput.value = "";
+      fileNameDisplay.value = "";
+      return;
+    }
+
+    titleInput.value = song.title || "";
+    editor.value = song.text || "";
+    genresInput.value = (song.genres || []).join(", ");
+    tagsInput.value = (song.tags || []).join(", ");
+    coverIdeasInput.value = song.coverIdeas || "";
+    fileNameDisplay.value = createSongFileName(song.title || "");
+  }
+
+  function renderSongArchive() {
+    const list = document.getElementById("songArchiveList");
+    const countMeta = document.getElementById("songArchiveCountMeta");
+    list.innerHTML = "";
+
+    const entries = Object.values(appState.songs)
+      .sort((a, b) => (a.title || "").localeCompare(b.title || ""));
+
+    countMeta.textContent = entries.length + " Songs";
+
+    entries.forEach((song) => {
+      const li = document.createElement("li");
+      li.className = "song-list-item" + (song.id === appState.currentSongId ? " active" : "");
+      const title = song.title || "(ohne Titel)";
+      li.innerHTML = "<div class=\"song-list-item-title\" title=\"" + title + "\">" + title + "</div>" +
+                     "<div class=\"song-list-item-meta\">" + (song.genres || []).length + " Genres</div>";
+      li.addEventListener("click", () => {
+        appState.currentSongId = song.id;
+        setStatus("Song geladen: " + (song.title || ""));
+        renderAll();
+      });
+      list.appendChild(li);
+    });
+  }
+
+  function renderProjectSidebar() {
+    const list = document.getElementById("projectSongList");
+    const countEl = document.getElementById("projectSongCount");
+    list.innerHTML = "";
+
+    const entries = Object.values(appState.songs)
+      .sort((a, b) => (a.title || "").localeCompare(b.title || ""));
+
+    countEl.textContent = entries.length;
+
+    entries.forEach((song) => {
+      const li = document.createElement("li");
+      li.className = "song-list-item" + (song.id === appState.currentSongId ? " active" : "");
+      const title = song.title || "(ohne Titel)";
+      li.innerHTML = "<span class=\"song-list-item-title\" title=\"" + title + "\">" + title + "</span>" +
+                     "<span class=\"song-list-item-meta\">" + (song.updatedAt ? new Date(song.updatedAt).toLocaleDateString("de-DE") : "") + "</span>";
+      li.addEventListener("click", () => {
+        appState.currentSongId = song.id;
+        renderAll();
+      });
+      list.appendChild(li);
+    });
+  }
+
+  function renderStats() {
+    const song = appState.currentSongId ? appState.songs[appState.currentSongId] : null;
+    const text = song && song.text ? song.text : "";
+    const chars = text.length;
+    const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+    const sections = (text.match(/:.*/g) || []).length;
+
+    document.getElementById("charCountStat").textContent = chars;
+    document.getElementById("wordCountStat").textContent = words;
+    document.getElementById("sectionCountStat").textContent = sections;
+  }
+
+  function renderPreview() {
+    const song = appState.currentSongId ? appState.songs[appState.currentSongId] : null;
+    const preview = document.getElementById("songPreview");
+    if (!song) {
+      preview.textContent = "";
+      return;
+    }
+    const header = song.title ? "# " + song.title + "\n\n" : "";
+    const metaParts = [];
+    if (song.genres && song.genres.length) metaParts.push("Genres: " + song.genres.join(", "));
+    if (song.tags && song.tags.length) metaParts.push("Tags: " + song.tags.join(", "));
+    const meta = metaParts.length ? metaParts.join(" | ") + "\n\n" : "";
+    preview.textContent = header + meta + (song.text || "");
+  }
+
+  function ensureCurrentSong() {
+    if (appState.currentSongId && appState.songs[appState.currentSongId]) return;
+
+    const id = "song_" + Date.now();
+    appState.currentSongId = id;
+    appState.songs[id] = {
+      id,
+      title: "",
+      text: "",
+      genres: [],
+      tags: [],
+      coverIdeas: "",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+  }
+
+  function createSongFileName(title) {
+    const safe = (title || "unbenannter-song")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/gi, "-")
+      .replace(/^-+|-+$/g, "");
+    return safe + ".txt";
+  }
+
+  function splitAndArchive(text, type) {
+    const items = text
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+
+    const unique = [];
+    const seen = new Set();
+
+    items.forEach((item) => {
+      const key = item.toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        unique.push(item);
+        if (!appState.archiveTerms[item]) {
+          appState.archiveTerms[item] = { type, count: 1 };
+        } else {
+          appState.archiveTerms[item].count += 1;
+        }
+      }
+    });
+
+    return unique;
+  }
+
+  function updateCurrentSongFromInputs() {
+    ensureCurrentSong();
+    const song = appState.songs[appState.currentSongId];
+    const title = document.getElementById("songTitleInput").value.trim();
+    const text = document.getElementById("songEditor").value;
+    const genresRaw = document.getElementById("genresInput").value;
+    const tagsRaw = document.getElementById("tagsInput").value;
+    const coverIdeas = document.getElementById("coverIdeasInput").value;
+
+    song.title = title;
+    song.text = text;
+    song.genres = splitAndArchive(genresRaw, "genre");
+    song.tags = splitAndArchive(tagsRaw, "tag");
+    song.coverIdeas = coverIdeas;
+    song.updatedAt = new Date().toISOString();
+
+    renderStats();
+    renderPreview();
+    renderSongArchive();
+    renderProjectSidebar();
+  }
+
+  function insertTextIntoSongEditor(text) {
+    const editor = document.getElementById("songEditor");
+    const start = editor.selectionStart;
+    const end = editor.selectionEnd;
+    const val = editor.value;
+    editor.value = val.slice(0, start) + text + val.slice(end);
+    editor.focus();
+    const newPos = start + text.length;
+    editor.selectionStart = editor.selectionEnd = newPos;
+    updateCurrentSongFromInputs();
+  }
+
+  function setupAutosave() {
+    if (autosaveTimer) clearInterval(autosaveTimer);
+    const minutes = appState.settings.autosaveMinutes || 5;
+    autosaveTimer = setInterval(() => {
+      updateCurrentSongFromInputs();
+      saveState();
+      showToast("Autosave abgeschlossen", false);
+    }, minutes * 60 * 1000);
+  }
+
+  function exportCurrentSongAsTxt() {
+    ensureCurrentSong();
+    const song = appState.songs[appState.currentSongId];
+    const header = song.title ? song.title + "\n\n" : "";
+    const metaParts = [];
+    if (song.genres && song.genres.length) metaParts.push("Genres: " + song.genres.join(", "));
+    if (song.tags && song.tags.length) metaParts.push("Tags: " + song.tags.join(", "));
+    const meta = metaParts.length ? metaParts.join(" | ") + "\n\n" : "";
+    const content = header + meta + (song.text || "");
+
+    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = createSongFileName(song.title);
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    logEvent("Song als TXT exportiert.");
+  }
+
+  function exportProfilesAsJSON() {
+    const blob = new Blob([JSON.stringify(appState.profiles, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "song_profiles.json";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    logEvent("Profile als JSON exportiert.");
+  }
+
+  function importProfilesFromFile(file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const json = JSON.parse(e.target.result);
+        appState.profiles = Object.assign({}, appState.profiles, json);
+        renderProfiles();
+        saveState();
+        showToast("Profile importiert.", false);
+      } catch (err) {
+        handleError(err, "importProfilesFromFile");
+      }
+    };
+    reader.readAsText(file, "utf-8");
+  }
+
+  function exportBackup() {
+    try {
+      const blob = new Blob([JSON.stringify(appState, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "songworkbench_backup_" + new Date().toISOString().replace(/[:.]/g, "-") + ".json";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      logEvent("Vollständiges Backup exportiert.");
+      showToast("Backup exportiert.", false);
+    } catch (err) {
+      handleError(err, "exportBackup");
+    }
+  }
+
+  function importBackup(file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const json = JSON.parse(e.target.result);
+        appState = Object.assign(clone(initialState), json);
+        renderAll();
+        saveState();
+        showToast("Backup importiert.", false);
+        logEvent("Backup importiert.");
+      } catch (err) {
+        handleError(err, "importBackup");
+      }
+    };
+    reader.readAsText(file, "utf-8");
+  }
+
+  function generateRandomGenres() {
+    const profileSelect = document.getElementById("profileSelectForRandom");
+    const amountSelect = document.getElementById("randomAmountSelect");
+    const profileName = profileSelect.value;
+    const amount = parseInt(amountSelect.value, 10);
+
+    const profile = appState.profiles[profileName] || { genres: [], moods: [], effects: [] };
+    const all = [
+      ...(profile.genres || []),
+      ...(profile.moods || []),
+      ...(profile.effects || [])
+    ];
+
+    Object.keys(appState.archiveTerms).forEach((term) => {
+      all.push(term);
+    });
+
+    const unique = Array.from(new Set(all));
+    if (!unique.length) {
+      showToast("Keine Einträge für Zufallsgenerator vorhanden.", true);
+      return;
+    }
+
+    const result = [];
+    const pool = unique.slice();
+
+    while (result.length < amount && pool.length > 0) {
+      const idx = Math.floor(Math.random() * pool.length);
+      result.push(pool[idx]);
+      pool.splice(idx, 1);
+    }
+
+    const text = result.join(", ");
+    const out = document.getElementById("randomResultOutput");
+    out.value = text;
+
+    const genresInput = document.getElementById("genresInput");
+    genresInput.value = text;
+    updateCurrentSongFromInputs();
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).catch(() => {});
+    }
+
+    const logEntry = {
+      when: new Date().toISOString(),
+      profile: profileName || null,
+      amount,
+      result
+    };
+    appState.randomLogs.push(logEntry);
+    logEvent("Genres-Zufallsgenerator ausgeführt (" + amount + ").");
+    saveState();
+    showToast("Zufällige Genres generiert & kopiert.", false);
+  }
+
+  function createNewSong() {
+    const id = "song_" + Date.now();
+    const now = new Date().toISOString();
+    appState.songs[id] = {
+      id,
+      title: "",
+      text: "",
+      genres: [],
+      tags: [],
+      coverIdeas: "",
+      createdAt: now,
+      updatedAt: now
+    };
+    appState.currentSongId = id;
+    renderAll();
+    saveState();
+    logEvent("Neuer Song erstellt.");
+  }
+
+  function duplicateCurrentSong() {
+    if (!appState.currentSongId) return;
+    const original = appState.songs[appState.currentSongId];
+    const id = "song_" + Date.now();
+    const now = new Date().toISOString();
+    appState.songs[id] = Object.assign(clone(original), {
+      id,
+      title: (original.title || "") + " (Kopie)",
+      createdAt: now,
+      updatedAt: now
+    });
+    appState.currentSongId = id;
+    renderAll();
+    saveState();
+    logEvent("Song dupliziert.");
+  }
+
+  function deleteCurrentSong() {
+    if (!appState.currentSongId) return;
+    const song = appState.songs[appState.currentSongId];
+    const title = song.title || "(ohne Titel)";
+    if (!confirm('Song "' + title + '" wirklich löschen?')) return;
+    delete appState.songs[appState.currentSongId];
+    appState.currentSongId = Object.keys(appState.songs)[0] || null;
+    renderAll();
+    saveState();
+    logEvent("Song gelöscht: " + title);
+  }
+
+  function renameCurrentSong() {
+    if (!appState.currentSongId) return;
+    const song = appState.songs[appState.currentSongId];
+    const newTitle = prompt("Neuer Titel für Song:", song.title || "");
+    if (newTitle === null) return;
+    const trimmed = newTitle.trim();
+    if (!trimmed) return;
+    song.title = trimmed;
+    song.updatedAt = new Date().toISOString();
+    renderAll();
+    saveState();
+    logEvent("Song umbenannt zu: " + trimmed);
+  }
+
+  function removeCurrentSongFromProject() {
+    deleteCurrentSong();
+  }
+
+  function saveSongToArchive() {
+    updateCurrentSongFromInputs();
+    saveState();
+    showToast("Song im Archiv gespeichert.", false);
+  }
+
+  function addSectionName() {
+    const input = document.getElementById("sectionNameInput");
+    const name = input.value.trim();
+    if (!name) return;
+    if (!appState.sections.includes(name)) {
+      appState.sections.push(name);
+      renderSectionsSidebar();
+      saveState();
+      logEvent("Bereich hinzugefügt: " + name);
+    }
+    insertTextIntoSongEditor(name + "\n");
+    input.value = "";
+  }
+
+  function addSectionSidebar() {
+    const name = prompt("Name des neuen Bereichs (mit Doppelpunkt endend, z.B. Strophe 1:)", "Strophe 1:");
+    if (!name) return;
+    const n = name.trim();
+    if (!n) return;
+    if (!appState.sections.includes(n)) {
+      appState.sections.push(n);
+      renderSectionsSidebar();
+      saveState();
+    }
+  }
+
+  function saveTemplate() {
+    const nameInput = document.getElementById("templateNameInput");
+    const contentInput = document.getElementById("templateContentInput");
+    const name = nameInput.value.trim();
+    const content = contentInput.value.trim();
+    if (!name || !content) {
+      showToast("Template-Name und Inhalt erforderlich.", true);
+      return;
+    }
+    appState.templates[name] = content;
+    renderTemplates();
+    saveState();
+    showToast("Template gespeichert.", false);
+  }
+
+  function applyTemplateToSong() {
+    const select = document.getElementById("templateSelect");
+    const name = select.value;
+    if (!name) return;
+    const content = appState.templates[name];
+    if (!content) return;
+    insertTextIntoSongEditor(content + "\n");
+    logEvent("Template eingefügt: " + name);
+  }
+
+  function saveProfile() {
+    const name = document.getElementById("profileNameInput").value.trim();
+    if (!name) {
+      showToast("Profilname erforderlich.", true);
+      return;
+    }
+    const genres = splitToUniqueList(document.getElementById("profileGenresInput").value);
+    const moods = splitToUniqueList(document.getElementById("profileMoodsInput").value);
+    const effects = splitToUniqueList(document.getElementById("profileEffectsInput").value);
+
+    appState.profiles[name] = { genres, moods, effects };
+    renderProfiles();
+    saveState();
+    showToast("Profil gespeichert.", false);
+    logEvent("Profil gespeichert: " + name);
+  }
+
+  function splitToUniqueList(text) {
+    const arr = text.split(",").map((s) => s.trim()).filter(Boolean);
+    return Array.from(new Set(arr));
+  }
+
+  function setupTabs() {
+    const tabs = document.querySelectorAll(".tab");
+    tabs.forEach((tab) => {
+      tab.addEventListener("click", () => {
+        const tabId = tab.dataset.tab;
+        document.querySelectorAll(".tab").forEach((t) => {
+          t.classList.remove("active");
+          t.setAttribute("aria-selected", "false");
+        });
+        tab.classList.add("active");
+        tab.setAttribute("aria-selected", "true");
+        document.querySelectorAll(".tab-content").forEach((c) => (c.style.display = "none"));
+        document.getElementById(tabId).style.display = "block";
+      });
+    });
+  }
+
+  function toggleSidebar(id) {
+    const el = document.getElementById(id);
+    el.classList.toggle("collapsed");
+  }
+
+  function attachEventHandlers() {
+    document.getElementById("newSongBtn").addEventListener("click", createNewSong);
+    document.getElementById("duplicateSongBtn").addEventListener("click", duplicateCurrentSong);
+    document.getElementById("deleteSongBtn").addEventListener("click", deleteCurrentSong);
+    document.getElementById("saveSongToArchiveBtn").addEventListener("click", saveSongToArchive);
+    document.getElementById("renameSongBtn").addEventListener("click", renameCurrentSong);
+    document.getElementById("removeFromProjectBtn").addEventListener("click", removeCurrentSongFromProject);
+    document.getElementById("exportSongTxtBtn").addEventListener("click", exportCurrentSongAsTxt);
+
+    document.getElementById("saveTemplateBtn").addEventListener("click", saveTemplate);
+    document.getElementById("applyTemplateToSongBtn").addEventListener("click", applyTemplateToSong);
+    document.getElementById("insertSectionBtn").addEventListener("click", addSectionName);
+    document.getElementById("addSectionBtn").addEventListener("click", addSectionSidebar);
+
+    document.getElementById("saveProfileBtn").addEventListener("click", saveProfile);
+    document.getElementById("exportProfilesBtn").addEventListener("click", exportProfilesAsJSON);
+    document.getElementById("importProfilesBtn").addEventListener("click", () => {
+      document.getElementById("importProfilesFile").click();
+    });
+    document.getElementById("importProfilesFile").addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (file) importProfilesFromFile(file);
+      e.target.value = "";
+    });
+
+    document.getElementById("generateRandomBtn").addEventListener("click", generateRandomGenres);
+    document.getElementById("insertGenresIntoSongBtn").addEventListener("click", () => {
+      insertTextIntoSongEditor(document.getElementById("genresInput").value + "\n");
+    });
+
+    document.getElementById("refreshPreviewBtn").addEventListener("click", () => {
+      updateCurrentSongFromInputs();
+      renderPreview();
+    });
+
+    document.getElementById("themeSelect").addEventListener("change", (e) => {
+      appState.settings.theme = e.target.value;
+      applySettingsToDOM();
+      saveState();
+    });
+    document.getElementById("fontSizeSelect").addEventListener("change", (e) => {
+      appState.settings.fontSize = e.target.value;
+      applySettingsToDOM();
+      saveState();
+    });
+
+    document.getElementById("toggleLeftSidebarBtn").addEventListener("click", () => toggleSidebar("leftSidebar"));
+    document.getElementById("toggleRightSidebarBtn").addEventListener("click", () => toggleSidebar("rightSidebar"));
+
+    document.getElementById("backupExportBtn").addEventListener("click", exportBackup);
+    document.getElementById("backupImportBtn").addEventListener("click", () => {
+      document.getElementById("backupImportFile").click();
+    });
+    document.getElementById("backupImportFile").addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (file) importBackup(file);
+      e.target.value = "";
+    });
+
+    const debouncedUpdate = debounce(updateCurrentSongFromInputs, 300);
+    ["songTitleInput", "songEditor", "genresInput", "tagsInput", "coverIdeasInput"].forEach((id) => {
+      const el = document.getElementById(id);
+      el.addEventListener("input", debouncedUpdate);
+    });
+
+    window.addEventListener("keydown", (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        updateCurrentSongFromInputs();
+        saveState();
+        showToast("Song gespeichert (Strg+S).", false);
+      }
+    });
+
+    window.addEventListener("beforeunload", () => {
+      try {
+        updateCurrentSongFromInputs();
+        saveState();
+      } catch (err) {}
+    });
+
+    setupColumnResizers();
+    setupZoomHandlers();
+  }
+
+  function setupColumnResizers() {
+    const main = document.querySelector(".main");
+    const col1 = document.querySelector(".col-1");
+    const col2 = document.querySelector(".col-2");
+    const col3 = document.querySelector(".col-3");
+    const resizers = document.querySelectorAll(".col-resizer");
+
+    let isDragging = false;
+    let currentResizer = null;
+    let startX = 0;
+    let startWidths = null;
+
+    function onMouseDown(e) {
+      isDragging = true;
+      currentResizer = e.target;
+      startX = e.clientX;
+      startWidths = {
+        col1: col1.getBoundingClientRect().width,
+        col2: col2.getBoundingClientRect().width,
+        col3: col3.getBoundingClientRect().width
+      };
+      document.body.style.cursor = "col-resize";
+      e.preventDefault();
+    }
+
+    function onMouseMove(e) {
+      if (!isDragging) return;
+      const dx = e.clientX - startX;
+      const total = startWidths.col1 + startWidths.col2 + startWidths.col3;
+      if (currentResizer.dataset.resizer === "1") {
+        let newCol1 = startWidths.col1 + dx;
+        let newCol2 = startWidths.col2 - dx;
+        newCol1 = Math.max(150, Math.min(newCol1, total - 300));
+        newCol2 = Math.max(150, Math.min(newCol2, total - newCol1 - 150));
+        col1.style.flex = "0 0 " + newCol1 + "px";
+        col2.style.flex = "0 0 " + newCol2 + "px";
+        col3.style.flex = "1 1 0";
+      } else if (currentResizer.dataset.resizer === "2") {
+        let newCol2 = startWidths.col2 + dx;
+        let newCol3 = startWidths.col3 - dx;
+        newCol2 = Math.max(150, Math.min(newCol2, total - 300));
+        newCol3 = Math.max(150, Math.min(newCol3, total - (startWidths.col1) - newCol2));
+        col2.style.flex = "0 0 " + newCol2 + "px";
+        col3.style.flex = "0 0 " + newCol3 + "px";
+        col1.style.flex = "0 0 " + startWidths.col1 + "px";
+      }
+    }
+
+    function onMouseUp() {
+      if (!isDragging) return;
+      isDragging = false;
+      currentResizer = null;
+      document.body.style.cursor = "default";
+    }
+
+    resizers.forEach((r) => {
+      r.addEventListener("mousedown", onMouseDown);
+    });
+
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+  }
+
+  function enhanceFieldGroups() {
+    const groups = document.querySelectorAll("[data-field-group]");
+    groups.forEach((group, index) => {
+      if (group.dataset.enhanced === "1") return;
+      const children = Array.from(group.children);
+      const label = children.find((c) => c.classList && c.classList.contains("field-label"));
+      if (!label) return;
+      let content = children.find((c) => c.classList && c.classList.contains("field-content"));
+      if (!content) {
+        content = document.createElement("div");
+        content.className = "field-content";
+        children.forEach((child) => {
+          if (child !== label) {
+            content.appendChild(child);
+          }
+        });
+        group.appendChild(content);
+      }
+      const actions = document.createElement("span");
+      actions.className = "field-actions";
+      const btnMax = document.createElement("button");
+      btnMax.type = "button";
+      btnMax.className = "field-action-btn";
+      btnMax.textContent = "⤢";
+      btnMax.title = "Maximieren";
+      btnMax.addEventListener("click", () => {
+        group.classList.toggle("maximized");
+      });
+      const btnMin = document.createElement("button");
+      btnMin.type = "button";
+      btnMin.className = "field-action-btn";
+      btnMin.textContent = "▁";
+      btnMin.title = "Minimieren";
+      btnMin.addEventListener("click", () => {
+        group.classList.toggle("minimized");
+      });
+      const btnOff = document.createElement("button");
+      btnOff.type = "button";
+      btnOff.className = "field-action-btn";
+      btnOff.textContent = "⏻";
+      btnOff.title = "Deaktivieren/Aktivieren";
+      btnOff.addEventListener("click", () => {
+        const disabled = group.classList.toggle("disabled");
+        group.querySelectorAll("input, textarea, select, button").forEach((el) => {
+          if (el.classList.contains("field-action-btn")) return;
+          el.disabled = disabled;
+        });
+      });
+      actions.appendChild(btnMax);
+      actions.appendChild(btnMin);
+      actions.appendChild(btnOff);
+      label.appendChild(actions);
+      group.dataset.enhanced = "1";
+    });
+  }
+
+  function setupZoomHandlers() {
+    window.addEventListener("wheel", (e) => {
+      if (!e.ctrlKey) return;
+      e.preventDefault();
+      const delta = e.deltaY < 0 ? 0.1 : -0.1;
+      const target = e.target;
+      if (target.closest(".text-zoom-area") || target.tagName === "TEXTAREA" || target.tagName === "INPUT") {
+        let tz = appState.settings.textZoom || 1;
+        tz += delta;
+        tz = Math.min(2, Math.max(0.6, tz));
+        appState.settings.textZoom = tz;
+        document.documentElement.style.setProperty("--text-zoom", tz);
+      } else {
+        let uz = appState.settings.uiZoom || 1;
+        uz += delta;
+        uz = Math.min(1.6, Math.max(0.7, uz));
+        appState.settings.uiZoom = uz;
+        document.documentElement.style.setProperty("--ui-zoom", uz);
+      }
+      saveState();
+    }, { passive: false });
+  }
+
+  function setupAutosaveClock() {
+    setupAutosave();
+    setInterval(updateClock, 1000);
+    updateClock();
+  }
+
+  function init() {
+    loadState();
+    ensureCurrentSong();
+    attachEventHandlers();
+    setupTabs();
+    renderAll();
+    setupAutosaveClock();
+    setStatus("Bereit – du kannst loslegen.");
+    logEvent("App gestartet.");
+  }
+
+  document.addEventListener("DOMContentLoaded", init);
+</script>
+</body>
+</html>
