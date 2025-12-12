@@ -23,14 +23,15 @@
 
 ## Voraussetzungen
 - Bash-kompatible Shell (für `start.sh`).
+- Node.js ab Version 18 mit npm (für automatische Prüfungen und Startskript).
 - Aktuelle Browser-Version für die HTML-Tools.
-- Optional: Python 3 (für virtuelle Umgebungen) und Node.js (falls Build-Schritte ergänzt werden).
+- Optional: Python 3 (für virtuelle Umgebungen) und – für Headless-Checks – die üblichen Systembibliotheken (z. B. `libatk1.0-0t64`, `libgtk-3-0t64`, `libnss3`, `libgbm1`).
 
 ## Installation
 1. Repository klonen: `git clone <repo-url> && cd 2026-MultiTool`.
 2. Ausführbarkeit sicherstellen (Rechte): `chmod +x start.sh`.
 3. (Optional) Virtuelle Umgebung vorbereiten: `python -m venv .venv && source .venv/bin/activate`.
-4. Abhängigkeiten (Dependencies) prüfen/auflösen: `./start.sh --check-only` führt die automatischen Prüfungen aus (Linting + Accessibility) und beendet sich danach.
+4. Abhängigkeiten (Dependencies) prüfen/auflösen: `./start.sh --check-only` (Alias: `--health`) führt die automatischen Prüfungen aus (Linting + Accessibility) und beendet sich danach.
 
 ## Nutzung
 1. Start-Routine ausführen: `./start.sh` prüft Abhängigkeiten automatisch, löst fehlende Pakete, führt Checks aus und startet die Oberfläche mit Fortschrittsmeldungen.
@@ -50,7 +51,7 @@
 - Logging-Level (Protokollstufe) wird in `config/start.conf` gesetzt.
 
 ## Automatische Prüfungen & Tests
-- Automatische Routine: `./start.sh` löst fehlende Abhängigkeiten auf und führt `npm run check` (Linting + Accessibility) aus. Für reine Prüfungen kann `./start.sh --check-only` genutzt werden.
+- Automatische Routine: `./start.sh` löst fehlende Abhängigkeiten auf und führt `npm run check` (Linting + Accessibility) aus. Für reine Prüfungen kann `./start.sh --check-only` bzw. `--health` genutzt werden.
 - Manuelle Ergänzung: Bei Bedarf zusätzlich HTML mit externen Validatoren prüfen, um neue Module abzusichern.
 
 ## Tests (manuell)
@@ -75,11 +76,6 @@
 - **ARIA**: Attribute, die Screenreadern Hinweise geben und die Zugänglichkeit verbessern.
 
 Eine kleine Qualitätssicherung für die statischen HTML-Tools mit einfacher Sprache und erklärten Fachbegriffen.
-
-## Voraussetzungen
-- Node.js (Laufzeit für JavaScript außerhalb des Browsers) ab Version 18
-- npm (Paketmanager, verwaltet Abhängigkeiten) ist in Node.js enthalten
-- Ein aktuelles Chrome/Chromium mit Headless-Unterstützung. In Docker/Ubuntu genügt z. B.: `apt-get install -y libasound2t64 libatk1.0-0t64 libgtk-3-0t64 libnss3 libx11-xcb1 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1` (stellt die wichtigsten Bibliotheken für den Browser bereit)
 
 ## Schnellstart mit Autopilot
 - `./start.sh` startet die vollautomatische Routine: prüft npm, installiert Abhängigkeiten, führt Linting (Quellcode-Prüfung) und Accessibility-Checks (Barrierefreiheits-Prüfung) aus und startet danach einen lokalen Server auf http://localhost:5000.
@@ -113,7 +109,7 @@ Dieses Repository bündelt mehrere Tools (z. B. Songtext-, Genre- und Index-Ge
 ## Startanleitung
 1. Startroutine ausführbar machen (falls nötig): `chmod +x start.sh`
 2. Start mit automatischer Prüfung: `./start.sh`
-   * `--check-only` / `--health`: Nur Prüfungen (Linting + Accessibility, Port-Check) ohne Serverstart.
+    * `--check-only` / `--health`: Nur Prüfungen (Linting + Accessibility, Port-Check) ohne Serverstart.
    * `--no-tests`: Überspringt die Checks (nur sinnvoll für schnelle Demos).
    * `--debug`: Ausführliches Logging in `logs/start.log` aktivieren.
 
@@ -123,7 +119,7 @@ Ein übersichtliches Werkzeug-Paket mit statischen HTML-Tools. Ziel ist maximale
 ## Schnellstart
 1. **Voraussetzungen (Dependencies)**: Linux/Mac/WSL mit `node` (>=18) und `npm`.
 2. **Startskript**: `./start.sh` installiert Abhängigkeiten (falls nötig), führt Checks aus und startet einen lokalen Webserver.
-3. **Nur prüfen (Health-Check)**: `./start.sh --check-only` validiert Umgebung und endet ohne Serverstart.
+3. **Nur prüfen (Health-Check)**: `./start.sh --check-only` (Alias: `--health`) validiert Umgebung und endet ohne Serverstart.
 4. **Port ändern (Port = Netzwerk-Adresse)**: `PORT=8080 ./start.sh --no-serve` prüft nur.
 
 ## Bedienung
@@ -138,7 +134,7 @@ Ein übersichtliches Werkzeug-Paket mit statischen HTML-Tools. Ziel ist maximale
 - **Modularität**: Statische HTML-Tools bleiben unabhängig; gemeinsame Abhängigkeiten liegen in den Node-Dev-Tools (`node_modules`), optionale Python-Pakete würden in `requirements.txt` landen.
 
 ## Tests und Qualität
-- **Gesundheitscheck**: `./start.sh --check-only` kontrolliert, ob Abhängigkeiten installierbar sind und Linting/Accessibility laufen.
+- **Gesundheitscheck**: `./start.sh --check-only` (Alias: `--health`) kontrolliert, ob Abhängigkeiten installierbar sind und Linting/Accessibility laufen.
 - **Format und Style**: HTML/CSS folgen responsiven Layouts und klaren Kontrastfarben; weitere Linting-Tools können in `requirements.txt` ergänzt werden.
 
 ## Struktur

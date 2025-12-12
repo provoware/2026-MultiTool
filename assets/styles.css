@@ -71,6 +71,25 @@
   --color-focus: #ff8c00;
 }
 
+[data-theme="solar"] {
+  --color-bg: #0b2b36;
+  --color-surface: #0f3b47;
+  --color-surface-2: #115263;
+  --color-border: #19a0b8;
+  --color-text: #e3f2f9;
+  --color-text-soft: #c5e4ed;
+  --color-accent: #ffd166;
+  --color-accent-strong: #f4a261;
+  --color-accent-soft: rgba(255, 209, 102, 0.2);
+  --color-bg-soft: #0f3b47;
+  --color-bg-softer: #0b2b36;
+  --color-success: #8be9c3;
+  --color-warning: #ffe066;
+  --color-danger: #ff6b6b;
+  --color-muted: #9ad5e0;
+  --color-focus: #ffb703;
+}
+
 * { box-sizing: border-box; }
 
 html, body {

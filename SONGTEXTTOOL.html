@@ -19,7 +19,7 @@
       <span class="badge" aria-label="Autosave und Dateiformate">Autosave 5 min · JSON/TXT · Backup</span>
     </div>
     <div class="header-right" aria-label="Status und Einstellungen">
-      <div class="status-pill" aria-live="polite">
+      <div class="status-pill" aria-live="polite" role="status" aria-atomic="true">
         <span class="status-dot" aria-hidden="true"></span>
         <span id="statusText">Bereit</span>
       </div>
@@ -31,7 +31,7 @@
           <option value="solar">Solar</option>
           <option value="contrast">High Contrast</option>
         </select>
-        <select id="fontSizeSelect" class="header-select" aria-label="Grundschriftgröße wählen">
+        <select id="fontSizeSelect" class="header-select" aria-label="Grundschriftgröße wählen" data-font-select>
           <option value="small">A-</option>
           <option value="base" selected>A</option>
           <option value="large">A+</option>

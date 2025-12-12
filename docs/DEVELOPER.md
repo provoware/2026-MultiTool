@@ -10,7 +10,7 @@ Die Routine erledigt alles automatisch und gibt Fortschrittsschritte aus:
 1. **Abhängigkeiten prüfen/auflösen**: `./start.sh` installiert Node-Module (per `npm ci`), wenn sie fehlen.
 2. **Qualitätsprüfungen**: Linting + Accessibility laufen automatisch (`npm run check`).
 3. **Serverstart**: Statischer Server über `http-server`, erreichbar unter `http://localhost:5000`.
-4. **Nur prüfen**: `./start.sh --check-only` beendet sich nach den Checks (kein Serverstart).
+4. **Nur prüfen**: `./start.sh --check-only` (Alias: `--health`) beendet sich nach den Checks (kein Serverstart).
 5. **Ohne Tests**: `./start.sh --no-tests` überspringt alle automatischen Prüfungen (z. B. für schnelle Demos).
 6. **Logging/Debug**: `./start.sh --debug` schreibt detaillierte Schritte nach `logs/start.log`.
 
@@ -47,7 +47,7 @@ Eingaben werden geprüft (z. B. gültiger Port). Bei Fehlern erfolgt eine klare 
 ## Häufige Befehle (mit Erklärung)
 - `npm ci` – Installiert Abhängigkeiten reproduzierbar (CI = Continuous Integration).
 - `npm run check` – Führt Linting (Format-/Syntax-Check) und Accessibility-Tests aus.
-- `./start.sh --health` – Prüft Umgebung, ohne den Server zu starten (Health-Check = Gesundheitsprüfung).
+- `./start.sh --check-only` oder `./start.sh --health` – Prüft Umgebung, ohne den Server zu starten (Health-Check = Gesundheitsprüfung).
 - `./start.sh --no-serve` – Startet nur Prüfungen, kein Webserver (z. B. für CI-Pipelines).
 - `./start.sh --debug` – Aktiviert detaillierte Logs für die Fehlersuche.
 
