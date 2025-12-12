@@ -66,6 +66,35 @@ validate_port() {
   fi
 }
 
+validate_host() {
+  local host_value="$1"
+  if [[ -z "${host_value// }" ]]; then
+    echo "Ungültiger Host: Wert darf nicht leer sein." >&2
+    exit 1
+  fi
+  if [[ ! "${host_value}" =~ ^[A-Za-z0-9.-]+$ ]]; then
+    echo "Ungültiger Host '${host_value}': nur Buchstaben, Zahlen, Punkt und Bindestrich erlaubt." >&2
+    exit 1
+  fi
+}
+
+ensure_log_destination() {
+  local target_file="$1"
+  local target_dir
+
+  if [[ -z "${target_file:-}" ]]; then
+    echo "LOG_FILE darf nicht leer sein." >&2
+    exit 1
+  fi
+
+  target_dir="$(dirname "${target_file}")"
+  mkdir -p "${target_dir}"
+  if [[ ! -w "${target_dir}" ]]; then
+    echo "Log-Verzeichnis '${target_dir}' ist nicht schreibbar." >&2
+    exit 1
+  fi
+}
+
 parse_args() {
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -139,6 +168,8 @@ trap cleanup EXIT
 
 parse_args "$@"
 validate_port "${PORT}"
+validate_host "${HOST}"
+ensure_log_destination "${LOG_FILE}"
 
 touch "${LOG_FILE}"
 log "INFO" "Startroutine 2026-MultiTool wird ausgeführt."

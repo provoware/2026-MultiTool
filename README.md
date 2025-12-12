@@ -49,6 +49,7 @@
 - Startparameter: `./start.sh --debug` aktiviert erweitertes Logging (Protokollierung) nach `logs/start.log`.
 - Eingaben werden validiert (geprüft) und Ausgaben auf Erfolg kontrolliert; bitte Validation pro Funktion einplanen.
 - Logging-Level (Protokollstufe) wird in `config/start.conf` gesetzt.
+- Log-Pfad und Netzwerkangaben (Host/Port) prüft die Startroutine jetzt automatisch und legt fehlende Ordner an, damit die Protokolle zuverlässig geschrieben werden.
 
 ## Automatische Prüfungen & Tests
 - Automatische Routine: `./start.sh` löst fehlende Abhängigkeiten auf und führt `npm run check` (Linting + Accessibility) aus. Für reine Prüfungen kann `./start.sh --check-only` bzw. `--health` genutzt werden.

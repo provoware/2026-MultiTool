@@ -1,5 +1,6 @@
 # Offene Aufgaben
 - [x] start.sh automatisieren: Abhängigkeiten prüfen, fehlende Pakete mit Fortschrittsanzeige installieren und automatische Checks/Serverstart anbieten.
+- [x] Log-Pfad absichern: start.sh prüft Host/Port-Eingaben, legt fehlende Verzeichnisse für LOG_FILE automatisch an und bricht bei ungültigen Angaben ab.
 - [ ] Theme-Switcher in allen HTML-Modulen ergänzen (hoher Kontrast, Dunkel, Hell) mit dokumentierten Farbwerten in `config/themes.json`.
 - [x] Barrierefreiheits-Hinweise (ARIA-Labels, Tastatur-Fokus) in GenresTool und SongtextTool prüfen und ergänzen.
 - [ ] Debug-/Logging-Modus per `./start.sh --debug` implementieren und Protokolle nach `logs/app.log` schreiben.
@@ -42,10 +43,6 @@ Status: Offen
 - [x] Programmfehler: `assets/ui.js` kennt aktuell kein Theme `solar`, obwohl es in SONGTEXTTOOL auswählbar ist – Optionen und Logik angleichen.
 - [x] Kommentar/Doku-Abgleich: die Beschreibung der Start-Parameter (`--health`/`--check-only`) in README und DEVELOPER-Guide spiegeln, damit beide Quellen übereinstimmen.
 - [x] Test-Verbesserung: automatischen Check ergänzen, der Theme-Optionen in HTML-Dateien mit der Liste in `assets/ui.js` vergleicht (fängt fehlende Themes wie `solar` ab).
-- [ ] Tippfehler bereinigen: die doppelte Überschrift "Voraussetzungen" in `README.md` vereinheitlichen, damit die Hilfe klar bleibt.
-- [ ] Programmfehler: `assets/ui.js` kennt aktuell kein Theme `solar`, obwohl es in SONGTEXTTOOL auswählbar ist – Optionen und Logik angleichen.
-- [ ] Kommentar/Doku-Abgleich: die Beschreibung der Start-Parameter (`--health`/`--check-only`) in README und DEVELOPER-Guide spiegeln, damit beide Quellen übereinstimmen.
-- [ ] Test-Verbesserung: automatischen Check ergänzen, der Theme-Optionen in HTML-Dateien mit der Liste in `assets/ui.js` vergleicht (fängt fehlende Themes wie `solar` ab).
 # todo.txt – priorisierte Aufgaben (Status: open|doing|done)
 Titel | Beschreibung | Priorität | Status
 Startskript automatisieren | start.sh prüft Umgebung, installiert Pakete, bietet Health-Check und optionalen Serverstart mit Debug-Logs | hoch | done
