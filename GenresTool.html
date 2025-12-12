@@ -9,11 +9,38 @@
   <script src="assets/ui.js"></script>
 </head>
 <body data-page="genres" data-theme="light" aria-label="Genre- und Stimmungstool">
+  <a class="skip-link" href="#mainContent">Zum Inhalt springen</a>
   <!-- HEADER -->
   <header>
     <div>🎵 <strong>Musiktool v6</strong></div>
-    <div>Profil: <span id="profileLabel">–</span></div>
+    <div class="status-pill" aria-live="polite">
+      Profil: <span id="profileLabel">–</span>
+    </div>
   </header>
+
+  <section class="toolbar" aria-label="Anzeige- und Zugänglichkeitsoptionen">
+    <div class="toolbar-group">
+      <label for="themeSelect">Theme</label>
+      <select id="themeSelect" data-theme-select aria-label="Farbschema wählen">
+        <option value="light">Hell</option>
+        <option value="dark">Dunkel</option>
+        <option value="contrast">Kontrast</option>
+      </select>
+      <button class="btn-ghost" type="button" data-theme-toggle aria-label="Theme durchschalten">Wechseln</button>
+    </div>
+    <div class="toolbar-group">
+      <label for="fontSelect">Schrift</label>
+      <select id="fontSelect" data-font-select aria-label="Schriftgröße wählen">
+        <option value="small">Klein</option>
+        <option value="base">Normal</option>
+        <option value="large">Groß</option>
+      </select>
+    </div>
+    <div class="toolbar-group" aria-live="polite">
+      <span class="badge">AA-Kontrast aktivierbar</span>
+      <span class="muted">Alle Bereiche sind tastaturnavigierbar.</span>
+    </div>
+  </section>
 
   <!-- SIDEBAR -->
   <aside>
@@ -30,7 +57,7 @@
   </aside>
 
   <!-- MAIN: 4 gleich große Bereiche -->
-  <main>
+  <main id="mainContent">
     <!-- 1: Zufall (oben links) -->
     <section id="randomPanel" class="panel">
       <h2>Zufall 🎲</h2>
