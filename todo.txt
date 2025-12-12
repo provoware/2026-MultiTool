@@ -1,2 +1,15 @@
 - [ ] Neue Details aus Inputpool prüfen und hier ergänzen (aktuell keine weiteren Angaben vorhanden).
 - [ ] Gemeinsame Theme-Varianten und Barrierefreiheits-Checks regelmäßig testen.
+# ToDo-Liste
+- [ ] Neue Detailanforderungen aus Inputpool prüfen und bei Bedarf einplanen.
+- [ ] Mehrere Farb-Themes mit hohem Kontrast für das Frontend entwerfen und dokumentieren.
+- [ ] Export/Import-Funktionen für Nutzereingaben ergänzen.
+- [ ] Dashboard-Bereich um laienfreundliche Statistiken und Tooltips erweitern.
+- [ ] Modulstruktur weiter vereinheitlichen und Plug-in-Punkte definieren.
+# todo.txt – priorisierte Aufgaben (Status: open|doing|done)
+Titel | Beschreibung | Priorität | Status
+Startskript automatisieren | start.sh prüft Umgebung, installiert Pakete, bietet Health-Check und optionalen Serverstart mit Debug-Logs | hoch | done
+Gemeinsame UI-Basis | Zentrales CSS/JS für Buttons, Panels, Kontrast- und Fokus-Stile, von allen HTML-Tools nutzbar | hoch | open
+Mehrere Farb-Themes | Mindestens zwei AA-konforme Themes definieren und in Tools auswählbar machen | mittel | open
+Import/Export pro Tool | Klartext- und JSON-Export/Import für alle Datensichten bereitstellen | mittel | open
+Drag-and-Drop-Layouts | Panels flexibel verschiebbar/skalierbar machen, Einstellungen persistieren | niedrig | open
