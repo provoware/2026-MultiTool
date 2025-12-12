@@ -1,0 +1,2 @@
+Neue details die implementiert werden sollen, prüfe auf vorhandensein und übertrage in todo
+- 
