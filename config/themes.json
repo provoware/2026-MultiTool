@@ -1,0 +1,39 @@
+{
+  "version": "1.0.0",
+  "wcag": "AA",
+  "description": "Zentrale Farbpaletten mit AA-Kontrastwerten für alle HTML-Tools.",
+  "themes": [
+    {
+      "id": "light",
+      "label": "Hell",
+      "contrast": "AA",
+      "primaryText": "#0f172a",
+      "background": "#f5f7fb",
+      "notes": "Standard-Lesbarkeit, helle Oberflächen"
+    },
+    {
+      "id": "dark",
+      "label": "Dunkel",
+      "contrast": "AA",
+      "primaryText": "#e5e7eb",
+      "background": "#0b1020",
+      "notes": "Dunkles Layout mit cyanfarbener Akzentfarbe"
+    },
+    {
+      "id": "contrast",
+      "label": "Kontrast",
+      "contrast": "AA",
+      "primaryText": "#ffffff",
+      "background": "#000000",
+      "notes": "Hoher Kontrast mit klaren Konturen"
+    },
+    {
+      "id": "solar",
+      "label": "Solar",
+      "contrast": "AA",
+      "primaryText": "#e3f2f9",
+      "background": "#0b2b36",
+      "notes": "Blaue Basis mit warmen Akzenten"
+    }
+  ]
+}

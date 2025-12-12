@@ -1,12 +1,12 @@
 # Offene Aufgaben
 - [x] start.sh automatisieren: Abhängigkeiten prüfen, fehlende Pakete mit Fortschrittsanzeige installieren und automatische Checks/Serverstart anbieten.
 - [x] Log-Pfad absichern: start.sh prüft Host/Port-Eingaben, legt fehlende Verzeichnisse für LOG_FILE automatisch an und bricht bei ungültigen Angaben ab.
-- [ ] Theme-Switcher in allen HTML-Modulen ergänzen (hoher Kontrast, Dunkel, Hell) mit dokumentierten Farbwerten in `config/themes.json`.
+- [x] Theme-Switcher in allen HTML-Modulen ergänzen (hoher Kontrast, Dunkel, Hell) mit dokumentierten Farbwerten in `config/themes.json`.
 - [x] Barrierefreiheits-Hinweise (ARIA-Labels, Tastatur-Fokus) in GenresTool und SongtextTool prüfen und ergänzen.
-- [ ] Debug-/Logging-Modus per `./start.sh --debug` implementieren und Protokolle nach `logs/app.log` schreiben.
-- [ ] Automatische Tests (Linting, HTML-Validierung) an `./start.sh --test` anbinden und Feedback laienfreundlich ausgeben.
-- [ ] Barrierefreie Farbschemata erweitern (mehrere Themes mit AA-Kontrast) und in gemeinsame CSS-Datei auslagern. (aus Inputpool)
-- [ ] Gemeinsame UI-Bibliothek anlegen (Buttons, Panels, Fokus-Stile) und in allen HTML-Tools referenzieren. (aus Inputpool)
+- [x] Debug-/Logging-Modus per `./start.sh --debug` implementieren und Protokolle nach `logs/app.log` schreiben.
+- [x] Automatische Tests (Linting, HTML-Validierung) an `./start.sh --test` anbinden und Feedback laienfreundlich ausgeben.
+- [x] Barrierefreie Farbschemata erweitern (mehrere Themes mit AA-Kontrast) und in gemeinsame CSS-Datei auslagern. (aus Inputpool)
+- [x] Gemeinsame UI-Bibliothek anlegen (Buttons, Panels, Fokus-Stile) und in allen HTML-Tools referenzieren. (aus Inputpool)
 - [ ] Automatisches Logging-Dashboard ergänzen, das erfolgreiche Aktionen pro Tool zählt und exportiert. (aus Inputpool)
 - [ ] Import/Export-Funktion mit Klartext- und JSON-Format in jedem Tool anbieten. (aus Inputpool)
 - [ ] Drag-and-Drop-Layoutsteuerung (Bereiche flexibel verschiebbar) als optionales Modul vorsehen. (aus Inputpool)

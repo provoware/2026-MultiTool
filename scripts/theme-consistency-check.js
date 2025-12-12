@@ -4,16 +4,32 @@ const path = require('path');
 const cheerio = require('cheerio');
 
 const projectRoot = path.resolve(__dirname, '..');
-const uiPath = path.join(projectRoot, 'assets', 'ui.js');
-const uiContent = fs.readFileSync(uiPath, 'utf8');
-const themeMatch = uiContent.match(/const\s+themes\s*=\s*\[([^\]]+)\]/m);
+const configPath = path.join(projectRoot, 'config', 'themes.json');
+const themesCssPath = path.join(projectRoot, 'assets', 'themes.css');
 
-if (!themeMatch) {
-  console.error('Konnte Theme-Liste in assets/ui.js nicht finden.');
+if (!fs.existsSync(configPath)) {
+  console.error('config/themes.json fehlt. Bitte zentrale Theme-Datei hinzufügen.');
   process.exit(1);
 }
 
-const themes = JSON.parse(`[${themeMatch[1].replace(/'/g, '"')}]`);
+const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+const themes = (config.themes || []).map((entry) => entry.id).filter(Boolean);
+
+if (!themes.length) {
+  console.error('Keine Themes in config/themes.json gefunden.');
+  process.exit(1);
+}
+
+const themeCss = fs.readFileSync(themesCssPath, 'utf8');
+const missingInCss = themes.filter((theme) => {
+  if (theme === 'light') return false; // Basiswerte im :root Block
+  return !new RegExp(`data-theme=\\"${theme}\\"`).test(themeCss);
+});
+
+if (missingInCss.length) {
+  console.error(`Folgende Themes fehlen in assets/themes.css: ${missingInCss.join(', ')}`);
+  process.exit(1);
+}
 const htmlFiles = fs.readdirSync(projectRoot).filter((file) => file.endsWith('.html'));
 let hasError = false;
 
