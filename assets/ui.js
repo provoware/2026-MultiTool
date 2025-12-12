@@ -1,7 +1,9 @@
 (function(){
   const THEME_KEY = 'multitool_theme';
+  const FONT_KEY = 'multitool_fontsize';
   const ariaAnnouncerId = 'global-aria-live';
   const themes = ['light', 'dark', 'contrast'];
+  const fontSizes = ['small', 'base', 'large'];
 
   function getPreferredTheme(){
     const stored = localStorage.getItem(THEME_KEY);
@@ -12,8 +14,21 @@
   function applyTheme(theme){
     const next = themes.includes(theme) ? theme : 'light';
     document.documentElement.setAttribute('data-theme', next);
+    if(document.body){
+      document.body.setAttribute('data-theme', next);
+    }
     localStorage.setItem(THEME_KEY, next);
     announce(`Theme gesetzt auf ${next}`);
+    return next;
+  }
+
+  function applyFontSize(size){
+    const next = fontSizes.includes(size) ? size : 'base';
+    if(document.body){
+      document.body.setAttribute('data-font-size', next);
+    }
+    localStorage.setItem(FONT_KEY, next);
+    announce(`Schriftgröße auf ${next} gesetzt`);
     return next;
   }
 
@@ -32,6 +47,12 @@
     });
   }
 
+  function syncFontControls(value){
+    document.querySelectorAll('[data-font-select]').forEach(sel => {
+      if(sel.value !== value) sel.value = value;
+    });
+  }
+
   function bindThemeControls(){
     document.querySelectorAll('[data-theme-toggle]').forEach(btn => {
       btn.addEventListener('click', cycleTheme);
@@ -39,6 +60,19 @@
     });
     document.querySelectorAll('[data-theme-select]').forEach(sel => {
       sel.addEventListener('change', e => applyTheme(e.target.value));
+    });
+  }
+
+  function bindFontControls(){
+    document.querySelectorAll('[data-font-select]').forEach(sel => {
+      sel.addEventListener('change', e => applyFontSize(e.target.value));
+    });
+    document.querySelectorAll('[data-font-button]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const value = btn.getAttribute('data-font-button');
+        applyFontSize(value);
+        syncFontControls(value);
+      });
     });
   }
 
@@ -74,14 +108,27 @@
     document.querySelectorAll('input[required], textarea[required]').forEach(el => {
       if(!validateFilled(el.value)) el.setAttribute('aria-invalid', 'true');
     });
+    document.querySelectorAll('[data-validate-length]').forEach(el => {
+      const limit = Number(el.getAttribute('data-validate-length'));
+      if(Number.isFinite(limit) && el.value && el.value.length > limit){
+        el.setAttribute('aria-invalid', 'true');
+        el.setAttribute('data-feedback', `Maximal ${limit} Zeichen erlaubt`);
+      }
+    });
   }
 
   document.addEventListener('DOMContentLoaded', () => {
-    const initial = applyTheme(getPreferredTheme());
-    syncThemeSelect(initial);
+    const initialTheme = applyTheme(getPreferredTheme());
+    syncThemeSelect(initialTheme);
     bindThemeControls();
+
+    const storedFont = localStorage.getItem(FONT_KEY) || 'base';
+    const initialFont = applyFontSize(storedFont);
+    syncFontControls(initialFont);
+    bindFontControls();
+
     startupAudit();
   });
 
-  window.SharedUI = { applyTheme, cycleTheme, bindThemeControls, announce, validateFilled };
+  window.SharedUI = { applyTheme, cycleTheme, bindThemeControls, announce, validateFilled, applyFontSize };
 })();
