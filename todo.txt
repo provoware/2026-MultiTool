@@ -1,0 +1,14 @@
+Titel: Inputpool-Bereinigung
+Beschreibung: Platzhalter entfernt und thematische Cluster angelegt, damit neue Einträge strukturiert erfasst werden können.
+Priorität: Hoch
+Status: Erledigt
+
+Titel: Automatisches Inputpool-zu-Todo-Clustering
+Beschreibung: Start-Routine entwickeln, die Inputpool-Einträge nach Themen bündelt, validiert und inklusive Priorität/Status automatisiert in die Todo-Liste überträgt.
+Priorität: Hoch
+Status: Offen
+
+Titel: Regelmäßige Inputpool-Pflege
+Beschreibung: Wöchentliche Erinnerung etablieren, um neue Ideen zu prüfen, doppelte Einträge zu entfernen und den Status abgeschlossener Punkte zu aktualisieren.
+Priorität: Mittel
+Status: Offen

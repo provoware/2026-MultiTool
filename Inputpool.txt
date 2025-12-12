@@ -1,2 +1,8 @@
-Neue details die implementiert werden sollen, prüfe auf vorhandensein und übertrage in todo
-- 
+# Inputpool
+
+Themencluster (für neue Einträge):
+- Accessibility (Barrierefreiheit): aktuell keine offenen Punkte.
+- Automatisierung: aktuell keine offenen Punkte.
+- UI/Bedienung: aktuell keine offenen Punkte.
+
+Hinweis: Bitte neue Ideen direkt unter dem passenden Themenpunkt ergänzen (kurzer Titel + 1–2 Sätze Beschreibung). Platzhalter wie "-" werden vermieden, damit die Todo-Liste automatisiert gepflegt werden kann.
