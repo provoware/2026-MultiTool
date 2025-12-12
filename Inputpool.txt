@@ -1,2 +1,7 @@
-Neue details die implementiert werden sollen, prüfe auf vorhandensein und übertrage in todo
-- 
+# Inputpool – neue Ideen und Anforderungen (bitte bei Bedarf ergänzen)
+
+- Barrierefreie Farbschemata erweitern (mehrere Themes mit AA-Kontrast) und in gemeinsame CSS-Datei auslagern.
+- Gemeinsame UI-Bibliothek anlegen (Buttons, Panels, Fokus-Stile) und in allen HTML-Tools referenzieren.
+- Automatisches Logging-Dashboard ergänzen, das erfolgreiche Aktionen pro Tool zählt und exportiert.
+- Import/Export-Funktion mit Klartext- und JSON-Format in jedem Tool anbieten.
+- Drag-and-Drop-Layoutsteuerung (Bereiche flexibel verschiebbar) als optionales Modul vorsehen.
