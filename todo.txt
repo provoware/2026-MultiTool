@@ -1,3 +1,9 @@
+# Offene Aufgaben
+- [ ] start.sh automatisieren: virtuelle Umgebung erstellen, Abhängigkeiten (Dependencies) prüfen und fehlende Pakete mit Fortschrittsanzeige installieren.
+- [ ] Theme-Switcher in allen HTML-Modulen ergänzen (hoher Kontrast, Dunkel, Hell) mit dokumentierten Farbwerten in `config/themes.json`.
+- [ ] Barrierefreiheits-Hinweise (ARIA-Labels, Tastatur-Fokus) in GenresTool und SongtextTool prüfen und ergänzen.
+- [ ] Debug-/Logging-Modus per `./start.sh --debug` implementieren und Protokolle nach `logs/app.log` schreiben.
+- [ ] Automatische Tests (Linting, HTML-Validierung) an `./start.sh --test` anbinden und Feedback laienfreundlich ausgeben.
 # TODO (2026-MultiTool)
 - [x] Automatische Linting- und Accessibility-Checks via npm/CI verankern.
 - [ ] Neue Funktionswünsche aus Inputpool.txt sammeln, bündeln und priorisieren.
