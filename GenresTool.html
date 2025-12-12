@@ -24,6 +24,7 @@
       <select id="themeSelect" data-theme-select aria-label="Farbschema wählen">
         <option value="light">Hell</option>
         <option value="dark">Dunkel</option>
+        <option value="solar">Solar</option>
         <option value="contrast">Kontrast</option>
       </select>
       <button class="btn-ghost" type="button" data-theme-toggle aria-label="Theme durchschalten">Wechseln</button>
@@ -67,13 +68,13 @@
         <label><input type="checkbox" id="incStyles" checked aria-label="Stile einbeziehen"> Stile</label>
       </div>
       <div class="panel-controls">
-        <button data-count="1" class="btn">1</button>
-        <button data-count="3" class="btn">3</button>
-        <button data-count="5" class="btn">5</button>
+        <button data-count="1" class="btn" aria-label="Einen Vorschlag generieren">1</button>
+        <button data-count="3" class="btn" aria-label="Drei Vorschläge generieren">3</button>
+        <button data-count="5" class="btn" aria-label="Fünf Vorschläge generieren">5</button>
         <input id="customCount" type="number" min="1" placeholder="Anzahl" class="input-compact" aria-label="Individuelle Anzahl" />
-        <button id="genRandom" class="btn">Los</button>
+        <button id="genRandom" class="btn" aria-label="Zufall generieren">Los</button>
       </div>
-      <div id="randomResults" class="panel-content"></div>
+      <div id="randomResults" class="panel-content" aria-live="polite" aria-label="Zufallsergebnisse"></div>
     </section>
 
     <!-- 2: Eingabe (oben rechts) -->

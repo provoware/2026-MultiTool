@@ -7,12 +7,14 @@
     "lint:js": "eslint . --ext .js,.mjs,.cjs --no-error-on-unmatched-pattern",
     "lint:html": "htmlhint \"*.html\"",
     "lint": "npm-run-all lint:js lint:html",
+    "test:themes": "node scripts/theme-consistency-check.js",
     "serve": "http-server -p 5000 .",
     "check:accessibility": "start-server-and-test serve http://localhost:5000 \"node scripts/accessibility-check.js\"",
-    "check": "npm-run-all lint check:accessibility"
+    "check": "npm-run-all lint test:themes check:accessibility"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "cheerio": "^1.0.0",
     "eslint": "^9.8.0",
     "eslint-plugin-html": "^8.1.0",
     "globals": "^16.5.0",

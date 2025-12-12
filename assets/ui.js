@@ -2,7 +2,7 @@
   const THEME_KEY = 'multitool_theme';
   const FONT_KEY = 'multitool_fontsize';
   const ariaAnnouncerId = 'global-aria-live';
-  const themes = ['light', 'dark', 'contrast'];
+  const themes = ['light', 'dark', 'contrast', 'solar'];
   const fontSizes = ['small', 'base', 'large'];
 
   function getPreferredTheme(){
@@ -44,6 +44,11 @@
   function syncThemeSelect(value){
     document.querySelectorAll('[data-theme-select]').forEach(sel => {
       if(sel.value !== value) sel.value = value;
+      sel.setAttribute('aria-label', `Farbschema wählen (aktuell: ${value})`);
+    });
+    document.querySelectorAll('[data-theme-toggle]').forEach(btn => {
+      btn.setAttribute('aria-pressed', 'false');
+      btn.setAttribute('aria-label', `Theme wechseln (aktuell: ${value})`);
     });
   }
 

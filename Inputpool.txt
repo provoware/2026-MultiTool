@@ -1,19 +1,12 @@
 Inputpool (frei für neue Anforderungen)
 - Aktuelle offenen Ideen wurden nach `todo.txt` verschoben.
 - Trage neue Details hier ein; sie werden regelmäßig in die To-do-Liste übernommen.
-# Inputpool
 
 Themencluster (für neue Einträge):
 - Accessibility (Barrierefreiheit): aktuell keine offenen Punkte.
 - Automatisierung: aktuell keine offenen Punkte.
 - UI/Bedienung: aktuell keine offenen Punkte.
 
-Hinweis: Bitte neue Ideen direkt unter dem passenden Themenpunkt ergänzen (kurzer Titel + 1–2 Sätze Beschreibung). Platzhalter wie "-" werden vermieden, damit die Todo-Liste automatisiert gepflegt werden kann.
-Neue Details die implementiert werden sollen, prüfe auf vorhandensein und übertrage in todo.
-Aktuell keine weiteren Einträge – bitte hier nur neue Ideen notieren (siehe todo.txt).
-# Inputpool
-# Alle neuen Detailanforderungen bitte hier sammeln. Aktuell keine offenen Einträge; Inhalte werden nach todo.txt verschoben.
-# Inputpool – neue Ideen und Anforderungen (bitte bei Bedarf ergänzen)
+Hinweis: Bitte neue Ideen direkt unter dem passenden Themenpunkt ergänzen (kurzer Titel + 1–2 Sätze Beschreibung). Platzhalter wie "-" werden vermieden, damit die Todo-Liste automatisiert gepflegt werden kann. Neue Details, die implementiert werden sollen, bitte kurz prüfen und danach in `todo.txt` übertragen.
 
-Alle offenen Ideen wurden in `todo.txt` überführt, damit sie verfolgbar sind.
-Neue Vorschläge bitte wieder hier ergänzen (kurzer Titel + 1–2 Sätze).
+Alle offenen Ideen wurden in `todo.txt` überführt, damit sie verfolgbar sind. Neue Vorschläge bitte wieder hier ergänzen (kurzer Titel + 1–2 Sätze).
