@@ -3,4 +3,5 @@
 - Analysiere Codequalität Robustheit und optimiere eine Sache
 - Zeige in jeder Ausgabe den Fortschritt der Entwicklung in Prozent an und nenne die nächsten aufgaben
 - Analysiere ob sich Platzhalter im Code befinden und entferne einen durch das implementieren des benötigten optimalen code.
-- gib 5 verbesserungsvorschläge und eine Empfehlung in jeder ausgabe abschließend auis.
+- gib 5 verbesserungsvorschläge und eine Empfehlung in jeder ausgabe abschließend aus.
+- Analysiere die Inputpool.txt undstrukturiere input sinnvoll und verschiebe punkte in todo datei.
