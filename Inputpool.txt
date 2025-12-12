@@ -1,2 +1,2 @@
-Neue details die implementiert werden sollen, prüfe auf vorhandensein und übertrage in todo
-- 
+Neue Details die implementiert werden sollen, prüfe auf vorhandensein und übertrage in todo.
+Aktuell keine weiteren Einträge – bitte hier nur neue Ideen notieren (siehe todo.txt).

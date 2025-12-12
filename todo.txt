@@ -1,0 +1,2 @@
+- [ ] Neue Details aus Inputpool prüfen und hier ergänzen (aktuell keine weiteren Angaben vorhanden).
+- [ ] Gemeinsame Theme-Varianten und Barrierefreiheits-Checks regelmäßig testen.
