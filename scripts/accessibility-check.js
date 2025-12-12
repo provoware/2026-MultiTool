@@ -7,12 +7,13 @@ const urls = [
 ];
 
 const threshold = 20;
+const standard = 'WCAG2AA';
 
 async function run() {
   let totalIssues = 0;
   for (const url of urls) {
     const results = await pa11y(url, {
-      standard: 'WCAG2A',
+      standard,
       includeNotices: false,
       includeWarnings: false,
       chromeLaunchConfig: {
@@ -21,7 +22,7 @@ async function run() {
     });
     const count = results.issues.length;
     totalIssues += count;
-    console.log(`Pa11y: ${url} -> ${count} Befunde`);
+    console.log(`Pa11y (${standard}): ${url} -> ${count} Befunde`);
   }
 
   if (totalIssues > threshold) {

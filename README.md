@@ -88,7 +88,7 @@ Eine kleine Qualitätssicherung für die statischen HTML-Tools mit einfacher Spr
 ## Manuelle Qualitätsprüfungen
 - `npm install` oder `npm ci` installiert alle Dev-Tools reproduzierbar.
 - `npm run lint` überprüft HTML- und JS-Dateien auf saubere Syntax und Struktur.
-- `npm run check:accessibility` startet einen lokalen Server und prüft die drei HTML-Seiten automatisch mit Pa11y (Threshold 20 Befunde, läuft headless mit `--no-sandbox`).
+- `npm run check:accessibility` startet einen lokalen Server und prüft die drei HTML-Seiten automatisch mit Pa11y (Threshold 20 Befunde, läuft headless mit `--no-sandbox`, Standard: WCAG 2.1 AA).
 - `npm run check` bündelt alle Checks in einem Befehl.
 
 ## CI/CD
@@ -102,7 +102,7 @@ Eine kleine Qualitätssicherung für die statischen HTML-Tools mit einfacher Spr
 - `todo.txt`: Offene Verbesserungen, u. a. neue Ideen aus `Inputpool.txt` und Farbthemen für bessere Kontraste.
 
 ## Hinweise für Barrierefreiheit
-- Pa11y prüft nach WCAG 2.0 AA (Basis-Standard für Barrierefreiheit) und bricht ab, wenn mehr als 20 Befunde auftreten.
+- Pa11y prüft nach WCAG 2.1 AA (Standard `WCAG2AA`) und bricht ab, wenn mehr als 20 Befunde auftreten.
 - Themes mit gutem Kontrast sind als nächster Schritt im `todo.txt` notiert.
 Dieses Repository bündelt mehrere Tools (z. B. Songtext-, Genre- und Index-Generatoren) und stellt eine zentrale Anlaufstelle für neue Funktionen bereit. Die Pflege der Aufgaben erfolgt über `Inputpool.txt` (Eingang) und `todo.txt` (strukturierte Planung).
 

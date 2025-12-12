@@ -18,7 +18,7 @@ Eingaben werden geprüft (z. B. gültiger Port). Bei Fehlern erfolgt eine klare 
 
 ## Qualitäts- und Sicherheitschecks
 - **Linting**: `npm run lint` (JavaScript + HTML). Hilft, Tippfehler und Formatprobleme zu erkennen.
-- **Accessibility-Test (Barrierefreiheit)**: `npm run check:accessibility` prüft die HTML-Seiten mit Pa11y (Screenreader/ARIA-Hinweise, Kontrast).
+- **Accessibility-Test (Barrierefreiheit)**: `npm run check:accessibility` prüft die HTML-Seiten mit Pa11y (Screenreader/ARIA-Hinweise, Kontrast) nach WCAG 2.1 AA und stoppt, wenn mehr als 20 Befunde auftreten.
 - **Komplettpaket**: `npm run check` fasst beide Prüfungen zusammen und bricht bei Fehlern ab.
 - **Konfigurations-Ordner**: Der Start prüft automatisch, ob `config/` und `logs/` existieren, und legt sie bei Bedarf an (Schutz vor Datenverlust durch fehlende Ordner).
 
