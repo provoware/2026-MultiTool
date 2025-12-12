@@ -30,6 +30,12 @@ Eine kleine Qualitätssicherung für die statischen HTML-Tools mit einfacher Spr
 ## Hinweise für Barrierefreiheit
 - Pa11y prüft nach WCAG 2.0 AA (Basis-Standard für Barrierefreiheit) und bricht ab, wenn mehr als 20 Befunde auftreten.
 - Themes mit gutem Kontrast sind als nächster Schritt im `todo.txt` notiert.
+Dieses Repository bündelt mehrere Tools (z. B. Songtext-, Genre- und Index-Generatoren) und stellt eine zentrale Anlaufstelle für neue Funktionen bereit. Die Pflege der Aufgaben erfolgt über `Inputpool.txt` (Eingang) und `todo.txt` (strukturierte Planung).
+
+## Pflegehinweise
+- Neue Ideen landen zuerst im Inputpool, werden dort nach Themen sortiert und anschließend mit Titel, Beschreibung, Priorität und Status in die Todo-Liste übernommen.
+- Halte Einträge barrierearm (einfache Sprache, klare Beispiele) und vermeide Platzhalter oder doppelte Punkte.
+- Automatisiere Prüfungen und Tests, wo möglich, und dokumentiere Änderungen kurz in der Todo-Liste.
 ## Startanleitung
 1. Startroutine ausführbar machen (falls nötig): `chmod +x start.sh`
 2. Start mit automatischer Prüfung: `./start.sh`

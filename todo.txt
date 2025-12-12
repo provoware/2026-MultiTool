@@ -2,6 +2,20 @@
 - [x] Automatische Linting- und Accessibility-Checks via npm/CI verankern.
 - [ ] Neue Funktionswünsche aus Inputpool.txt sammeln, bündeln und priorisieren.
 - [ ] Farbthemen und Kontrast für alle Seiten evaluieren und mindestens zwei Themes mit klarer Umschaltung bereitstellen.
+Titel: Inputpool-Bereinigung
+Beschreibung: Platzhalter entfernt und thematische Cluster angelegt, damit neue Einträge strukturiert erfasst werden können.
+Priorität: Hoch
+Status: Erledigt
+
+Titel: Automatisches Inputpool-zu-Todo-Clustering
+Beschreibung: Start-Routine entwickeln, die Inputpool-Einträge nach Themen bündelt, validiert und inklusive Priorität/Status automatisiert in die Todo-Liste überträgt.
+Priorität: Hoch
+Status: Offen
+
+Titel: Regelmäßige Inputpool-Pflege
+Beschreibung: Wöchentliche Erinnerung etablieren, um neue Ideen zu prüfen, doppelte Einträge zu entfernen und den Status abgeschlossener Punkte zu aktualisieren.
+Priorität: Mittel
+Status: Offen
 - [ ] Neue Details aus Inputpool prüfen und hier ergänzen (aktuell keine weiteren Angaben vorhanden).
 - [ ] Gemeinsame Theme-Varianten und Barrierefreiheits-Checks regelmäßig testen.
 # ToDo-Liste
