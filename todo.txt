@@ -1,5 +1,5 @@
 # Offene Aufgaben
-- [ ] start.sh automatisieren: virtuelle Umgebung erstellen, Abhängigkeiten (Dependencies) prüfen und fehlende Pakete mit Fortschrittsanzeige installieren.
+- [x] start.sh automatisieren: Abhängigkeiten prüfen, fehlende Pakete mit Fortschrittsanzeige installieren und automatische Checks/Serverstart anbieten.
 - [ ] Theme-Switcher in allen HTML-Modulen ergänzen (hoher Kontrast, Dunkel, Hell) mit dokumentierten Farbwerten in `config/themes.json`.
 - [ ] Barrierefreiheits-Hinweise (ARIA-Labels, Tastatur-Fokus) in GenresTool und SongtextTool prüfen und ergänzen.
 - [ ] Debug-/Logging-Modus per `./start.sh --debug` implementieren und Protokolle nach `logs/app.log` schreiben.
@@ -9,6 +9,8 @@
 - [ ] Automatisches Logging-Dashboard ergänzen, das erfolgreiche Aktionen pro Tool zählt und exportiert. (aus Inputpool)
 - [ ] Import/Export-Funktion mit Klartext- und JSON-Format in jedem Tool anbieten. (aus Inputpool)
 - [ ] Drag-and-Drop-Layoutsteuerung (Bereiche flexibel verschiebbar) als optionales Modul vorsehen. (aus Inputpool)
+# Inputpool-Status
+- [x] Inputpool am aktuellen Stand geprüft (keine neuen Einträge vorhanden).
 # TODO (2026-MultiTool)
 - [x] Automatische Linting- und Accessibility-Checks via npm/CI verankern.
 - [ ] Neue Funktionswünsche aus Inputpool.txt sammeln, bündeln und priorisieren.

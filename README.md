@@ -12,9 +12,9 @@
 - **GenresTool**: HTML-Tool zur Genre-Auswahl und Ideenfindung.
 - **SongtextTool**: HTML-Tool zum Strukturieren von Songtexten.
 - **Index-/Template-Komponenten**: `index_templates_tool.html` als Startpunkt für neue Module.
-- **Start-Routine**: `start.sh` als geplanter automatischer Starthelfer (virtuelle Umgebung, Abhängigkeitsprüfung, Start der Oberfläche).
+- **Start-Routine**: `start.sh` als automatischer Starthelfer (Abhängigkeitsprüfung, Qualitätschecks, Start der Oberfläche).
 - **Themes & Accessibility**: Fokus-Styles, hohe Kontraste und mehrere Themes werden vorgesehen; bitte vorhandene Module bei Erweiterungen um Theme-Switcher ergänzen.
-- **Debug/Logging-Modus**: Geplanter Modus mit erweiterten Protokollen (Log-Dateien) und Fehlersuche.
+- **Debug/Logging-Modus**: Aktivierbarer Modus mit erweiterten Protokollen (Log-Dateien) und Fehlersuche.
 
 ## Modulare Struktur
 - **Statische Module**: Einzelne HTML-Dateien (`GenresTool.html`, `SONGTEXTTOOL.html`) bleiben voneinander getrennt und können separat angepasst werden.
@@ -30,10 +30,10 @@
 1. Repository klonen: `git clone <repo-url> && cd 2026-MultiTool`.
 2. Ausführbarkeit sicherstellen (Rechte): `chmod +x start.sh`.
 3. (Optional) Virtuelle Umgebung vorbereiten: `python -m venv .venv && source .venv/bin/activate`.
-4. Abhängigkeiten (Dependencies) prüfen/auflösen: `./start.sh --check` (geplanter Schritt; siehe TODO), alternativ manuell Pakete installieren, sobald definiert.
+4. Abhängigkeiten (Dependencies) prüfen/auflösen: `./start.sh --check-only` führt die automatischen Prüfungen aus (Linting + Accessibility) und beendet sich danach.
 
 ## Nutzung
-1. Start-Routine ausführen: `./start.sh --start` (geplant: prüft Abhängigkeiten automatisch, löst fehlende Pakete und startet die Oberfläche mit Fortschrittsmeldungen).
+1. Start-Routine ausführen: `./start.sh` prüft Abhängigkeiten automatisch, löst fehlende Pakete, führt Checks aus und startet die Oberfläche mit Fortschrittsmeldungen.
 2. Alternativ die HTML-Module direkt im Browser öffnen (Doppelklick auf `GenresTool.html` oder `SONGTEXTTOOL.html`).
 3. Theme wechseln (geplant): Schalter im Kopfbereich jeder Seite; wähle z. B. „Hoher Kontrast“ oder „Dunkel“.
 4. Barrierefreiheit (Accessibility): Nutze Tab-Taste zur Navigation, achte auf sichtbare Fokus-Ränder, und aktiviere Screenreader-Hinweise (ARIA-Labels), sobald ergänzt.
@@ -45,13 +45,13 @@
 - Tooltips (Kurz-Hilfetexte) und Beispieldaten ergänzen die Eingabefelder.
 
 ## Debugging & Logging
-- Geplanter Startparameter: `./start.sh --debug` aktiviert erweitertes Logging (Protokollierung) nach `logs/app.log`.
+- Startparameter: `./start.sh --debug` aktiviert erweitertes Logging (Protokollierung) nach `logs/start.log`.
 - Eingaben werden validiert (geprüft) und Ausgaben auf Erfolg kontrolliert; bitte Validation pro Funktion einplanen.
-- Logging-Level (Protokollstufe) soll in `config/logging.conf` zentral gepflegt werden.
+- Logging-Level (Protokollstufe) wird in `config/start.conf` gesetzt.
 
 ## Automatische Prüfungen & Tests
-- Geplante Routine: `./start.sh --test` führt Format- und Qualitätsprüfungen aus (z. B. `npm test` oder `pytest`), löst fehlende Abhängigkeiten automatisch und liefert laienfreundliches Feedback.
-- Bis zur Implementierung: Stelle sicher, dass HTML-Dateien per W3C-Validator geprüft werden und künftiger Code mit Linting versehen wird.
+- Automatische Routine: `./start.sh` löst fehlende Abhängigkeiten auf und führt `npm run check` (Linting + Accessibility) aus. Für reine Prüfungen kann `./start.sh --check-only` genutzt werden.
+- Manuelle Ergänzung: Bei Bedarf zusätzlich HTML mit externen Validatoren prüfen, um neue Module abzusichern.
 
 ## Tests (manuell)
 - Öffne die HTML-Dateien im Browser und prüfe Layout, Kontrast und Tastaturnavigation.
@@ -98,7 +98,7 @@ Eine kleine Qualitätssicherung für die statischen HTML-Tools mit einfacher Spr
 - `package.json` und `package-lock.json`: definieren und fixieren die Node-Toolchain (eslint, htmlhint, pa11y usw.).
 - `.gitignore`: schließt z. B. `node_modules` von Commits aus.
 - `.htmlhintrc`, `eslint.config.cjs`, `pa11yci.json`, `scripts/accessibility-check.js`: Konfiguration der Checks.
-- `requirements.txt`: Platzhalter für Python-Abhängigkeiten, aktuell leer.
+- `requirements.txt`: Referenzdatei für optionale Python-Abhängigkeiten (derzeit leer; Standard-Setup nutzt nur Node-Tools).
 - `todo.txt`: Offene Verbesserungen, u. a. neue Ideen aus `Inputpool.txt` und Farbthemen für bessere Kontraste.
 
 ## Hinweise für Barrierefreiheit
@@ -113,31 +113,32 @@ Dieses Repository bündelt mehrere Tools (z. B. Songtext-, Genre- und Index-Ge
 ## Startanleitung
 1. Startroutine ausführbar machen (falls nötig): `chmod +x start.sh`
 2. Start mit automatischer Prüfung: `./start.sh`
-   * `--check-only`: Nur Prüfungen (z. B. virtuelle Umgebung, Abhängigkeiten, Port) ohne Serverstart.
+   * `--check-only` / `--health`: Nur Prüfungen (Linting + Accessibility, Port-Check) ohne Serverstart.
+   * `--no-tests`: Überspringt die Checks (nur sinnvoll für schnelle Demos).
    * `--debug`: Ausführliches Logging in `logs/start.log` aktivieren.
 
-Die Routine legt eine virtuelle Umgebung an (`.venv`), liest `config/start.conf` als Konfiguration, installiert Abhängigkeiten aus `requirements.txt`, prüft den gewünschten Port und startet anschließend das Frontend (`python -m http.server`). Nach dem Start erfolgt ein kurzer Verfügbarkeits-Check.
+Die Routine liest `config/start.conf`, legt fehlende Ordner (`config/`, `logs/`, `data/`) automatisch an, installiert Node-Abhängigkeiten, führt `npm run check` aus und startet danach einen lokalen `http-server` auf Port 5000. Anschließend erfolgt ein kurzer Verfügbarkeits-Check per `curl`.
 Ein übersichtliches Werkzeug-Paket mit statischen HTML-Tools. Ziel ist maximale Barrierefreiheit, klare Bedienung und ein vollautomatischer Start.
 
 ## Schnellstart
-1. **Voraussetzungen (Dependencies)**: Linux/Mac/WSL mit `python3`.
-2. **Startskript**: `./start.sh` erzeugt automatisch eine virtuelle Umgebung (virtuelle Python-Box), installiert Abhängigkeiten und startet einen lokalen Webserver.
-3. **Nur prüfen (Health-Check)**: `./start.sh --health` validiert Umgebung und endet ohne Serverstart.
-4. **Port ändern (Port = Netzwerk-Adresse)**: `APP_PORT=8080 ./start.sh --no-serve` prüft auf Port 8080.
+1. **Voraussetzungen (Dependencies)**: Linux/Mac/WSL mit `node` (>=18) und `npm`.
+2. **Startskript**: `./start.sh` installiert Abhängigkeiten (falls nötig), führt Checks aus und startet einen lokalen Webserver.
+3. **Nur prüfen (Health-Check)**: `./start.sh --check-only` validiert Umgebung und endet ohne Serverstart.
+4. **Port ändern (Port = Netzwerk-Adresse)**: `PORT=8080 ./start.sh --no-serve` prüft nur.
 
 ## Bedienung
-- Öffne nach dem Start `http://localhost:8000` im Browser und wähle die gewünschte HTML-Datei aus.
+- Öffne nach dem Start `http://localhost:5000` im Browser und wähle die gewünschte HTML-Datei aus.
 - Buttons sind farblich hervorgehoben, Eingabefelder besitzen Beispiele (Placeholders) für schnellen Einstieg.
 - Dark/Light-Theme (Helles/Dunkles Farbschema) schaltest du direkt in den Tools um, soweit angeboten.
 
 ## Features und Standards
 - **Barrierefreiheit**: Klare Kontraste, skalierbares Layout und einfache Sprache. Fachbegriffe stehen in Klammern mit kurzer Erklärung.
-- **Logging & Debug**: `LOG_LEVEL=debug ./start.sh --health` zeigt jeden Schritt; regulär nur wichtige Meldungen.
+- **Logging & Debug**: `DEBUG=1 ./start.sh --health` zeigt jeden Schritt; regulär nur wichtige Meldungen.
 - **Validierung**: Das Startskript prüft Eingaben (z. B. gültiger Port) und bestätigt Erfolge mit gut lesbaren Meldungen.
-- **Modularität**: Statische HTML-Tools bleiben unabhängig; gemeinsame Abhängigkeiten liegen in `requirements.txt` und der virtuellen Umgebung `.venv`.
+- **Modularität**: Statische HTML-Tools bleiben unabhängig; gemeinsame Abhängigkeiten liegen in den Node-Dev-Tools (`node_modules`), optionale Python-Pakete würden in `requirements.txt` landen.
 
 ## Tests und Qualität
-- **Gesundheitscheck**: `./start.sh --health` kontrolliert, ob Python vorhanden ist und Abhängigkeiten installierbar sind.
+- **Gesundheitscheck**: `./start.sh --check-only` kontrolliert, ob Abhängigkeiten installierbar sind und Linting/Accessibility laufen.
 - **Format und Style**: HTML/CSS folgen responsiven Layouts und klaren Kontrastfarben; weitere Linting-Tools können in `requirements.txt` ergänzt werden.
 
 ## Struktur
