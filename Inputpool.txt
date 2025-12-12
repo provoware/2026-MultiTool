@@ -1,2 +1,3 @@
-Neue details die implementiert werden sollen, prüfe auf vorhandensein und übertrage in todo
-- 
+Inputpool (frei für neue Anforderungen)
+- Aktuelle offenen Ideen wurden nach `todo.txt` verschoben.
+- Trage neue Details hier ein; sie werden regelmäßig in die To-do-Liste übernommen.
