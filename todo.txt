@@ -1,3 +1,7 @@
+# TODO (2026-MultiTool)
+- [x] Automatische Linting- und Accessibility-Checks via npm/CI verankern.
+- [ ] Neue Funktionswünsche aus Inputpool.txt sammeln, bündeln und priorisieren.
+- [ ] Farbthemen und Kontrast für alle Seiten evaluieren und mindestens zwei Themes mit klarer Umschaltung bereitstellen.
 Titel: Inputpool-Bereinigung
 Beschreibung: Platzhalter entfernt und thematische Cluster angelegt, damit neue Einträge strukturiert erfasst werden können.
 Priorität: Hoch
