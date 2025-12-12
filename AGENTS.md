@@ -5,3 +5,5 @@
 - Analysiere ob sich Platzhalter im Code befinden und entferne einen durch das implementieren des benötigten optimalen code.
 - gib 5 verbesserungsvorschläge und eine Empfehlung in jeder ausgabe abschließend aus.
 - Analysiere die Inputpool.txt undstrukturiere input sinnvoll und verschiebe punkte in todo datei.
+- vereinheitliche die einzelnen module optimal
+- analysiere alle dateien auf optimale projektstruktur und optimiere
