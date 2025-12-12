@@ -1,2 +1,2 @@
-Neue details die implementiert werden sollen, prüfe auf vorhandensein und übertrage in todo
-- 
+# Inputpool
+# Alle neuen Detailanforderungen bitte hier sammeln. Aktuell keine offenen Einträge; Inhalte werden nach todo.txt verschoben.

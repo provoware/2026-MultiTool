@@ -1,0 +1,6 @@
+# ToDo-Liste
+- [ ] Neue Detailanforderungen aus Inputpool prüfen und bei Bedarf einplanen.
+- [ ] Mehrere Farb-Themes mit hohem Kontrast für das Frontend entwerfen und dokumentieren.
+- [ ] Export/Import-Funktionen für Nutzereingaben ergänzen.
+- [ ] Dashboard-Bereich um laienfreundliche Statistiken und Tooltips erweitern.
+- [ ] Modulstruktur weiter vereinheitlichen und Plug-in-Punkte definieren.
