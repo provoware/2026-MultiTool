@@ -1,3 +1,5 @@
+Neue Details die implementiert werden sollen, prüfe auf vorhandensein und übertrage in todo.
+Aktuell keine weiteren Einträge – bitte hier nur neue Ideen notieren (siehe todo.txt).
 # Inputpool
 # Alle neuen Detailanforderungen bitte hier sammeln. Aktuell keine offenen Einträge; Inhalte werden nach todo.txt verschoben.
 # Inputpool – neue Ideen und Anforderungen (bitte bei Bedarf ergänzen)

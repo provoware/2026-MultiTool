@@ -1,3 +1,5 @@
+- [ ] Neue Details aus Inputpool prüfen und hier ergänzen (aktuell keine weiteren Angaben vorhanden).
+- [ ] Gemeinsame Theme-Varianten und Barrierefreiheits-Checks regelmäßig testen.
 # ToDo-Liste
 - [ ] Neue Detailanforderungen aus Inputpool prüfen und bei Bedarf einplanen.
 - [ ] Mehrere Farb-Themes mit hohem Kontrast für das Frontend entwerfen und dokumentieren.
