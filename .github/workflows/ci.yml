@@ -25,3 +25,13 @@ jobs:
         run: npm audit --package-lock-only --audit-level=moderate
       - name: Run complete foundation quality gate
         run: npm run check
+      - name: Run native desktop browser acceptance
+        run: npm run test:foundation:browser
+      - name: Upload browser acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: c3-desktop-browser-acceptance
+          path: runtime/browser-acceptance
+          if-no-files-found: warn
+          retention-days: 7
