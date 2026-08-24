@@ -15,12 +15,12 @@
     "check": "npm run lint && npm run test:foundation"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.1",
-    "eslint": "^9.39.1",
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.9.0",
     "globals": "^16.5.0",
     "htmlhint": "^1.2.3"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20.19.0"
   }
 }
