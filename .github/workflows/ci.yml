@@ -4,21 +4,22 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   quality-gate:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - name: Checkout exact candidate
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
       - name: Install locked dependencies
         run: npm ci
-      - name: Run foundation failure matrix and knowledge integrity
-        run: npm run test:foundation
-      - name: Run complete current quality gate
+      - name: Run complete foundation quality gate
         run: npm run check
