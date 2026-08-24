@@ -1,38 +1,124 @@
 # PROVOWARE 2026-MultiTool
 
-> Neuaufbau 2026 – geführtes, offline-first arbeitendes HTML-Tool mit Fokus auf Robustheit, Laienfreundlichkeit, Barrierefreiheit, Transparenz, Recovery und lernende Qualitätsregeln.
+> **Foundation V0.1.0** – geführtes, offline-first arbeitendes HTML-Tool mit lokalem Backend, transparenter Startroutine, Recovery-Grundlagen und lernenden Qualitätsregeln.
 
-## Aktueller Stand
+## Aktueller Entwicklungsstand
 
-Der Neuaufbau läuft auf:
+Der Neuaufbau läuft auf `rebuild/v0.1.0-foundation`.
 
-`rebuild/v0.1.0-foundation`
+Der frühere Repository-Stand ist unverändert gesichert unter `archive/pre-rebuild-2026-08-24`. Der `main`-Branch bleibt unangetastet, bis die Foundation ausreichend grün validiert ist.
 
-Der bisherige Stand von `main` wurde vor dem Rebuild unverändert gesichert unter:
+### C2 – Clean Foundation
 
-`archive/pre-rebuild-2026-08-24`
+Der alte Produktkern wurde auf dem Rebuild-Branch entfernt. Nicht mehr Teil der neuen Anwendung sind die alten Songtext-/Genre-/Template-HTMLs, alten UI-Assets, Inputpool-Dateien, parallelen Agentenregeln und die alte Server-/Theme-Konfiguration.
 
-Der aktive `main`-Branch wird erst ersetzt bzw. integriert, wenn die neue Foundation ausreichend grün validiert ist.
+Der neue erste Nutzerweg ist:
 
-## Was entsteht hier?
+`Start → Preflight → Backend starten → Readiness → grafische Ampelansicht → Checkpoint → Abbruch/Logout → Shutdown → Verify Closed`
 
-Kein klassisches Sammel-Dashboard und kein digitales Handbuch, sondern ein verständlicher Entwicklungs- und Arbeitsassistent:
+## Schnellstart für Laien
 
-`Ziel → Empfehlung → Erklärung → Entscheidung → Prüfung → nächster Schritt`
+Auf Linux/Kubuntu:
 
-Die Oberfläche soll für Laien einfach bleiben und technische Details nur dann zeigen, wenn sie gebraucht werden.
+```bash
+./start.sh
+```
 
-## Verbindlicher Masterauftrag
+Die Startroutine zeigt jeden wichtigen Schritt zusätzlich zu Farben immer mit Symbol und Klartext:
 
-Die vollständigen Entwicklungs-, Qualitäts- und Architekturregeln stehen in:
+- 🔵 **IN ARBEIT** – Prüfung läuft
+- 🟢 **BESTANDEN** – Schritt erfolgreich
+- 🟡 **HINWEIS** – sicher nutzbar, aber mit Hinweis
+- 🔴 **BLOCKIERT** – sicherer Start derzeit nicht möglich
 
-- **[docs/PROJECT_MASTERPROMPT.md](docs/PROJECT_MASTERPROMPT.md)** – verbindlicher Masterauftrag für den Neuaufbau
-- **[docs/DEPENDENCY_AUTOPILOT.md](docs/DEPENDENCY_AUTOPILOT.md)** – automatische und transparente Abhängigkeitsauflösung
-- **[docs/BACKEND_LIFECYCLE.md](docs/BACKEND_LIFECYCLE.md)** – automatischer Backend-Start, kontrollierter Shutdown, Logout-/Abbruchbehandlung
-- **[docs/LEARNING_MEMORY.md](docs/LEARNING_MEMORY.md)** – Gültigkeit, Review, Ablauf und Widerspruchsschutz des Lerngedächtnisses
-- **[docs/EXPERTISE_MATRIX.md](docs/EXPERTISE_MATRIX.md)** – multidisziplinäre Prüf- und Entwicklungs-Expertisen
+Nach erfolgreicher Readiness öffnet der Launcher die lokale Oberfläche im Browser. Das Backend bindet ausschließlich an `127.0.0.1` und ist damit nicht als Netzwerkdienst für andere Rechner gedacht.
 
-Diese Dokumente sind Teil des Projektvertrags und müssen bei relevanten Änderungen synchron gehalten werden.
+### Voraussetzung
+
+Runtime: **Node.js >= 18**.
+
+Die eigentliche Foundation-Runtime verwendet nur Node-Standardbibliotheken. Entwicklungsabhängigkeiten sind über `package-lock.json` reproduzierbar fixiert und werden nur für Qualitätsprüfungen benötigt.
+
+Fehlt eine Systemabhängigkeit, erklärt der Startweg Zweck und Problem. Systemänderungen mit Root-/Admin-Rechten werden niemals versteckt ausgeführt.
+
+## Was der Launcher bereits macht
+
+1. Node-Version prüfen.
+2. Runtime-Verzeichnisse sicher anlegen.
+3. einen freien lokalen Port wählen, ohne fremde Prozesse zu beenden.
+4. Backend als eigenen Child-Prozess starten.
+5. `/api/health` bis zur bestätigten Readiness prüfen.
+6. Browser öffnen, sofern möglich.
+7. bei `SIGINT`, `SIGTERM` oder `SIGHUP` einen Checkpoint anfordern.
+8. das eigene Backend kontrolliert beenden.
+9. bei Hängen nach Timeout kontrolliert eskalieren.
+10. PID-Datei entfernen und Prozessende verifizieren.
+
+Ein Browser-Tab ist **nicht** Process Owner. Der Launcher besitzt und verwaltet das Backend.
+
+## Grafische Foundation-Oberfläche
+
+Die erste neue Oberfläche liegt in `src/ui/index.html` und zeigt aktuell bewusst nur den Foundation-Status:
+
+- Backend bereit / nicht erreichbar
+- localhost-Schutz
+- aktuelle Session
+- Checkpoint-Prüfung
+- verständliche Gesamtampel
+
+Die Oberfläche ist responsiv, tastaturbedienbar, besitzt sichtbare Fokuszustände, eine ARIA-Live-Region für Statusfeedback und berücksichtigt `prefers-reduced-motion`.
+
+## Backend-Vertrag
+
+Das lokale Backend stellt für die Foundation bereit:
+
+- `GET /api/health` – Readiness und Session
+- `GET /api/status` – verständlicher Betriebsstatus
+- `POST /api/checkpoint` – kontrollierter Foundation-Checkpoint
+
+Statische Dateien werden ausschließlich aus `src/ui/` ausgeliefert. Pfad-Traversal wird abgewehrt.
+
+## Tests
+
+```bash
+npm ci
+npm run check
+```
+
+Der Foundation-Gate umfasst:
+
+- Lifecycle-Failure-Matrix
+- Knowledge-/Learning-Memory-Integrität
+- Launcher-E2E: Start → Readiness → Checkpoint → SIGTERM → Verify Closed
+- JavaScript-Lint
+- HTML-Strukturprüfung
+
+Zu den gezielten Lifecycle-Fällen gehören unter anderem belegter Port, Backend-Startfehler, `SIGINT`, `SIGTERM`, stale PID, fehlende Dependency, hängendes Backend/Timeout und Schutz fremder Port-Owner.
+
+## Lerngedächtnis
+
+Kanonische Wissensdatei:
+
+`knowledge/LEARNING_MEMORY.jsonl`
+
+Regressionen:
+
+`knowledge/REGRESSION_REGISTRY.jsonl`
+
+Lernkette:
+
+`Beobachtung → Ursache → Lösung → Test → Evidenz → Regel → Regression → zukünftige Prävention`
+
+Aktive Erkenntnisse besitzen Gültigkeitsbereich, Review-/Ablaufdaten und Widerspruchserkennung. Eine einzelne Beobachtung wird niemals ungeprüft zur globalen Regel.
+
+## Verbindliche Projektverträge
+
+- [docs/PROJECT_MASTERPROMPT.md](docs/PROJECT_MASTERPROMPT.md) – Masterauftrag
+- [docs/DEPENDENCY_AUTOPILOT.md](docs/DEPENDENCY_AUTOPILOT.md) – Dependency Autopilot
+- [docs/BACKEND_LIFECYCLE.md](docs/BACKEND_LIFECYCLE.md) – Process Ownership und Shutdown
+- [docs/LEARNING_MEMORY.md](docs/LEARNING_MEMORY.md) – Wissens-/Regel-Governance
+- [docs/EXPERTISE_MATRIX.md](docs/EXPERTISE_MATRIX.md) – multidisziplinäre Qualitätsprüfung
+- [AGENTS.md](AGENTS.md) – verbindlicher Entwicklungsmodus
 
 ## Arbeitsmodus
 
@@ -40,169 +126,21 @@ Diese Dokumente sind Teil des Projektvertrags und müssen bei relevanten Änderu
 
 `Besprechen → stabile Entscheidung → klein implementieren → automatisch prüfen → Fehler gezielt fixen → Regression ergänzen → Lerngedächtnis aktualisieren → nächster unabhängiger Schritt`
 
-Ungeklärte Punkte blockieren nicht unnötig. Sie bleiben offen, konfigurierbar oder ausdrücklich als Annahme markiert.
+Es wird sauber unterschieden zwischen **spezifiziert**, **implementiert**, **automatisch validiert**, **manuell geprüft** und **noch offen**.
 
-## Laienprinzip
+## Sicherheit und Self-Healing
 
-Der Nutzer soll nicht gefragt werden, welche Technologie er möchte, wenn das Tool die technische Entscheidung aus seinem Ziel ableiten kann.
-
-Beispiel:
-
-Nicht:
-
-> IndexedDB oder localStorage?
-
-Sondern:
-
-> Müssen viele Projektdaten dauerhaft gespeichert werden?
-
-`Weiß ich nicht` ist eine gültige Antwort. Das System soll dann einen sicheren Standard empfehlen und erklären.
-
-## Geplante Hauptbereiche
-
-1. **Heute** – sinnvollster nächster Schritt
-2. **Projekt** – Ziele, Workflow und Entscheidungen
-3. **Bauen** – aktuelle Umsetzung
-4. **Prüfen** – Tests, Accessibility und Qualität
-5. **Absichern** – Save, Backup, Undo, Recovery, Self-Healing
-6. **Lernen** – Lerngedächtnis, Ausschlüsse, Fehlerwissen und Regeln
-7. **Release** – Freigabe, Dokumentation und Nachweise
-8. **Röntgen** – Gesamtgesundheit, Risiken und Blocker
-
-## Bedienmodi
-
-- **Einfach** – nur Notwendiges und sichere Empfehlungen
-- **Geführt** – zusätzlich Gründe, Beispiele und Alternativen
-- **Profi** – technische Regeln, Tests, Evidence und Architekturdetails
-
-Alle Modi verwenden denselben Projektzustand.
-
-## Dependency Autopilot
-
-Abhängigkeiten sollen vollständig erkannt und soweit sicher möglich automatisch aufgelöst werden.
-
-Dabei gilt:
-
-- keine stille Installation,
-- keine versteckten Root-/Admin-Aktionen,
-- projektlokale Dependencies automatisch und reproduzierbar,
-- Systemänderungen nur mit sichtbarer Freigabe,
-- jede Dependency mit Zweck, Version, Herkunft und Ergebnis dokumentieren,
-- normaler Start prüft nur notwendige Runtime-Abhängigkeiten,
-- tiefe Entwicklungsprüfungen laufen getrennt.
-
-Details: [docs/DEPENDENCY_AUTOPILOT.md](docs/DEPENDENCY_AUTOPILOT.md)
-
-## Backend automatisch starten und beenden
-
-Die spätere Laien-Startroutine soll Backend und benötigte lokale Dienste automatisch verwalten:
-
-1. Umgebung prüfen
-2. Abhängigkeiten auflösen
-3. Backend starten
-4. Readiness prüfen
-5. Oberfläche öffnen
-6. bei normalem Ende, Logout oder Abbruch kontrolliert Autosave/Checkpoint durchführen
-7. Backend und eigene Kindprozesse sauber schließen
-8. Port/PID/Locks verifizieren und aufräumen
-
-Ein Browser-Tab allein darf nicht Process Owner sein. Der Launcher verwaltet den Lifecycle zuverlässig.
-
-Details: [docs/BACKEND_LIFECYCLE.md](docs/BACKEND_LIFECYCLE.md)
-
-## Grafische Transparenz
-
-Start, Diagnose und Recovery verwenden verständliche Checkpoints:
-
-- 🔵 **IN ARBEIT** – Prüfung läuft
-- 🟢 **BESTANDEN** – alles in Ordnung
-- 🟡 **HINWEIS** – startfähig, aber nicht optimal
-- 🔴 **BLOCKIERT** – sicherer Start derzeit nicht möglich
-
-Farbe ist nie die einzige Information; Symbol und Klartext sind immer zusätzlich vorhanden.
-
-## Self-Healing
-
-Automatische Reparatur nur für verstandene, reversible und überprüfbare Fälle.
+Self-Healing ist nur für verstandene, begrenzte, reversible und überprüfbare Fälle zulässig.
 
 Pflichtkette:
 
 `BACKUP → REPAIR → VERIFY → JOURNAL`
 
-Scheitert `VERIFY`, folgt Rollback statt stiller Fortsetzung.
+Eigene stale PID-Dateien oder rebuildbare Laufzeitdaten dürfen kontrolliert bereinigt werden. Fremde Prozesse, unbekannte Nutzerdaten und nicht verstandene Fehler werden nicht automatisch verändert.
 
-## Lerngedächtnis
+## Projektstatus
 
-Bestätigte Erfahrungen sollen langfristig Fehler reduzieren.
-
-Geplant bzw. im Foundation-Aufbau angelegt:
-
-- `knowledge/DECISIONS.jsonl`
-- `knowledge/OPEN_QUESTIONS.jsonl`
-- `knowledge/EXCLUSIONS.jsonl`
-- `knowledge/LEARNING_MEMORY.jsonl`
-- `knowledge/REGRESSION_REGISTRY.jsonl`
-
-Lernkette:
-
-`Beobachtung → Ursache → Lösung → Test → Evidenz → Regel → Regression → zukünftige Prävention`
-
-Eine einzelne Beobachtung wird niemals ungeprüft zur globalen Regel. Bestätigte Regeln besitzen zusätzlich einen Gültigkeitsbereich, Review-Termin und optionales Ablaufdatum. Widersprechende aktive Regeln mit überlappendem Gültigkeitsbereich blockieren die Knowledge-Integrity-Prüfung, solange keine explizite Ablösung dokumentiert ist.
-
-Details: [docs/LEARNING_MEMORY.md](docs/LEARNING_MEMORY.md)
-
-## Qualität und Expertisen
-
-Wichtige Änderungen werden je nach Bereich aus mehreren Perspektiven geprüft, unter anderem:
-
-- Softwarearchitektur
-- Frontend Engineering
-- UI/UX & Human Factors
-- Accessibility
-- Runtime-/Process-Lifecycle
-- Dependency-/Reproducibility-Engineering
-- Datenintegrität & Recovery
-- Security
-- Observability & Diagnose
-- Test-/Failure-Engineering
-- Release-/Provenienz-Engineering
-- Performance
-- Laien-Onboarding
-- Knowledge-/Learning-Systeme
-- Wartbarkeit
-
-Details: [docs/EXPERTISE_MATRIX.md](docs/EXPERTISE_MATRIX.md)
-
-## Foundation V0.1.0
-
-Der erste echte Entwicklungsstand wird bewusst klein gehalten:
-
-- saubere Repository-Struktur
-- neue Projektverträge und Dokumentation
-- HTML-App-Shell
-- Design Tokens
-- laienfreundlicher Startweg
-- Project State
-- Decision Store
-- Learning Memory
-- minimale Rule Engine
-- erste `Heute`-Ansicht
-- Testbasis
-- CI Quality Gate
-
-Erst wenn dieser vertikale Schnitt eigenständig startbar, verständlich und ausreichend grün ist, wird fachlich erweitert.
-
-## Statusregel
-
-Dieses Repository behauptet niemals `fertig`, `robust`, `barrierefrei`, `self-healing` oder `releasefähig`, wenn die entsprechenden Prüfungen fehlen.
-
-Es wird sauber unterschieden zwischen:
-
-- spezifiziert
-- implementiert
-- automatisch validiert
-- manuell geprüft
-- noch nicht geprüft
+Der maschinenlesbare kanonische Stand liegt in [PROJECT_STATUS.json](PROJECT_STATUS.json).
 
 ## Leitregel
 
