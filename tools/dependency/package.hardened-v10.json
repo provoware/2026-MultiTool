@@ -1,0 +1,26 @@
+{
+  "name": "2026-multitool",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Foundation quality toolchain for PROVOWARE 2026-MultiTool.",
+  "scripts": {
+    "lint:js": "eslint . --ext .js,.mjs,.cjs --no-error-on-unmatched-pattern",
+    "lint:html": "htmlhint \"src/ui/*.html\"",
+    "lint": "npm run lint:js && npm run lint:html",
+    "test:foundation:lifecycle": "node tests/foundation/lifecycle_failure_matrix.mjs",
+    "test:foundation:lifecycle-race": "node tests/foundation/process_exit_race.mjs",
+    "test:foundation:knowledge": "node tests/foundation/knowledge_registry_integrity.mjs",
+    "test:foundation:launcher": "node tests/foundation/launcher_slice_e2e.mjs",
+    "test:foundation": "npm run test:foundation:lifecycle && npm run test:foundation:lifecycle-race && npm run test:foundation:knowledge && npm run test:foundation:launcher",
+    "check": "npm run lint && npm run test:foundation"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.9.0",
+    "globals": "^16.5.0",
+    "htmlhint": "^1.2.3"
+  },
+  "engines": {
+    "node": ">=20.19.0"
+  }
+}
