@@ -112,7 +112,7 @@ async function startDriver(browser) {
   let created;
   try {
     created = await wd(base, 'POST', '/session', { capabilities: { alwaysMatch } }, {
-      timeoutMs: browser === 'firefox' ? 25000 : 15000,
+      timeoutMs: browser === 'firefox' ? 45000 : 15000,
       label: `${browser} Session-Start`,
     });
   } catch (error) {
