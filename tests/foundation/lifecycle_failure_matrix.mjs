@@ -32,6 +32,27 @@ async function waitForFile(path, timeoutMs = 1500) {
   throw new Error(`Timeout beim Warten auf Datei: ${path}`);
 }
 
+async function waitForStdout(child, expected, timeoutMs = 1500) {
+  return await new Promise((resolve, reject) => {
+    let buffer = '';
+    const timer = setTimeout(() => reject(new Error(`Timeout beim Warten auf '${expected}'.`)), timeoutMs);
+    const onData = (chunk) => {
+      buffer += chunk.toString('utf8');
+      if (!buffer.includes(expected)) return;
+      clearTimeout(timer);
+      child.stdout.off('data', onData);
+      resolve(buffer);
+    };
+    child.stdout.on('data', onData);
+    child.once('exit', (code) => {
+      if (!buffer.includes(expected)) {
+        clearTimeout(timer);
+        reject(new Error(`Prozess endete vor '${expected}' mit Code ${code}.`));
+      }
+    });
+  });
+}
+
 async function runCase(id, title, fn) {
   const started = Date.now();
   try {
@@ -83,7 +104,6 @@ await runCase('REG-LIFE-001', 'Port belegt → sicherer Fallback', async () => {
     holder.once('error', reject);
     holder.listen({ host: '127.0.0.1', port: 0, exclusive: true }, resolve);
   });
-
   try {
     const preferred = holder.address().port;
     const selected = await findAvailablePort(preferred, { attempts: 12 });
@@ -96,12 +116,7 @@ await runCase('REG-LIFE-001', 'Port belegt → sicherer Fallback', async () => {
 
 await runCase('REG-LIFE-002', 'Backend startet nicht → kein falsches Ready', async () => {
   const child = spawn(process.execPath, ['-e', 'process.exit(23)'], { stdio: 'ignore' });
-  const result = await waitForChildReadiness(child, {
-    readinessProbe: () => false,
-    timeoutMs: 1000,
-    pollMs: 20,
-  });
-
+  const result = await waitForChildReadiness(child, { readinessProbe: () => false, timeoutMs: 1000, pollMs: 20 });
   assert(result.ready === false, 'Fehlgeschlagener Backendstart wurde als READY gemeldet.');
   assert(result.reason === 'EXITED_BEFORE_READY', `Unerwarteter Grund: ${result.reason}`);
   assert(result.exitCode === 23, `Exit-Code 23 erwartet, erhalten: ${result.exitCode}`);
@@ -114,15 +129,12 @@ await runCase('REG-LIFE-003', 'Ctrl+C → Child wird kontrolliert beendet', asyn
 await runCase('REG-LIFE-004', 'Stale PID → erkennen und nur stale entfernen', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'provoware-pid-'));
   const pidFile = join(dir, 'backend.pid');
-
   try {
     await writeFile(pidFile, '424242', 'utf8');
     const inspected = await inspectPidFile(pidFile, { isAlive: () => false });
     assert(inspected.state === 'STALE', `STALE erwartet, erhalten: ${inspected.state}`);
-
     const cleaned = await removePidFileIfStale(pidFile, { isAlive: () => false });
     assert(cleaned.removed === true, 'Stale PID-Datei wurde nicht entfernt.');
-
     await writeFile(pidFile, String(process.pid), 'utf8');
     const live = await removePidFileIfStale(pidFile, { isAlive: () => true });
     assert(live.state === 'LIVE', `LIVE erwartet, erhalten: ${live.state}`);
@@ -145,11 +157,11 @@ await runCase('REG-LIFE-006', 'SIGTERM → Child wird kontrolliert beendet', asy
 await runCase('REG-LIFE-007', 'Backend-Hang → Timeout führt zu kontrollierter Eskalation', async () => {
   const child = spawn(
     process.execPath,
-    ['-e', "process.on('SIGTERM',()=>{}); setInterval(()=>{},1000)"],
-    { stdio: 'ignore' },
+    ['-e', "process.on('SIGTERM',()=>{}); process.stdout.write('READY\\n'); setInterval(()=>{},1000)"],
+    { stdio: ['ignore', 'pipe', 'ignore'] },
   );
-
   try {
+    await waitForStdout(child, 'READY');
     assert(isProcessAlive(child.pid), 'Hang-Fixture ist nicht aktiv gestartet.');
     const result = await terminateOwnedProcess(child, { timeoutMs: 120, signal: 'SIGTERM' });
     assert(result.stopped === true, 'Hängender Child-Prozess wurde nicht beendet.');
@@ -163,15 +175,11 @@ await runCase('REG-LIFE-007', 'Backend-Hang → Timeout führt zu kontrollierter
 await runCase('REG-LIFE-008', 'Fremder belegter Port → fremden Prozess nicht stören', async () => {
   const holder = createServer();
   let connections = 0;
-  holder.on('connection', (socket) => {
-    connections += 1;
-    socket.end();
-  });
+  holder.on('connection', (socket) => { connections += 1; socket.end(); });
   await new Promise((resolve, reject) => {
     holder.once('error', reject);
     holder.listen({ host: '127.0.0.1', port: 0, exclusive: true }, resolve);
   });
-
   try {
     const foreignPort = holder.address().port;
     const selected = await findAvailablePort(foreignPort, { attempts: 12 });
@@ -185,10 +193,8 @@ await runCase('REG-LIFE-008', 'Fremder belegter Port → fremden Prozess nicht s
 
 const failed = results.filter((entry) => entry.status === 'FAIL');
 console.log(`\nLifecycle-Failure-Matrix: ${results.length - failed.length}/${results.length} PASS`);
-
 if (failed.length) {
   console.error(JSON.stringify({ status: 'FAIL', results }, null, 2));
   process.exit(1);
 }
-
 console.log(JSON.stringify({ status: 'PASS', results }, null, 2));
