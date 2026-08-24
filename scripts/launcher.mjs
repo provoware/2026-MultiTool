@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process';
+import { randomUUID } from 'node:crypto';
 import { mkdir, readFile, writeFile, rm } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import {
@@ -17,6 +18,7 @@ const preferredPort = Number(process.env.PORT || 5000);
 await mkdir(runtime, { recursive: true });
 const port = await findAvailablePort(preferredPort, { host, attempts: 30 });
 const session = `${Date.now()}-${process.pid}`;
+const controlToken = randomUUID();
 
 const status = (symbol, phase, text) => console.log(`${symbol} ${phase}  ${text}`);
 status('🔵','BACKEND',`Session ${session}, Port ${port}`);
@@ -29,6 +31,7 @@ const child = spawn(process.execPath, ['src/backend/server.mjs'], {
     PROVOWARE_PORT: String(port),
     PROVOWARE_SESSION: session,
     PROVOWARE_PROCESS_OWNER: 'launcher',
+    PROVOWARE_CONTROL_TOKEN: controlToken,
   },
   stdio: ['ignore','inherit','inherit'],
 });
@@ -52,9 +55,6 @@ async function shutdown(reason) {
   process.exit(result.stopped ? 0 : 31);
 }
 
-// Kritisch: Signalhandler müssen vor Readiness registriert sein. Sobald das Backend
-// erreichbar werden kann, darf ein SIGINT/SIGTERM/SIGHUP nicht mehr am Supervisor
-// vorbeilaufen und den eigenen Child-Prozess verwaisen lassen.
 process.on('SIGINT', () => void shutdown('SIGINT'));
 process.on('SIGTERM', () => void shutdown('SIGTERM'));
 process.on('SIGHUP', () => void shutdown('SIGHUP'));
@@ -77,8 +77,18 @@ if (!ready.ready) {
     await rm(pidFile, { force: true });
     process.exit(30);
   }
-}
-if (!closing) {
+} else if (!closing) {
+  const authorize = await fetch(`http://${host}:${port}/api/launcher-ready`, {
+    method:'POST',
+    headers:{'x-provoware-control-token':controlToken},
+    signal:AbortSignal.timeout(1000),
+  });
+  if (!authorize.ok) {
+    status('🔴','BLOCKIERT',`Launcher-Readiness konnte nicht autorisiert werden (${authorize.status})`);
+    await terminateOwnedProcess(child, { timeoutMs:800 });
+    await rm(pidFile,{force:true});
+    process.exit(33);
+  }
   status('🟢','BACKEND','Readiness bestätigt');
   status('🟢','BEREIT',`http://${host}:${port}`);
 }
