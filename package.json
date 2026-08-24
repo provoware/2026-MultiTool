@@ -6,26 +6,21 @@
   "scripts": {
     "lint:js": "eslint . --ext .js,.mjs,.cjs --no-error-on-unmatched-pattern",
     "lint:html": "htmlhint \"src/ui/*.html\"",
-    "lint": "npm-run-all lint:js lint:html",
+    "lint": "npm run lint:js && npm run lint:html",
     "test:foundation:lifecycle": "node tests/foundation/lifecycle_failure_matrix.mjs",
     "test:foundation:lifecycle-race": "node tests/foundation/process_exit_race.mjs",
     "test:foundation:knowledge": "node tests/foundation/knowledge_registry_integrity.mjs",
     "test:foundation:launcher": "node tests/foundation/launcher_slice_e2e.mjs",
-    "test:foundation": "npm-run-all test:foundation:lifecycle test:foundation:lifecycle-race test:foundation:knowledge test:foundation:launcher",
-    "check": "npm-run-all lint test:foundation"
+    "test:foundation": "npm run test:foundation:lifecycle && npm run test:foundation:lifecycle-race && npm run test:foundation:knowledge && npm run test:foundation:launcher",
+    "check": "npm run lint && npm run test:foundation"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
-    "cheerio": "^1.0.0",
-    "eslint": "^9.8.0",
-    "eslint-plugin-html": "^8.1.0",
+    "eslint": "^9.39.1",
     "globals": "^16.5.0",
-    "htmlhint": "^1.2.3",
-    "http-server": "^14.1.1",
-    "npm-run-all": "^4.1.5",
-    "pa11y": "^9.0.1",
-    "pa11y-ci": "^3.1.0",
-    "start-server-and-test": "^2.0.5"
+    "htmlhint": "^1.2.3"
   },
-  "engines": { "node": ">=18" }
+  "engines": {
+    "node": ">=18"
+  }
 }
