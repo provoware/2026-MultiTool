@@ -34,6 +34,7 @@
     "lifecycle_failure_matrix": "tests/foundation/lifecycle_failure_matrix.mjs",
     "lifecycle_exit_race_test": "tests/foundation/process_exit_race.mjs",
     "launcher_e2e_test": "tests/foundation/launcher_slice_e2e.mjs",
+    "desktop_browser_acceptance_test": "tests/foundation/desktop_browser_visual_acceptance.mjs",
     "knowledge_integrity_test": "tests/foundation/knowledge_registry_integrity.mjs"
   },
   "quality": {
@@ -41,6 +42,7 @@
     "implementation": "FOUNDATION_SLICE_PASS",
     "automated_validation": "PASS_CURRENT_FOUNDATION_SCOPE",
     "dependency_toolchain": "HARDENED_PASS",
+    "desktop_browser_acceptance": "PASS",
     "manual_validation": "NOT_RUN",
     "release_ready": false
   },
@@ -95,6 +97,35 @@
       ],
       "note": "Manifest und Lockfile wurden gemeinsam erzeugt und atomar promoviert. Temporäre Kandidaten- und Promote-Workflows wurden danach wieder entfernt."
     },
+    "c3_desktop_browser_acceptance": {
+      "status": "PASS",
+      "validated_candidate_sha": "163d3f7eb6e2d66a0f01fa1c2f740fa811491767",
+      "workflow_run_id": 32737793660,
+      "workflow_run_number": 186,
+      "workflow_conclusion": "success",
+      "evidence_artifact": "c3-desktop-browser-acceptance",
+      "evidence_artifact_sha256": "7ddb600984ea079ebf083482fc52fea823c53446ae6d8235d1c0ae3b340f2220",
+      "browsers": {
+        "firefox": "153.0.4",
+        "chrome": "151.0.7922.137"
+      },
+      "layout_levels_per_browser": 7,
+      "desktop_zoom_equivalents": [100, 125, 150, 175, 200],
+      "small_window_levels": [100, 200],
+      "zoom_method": "Native Browser-Rendering mit layoutäquivalenter effektiver Viewport-Reduktion; keine Manipulation der Browser-Zoom-UI.",
+      "horizontal_overflow": "PASS",
+      "critical_controls_visible": "PASS",
+      "minimum_click_target_44px": "PASS",
+      "keyboard_focus_order": "PASS",
+      "visible_focus": "PASS",
+      "reduced_motion": "PASS",
+      "contrast_minimum_4_5_to_1": "PASS",
+      "checkpoint_ui": "PASS",
+      "ui_logout": "PASS",
+      "verify_closed": "PASS",
+      "visual_evidence_review": "PASS",
+      "visual_review_note": "Firefox/Chrome Desktop und Extremansichten wurden anhand der CI-Screenshots zusätzlich visuell geprüft; keine horizontale Abschneidung oder Überlagerung erkannt. Vertikales Scrollen bei extrem niedrigen effektiven Viewports ist erwartetes responsives Verhalten."
+    },
     "lifecycle_failure_matrix": {
       "status": "PASS",
       "cases_registered": 8,
@@ -123,19 +154,19 @@
     },
     "knowledge_governance": {
       "status": "PASS_CURRENT_SCHEMA_V2_SCOPE",
-      "learning_records": 8,
-      "regressions": 13,
+      "learning_records": 9,
+      "regressions": 14,
       "schema_version": 2,
-      "cross_references": "PASS",
+      "cross_references": "PASS_PENDING_CURRENT_HEAD_RERUN",
       "active_rule_conflicts": 0,
       "review_due_active_rules": 0
     },
     "ci_gate": {
       "workflow": ".github/workflows/ci.yml",
-      "status": "PASS",
+      "status": "PASS_PENDING_CURRENT_HEAD_RERUN",
       "node": 24,
-      "candidate_sha": "089e05c411311dfb171723db73780b4f0c9ec204",
-      "workflow_run_id": 32736115120
+      "last_browser_validated_sha": "163d3f7eb6e2d66a0f01fa1c2f740fa811491767",
+      "last_browser_workflow_run_id": 32737793660
     }
   },
   "learning": {
@@ -144,7 +175,8 @@
       "LESSON-FOUNDATION-0005",
       "LESSON-FOUNDATION-0006",
       "LESSON-FOUNDATION-0007",
-      "LESSON-FOUNDATION-0008"
+      "LESSON-FOUNDATION-0008",
+      "LESSON-FOUNDATION-0009"
     ],
     "notable_findings": [
       "Failure-Fixtures benötigen einen expliziten Readiness-Handshake.",
@@ -152,26 +184,28 @@
       "Signalhandler des Launchers müssen registriert sein, bevor das Backend einen von außen beobachtbaren Ready-Zustand erreichen kann.",
       "Backend-Health und nutzerseitige Readiness sind getrennte Zustände; Nutzeraktionen werden erst nach Launcher-Autorisierung freigegeben.",
       "package.json und package-lock.json sind ein atomarer Dependency-Vertrag und dürfen nicht getrennt bereinigt werden.",
-      "Ein Audit-cleaner Dependency-Satz ist noch nicht ausreichend, wenn ein zentrales Qualitätswerkzeug bereits außerhalb seines Supportfensters liegt; Supportstatus gehört zur Härtung."
+      "Ein Audit-cleaner Dependency-Satz ist noch nicht ausreichend, wenn ein zentrales Qualitätswerkzeug bereits außerhalb seines Supportfensters liegt; Supportstatus gehört zur Härtung.",
+      "Native Browser-Session-Erzeugung benötigt ein eigenes begrenztes Startzeitbudget und darf nicht denselben kurzen Timeout wie normale WebDriver-Kommandos erben."
     ]
   },
   "checkpoints": {
     "C0_REPOSITORY_ARCHIVED": "PASS",
     "C1_REBUILD_CONTRACTS": "PASS",
     "C2_CLEAN_FOUNDATION": "PASS",
-    "C3_START_ROUTINE": "PASS_CORE_E2E_BROWSER_VISUAL_PENDING",
+    "C3_START_ROUTINE": "PASS_BROWSER_ACCEPTED",
     "C4_PROJECT_STATE": "NOT_STARTED",
-    "C5_LEARNING_MEMORY": "PASS_CURRENT_SCOPE",
+    "C5_LEARNING_MEMORY": "PASS_CURRENT_SCOPE_PENDING_HEAD_RERUN",
     "C6_RULE_ENGINE": "NOT_STARTED",
-    "C7_FOUNDATION_GATE": "PASS_CURRENT_SCOPE",
+    "C7_FOUNDATION_GATE": "PASS_CURRENT_SCOPE_PENDING_HEAD_RERUN",
     "DEPENDENCY_TOOLCHAIN_HARDENING": "PASS"
   },
   "known_gaps": [
     "Branch protection for main is currently not enabled.",
     "Dependency Autopilot is specified and dependency detection exists, but automatic dependency resolution is not implemented yet.",
-    "Browser opening is implemented defensively, but a real desktop-browser visual acceptance run is still pending.",
+    "Browser-Zoom-UI selbst wird in C3 nicht ferngesteuert; die festgelegten Zoomstufen werden als layoutäquivalente effektive Viewports in echten Browser-Engines geprüft.",
+    "Eine manuelle physische Desktop-Interaktion durch einen Menschen wurde nicht durchgeführt; automatisierte Browser-E2E und visuelle Screenshot-Prüfung sind bestanden.",
     "Project State implementation beyond the launcher session/checkpoint slice is not started.",
-    "Release readiness remains false; C2 and dependency hardening are foundation checkpoints, not a release candidate."
+    "Release readiness remains false; C2, Dependency-Hardening und C3 sind Foundation-Checkpoints, kein Release Candidate."
   ],
-  "next_step": "C3_DESKTOP_BROWSER_VISUAL_ACCEPTANCE"
+  "next_step": "C4_PROJECT_STATE"
 }
