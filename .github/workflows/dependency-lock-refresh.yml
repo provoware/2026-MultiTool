@@ -9,35 +9,33 @@ on:
       - '.github/workflows/dependency-lock-refresh.yml'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  build-lock-candidate:
+  promote-hardened-lock:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Checkout exact candidate
+      - name: Checkout exact branch head
         uses: actions/checkout@v7
+        with:
+          ref: rebuild/v0.1.0-foundation
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
           node-version: '24'
-          cache: 'npm'
-      - name: Build hardened lockfile candidate
+      - name: Build and audit hardened dependency contract
         run: |
           cp tools/dependency/package.hardened.json package.json
           rm -f package-lock.json
           npm install --package-lock-only --ignore-scripts --no-audit --no-fund
-          node -e "const l=require('./package-lock.json'); console.log('LOCK_PACKAGES='+(Object.keys(l.packages).length-1)); console.log('LOCK_VERSION='+l.lockfileVersion)"
-      - name: Audit hardened candidate
-        run: npm audit --package-lock-only --audit-level=moderate
-      - name: Upload hardened manifest and lock
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: hardened-dependency-candidate
-          path: |
-            tools/dependency/package.hardened.json
-            package-lock.json
-          if-no-files-found: error
-          retention-days: 3
+          node -e "const l=require('./package-lock.json'); const n=Object.keys(l.packages).length-1; if(n!==104) throw new Error('Unexpected lock package count: '+n); console.log('LOCK_PACKAGES='+n)"
+          npm audit --package-lock-only --audit-level=moderate
+      - name: Commit manifest and lock together
+        run: |
+          git config user.name 'provoware-foundation-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add package.json package-lock.json
+          git diff --cached --check
+          git commit -m 'build: atomically harden development dependencies'
+          git push origin HEAD:rebuild/v0.1.0-foundation
