@@ -1,10 +1,9 @@
 import { spawn } from 'node:child_process';
-import { mkdir, writeFile, rm } from 'node:fs/promises';
+import { mkdir, readFile, writeFile, rm } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import {
   terminateOwnedProcess,
   waitForChildReadiness,
-  waitForProcessExit,
   findAvailablePort,
   resolveExecutable,
 } from '../src/core/lifecycle.mjs';
@@ -24,8 +23,14 @@ status('🔵','BACKEND',`Session ${session}, Port ${port}`);
 
 const child = spawn(process.execPath, ['src/backend/server.mjs'], {
   cwd: ROOT,
-  env: { ...process.env, PROVOWARE_HOST: host, PROVOWARE_PORT: String(port), PROVOWARE_SESSION: session },
-  stdio: ['ignore','inherit','inherit','ipc'],
+  env: {
+    ...process.env,
+    PROVOWARE_HOST: host,
+    PROVOWARE_PORT: String(port),
+    PROVOWARE_SESSION: session,
+    PROVOWARE_PROCESS_OWNER: 'launcher',
+  },
+  stdio: ['ignore','inherit','inherit'],
 });
 await writeFile(pidFile, String(child.pid), 'utf8');
 
@@ -62,55 +67,48 @@ if (!process.argv.includes('--no-open')) {
 }
 
 let closing = false;
-async function shutdown(reason, options = {}) {
+async function shutdown(reason) {
   if (closing) return;
   closing = true;
-
-  if (options.checkpointDone) {
-    status('🟢','CHECKPOINT',`Session vor ${reason} bereits gesichert`);
-  } else {
-    status('🔵','CHECKPOINT',`Sichere Session vor ${reason} …`);
-    try {
-      await fetch(`http://${host}:${port}/api/checkpoint`, { method: 'POST', signal: AbortSignal.timeout(1000) });
-    } catch {
-      await writeFile(checkpointFile, JSON.stringify({ session, reason, at: new Date().toISOString(), fallback: true }, null, 2));
-    }
+  status('🔵','CHECKPOINT',`Sichere Session vor ${reason} …`);
+  try {
+    await fetch(`http://${host}:${port}/api/checkpoint`, { method: 'POST', signal: AbortSignal.timeout(1000) });
+  } catch {
+    await writeFile(checkpointFile, JSON.stringify({ session, reason, at: new Date().toISOString(), fallback: true }, null, 2));
   }
 
-  let result;
-  if (options.authorizeChild === true && child.connected) {
-    status('🔵','SHUTDOWN','Autorisiere Backend zum kontrollierten Selbst-Shutdown …');
-    child.send({ type:'shutdown-authorized', reason });
-    const stoppedGracefully = await waitForProcessExit(child, 1500);
-    result = stoppedGracefully
-      ? { stopped:true, escalated:false }
-      : await terminateOwnedProcess(child, { timeoutMs:800, escalationTimeoutMs:800 });
-  } else {
-    status('🔵','SHUTDOWN','Beende eigenes Backend kontrolliert …');
-    result = await terminateOwnedProcess(child, { timeoutMs:1500, escalationTimeoutMs:1500 });
-  }
-
+  status('🔵','SHUTDOWN','Beende eigenes Backend kontrolliert …');
+  const result = await terminateOwnedProcess(child, { timeoutMs:1500, escalationTimeoutMs:1500 });
   await rm(pidFile, { force: true });
   status(result.stopped ? '🟢' : '🔴','SHUTDOWN',result.escalated ? 'Backend beendet (Eskalation nötig)' : 'Backend sauber beendet');
   process.exit(result.stopped ? 0 : 31);
 }
 
-child.on('message', (message) => {
-  if (message?.type === 'shutdown-request') {
-    void shutdown(message.reason || 'UI_LOGOUT', {
-      checkpointDone: message.checkpointDone === true,
-      authorizeChild: true,
-    });
-  }
-});
 process.on('SIGINT', () => void shutdown('SIGINT'));
 process.on('SIGTERM', () => void shutdown('SIGTERM'));
 process.on('SIGHUP', () => void shutdown('SIGHUP'));
+
 child.once('exit', async (code) => {
   await rm(pidFile, { force: true });
-  if (!closing) {
-    status('🔴','BACKEND',`Backend unerwartet beendet (Code ${code})`);
-    process.exit(code ?? 32);
+  if (closing) return;
+
+  let checkpoint = null;
+  try {
+    checkpoint = JSON.parse(await readFile(checkpointFile, 'utf8'));
+  } catch {
+    checkpoint = null;
   }
+
+  const verifiedUiLogout = code === 0
+    && checkpoint?.session === session
+    && checkpoint?.reason === 'UI_LOGOUT';
+
+  if (verifiedUiLogout) {
+    status('🟢','SHUTDOWN','UI-Logout bestätigt; Backend sauber beendet und Session-Checkpoint verifiziert');
+    process.exit(0);
+  }
+
+  status('🔴','BACKEND',`Backend unerwartet beendet (Code ${code})`);
+  process.exit(code ?? 32);
 });
 setInterval(() => {}, 1000);
