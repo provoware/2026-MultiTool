@@ -3,10 +3,14 @@
 Diese Regeln gelten für jede Entwicklungsarbeit in diesem Repository.
 
 ## 1. Verbindliche Referenzen
-
+Goldene Hauptregel: Maximal codesparsam direkt im code patchen
+                    Maximal wartbar und getrennte strukturen
+                    Maximal effizient und begründet arbeiten exakt nach plan, 
+                    eventualitäten in nächste iteration zusätzlich mit aufnehmen
+                    Optimiere dich ständig selbständig und lernend mit einer Hilfsdatei für Dich wo du deine vollständig eigene systematik und struktur aufbauen kannst um immer perfekter und effizienter zu werden
 Vor relevanten Änderungen lesen und beachten:
 
-- `README.md`
+- `README.md & TODO.md`
 - `docs/PROJECT_MASTERPROMPT.md`
 - `docs/DEPENDENCY_AUTOPILOT.md`
 - `docs/BACKEND_LIFECYCLE.md`
@@ -17,11 +21,11 @@ Vor relevanten Änderungen lesen und beachten:
 
 Arbeitskette:
 
-`Besprechen → stabile Entscheidung → klein implementieren → automatisch prüfen → Fehler kontrolliert fixen → Regression ergänzen → Lerngedächtnis aktualisieren → nächster unabhängiger Schritt`
+`Besprechen → stabile Entscheidung → klein implementieren, und zuerst die man beenden könnte,  → automatisch prüfen → Fehler kontrolliert fixen → Regression ergänzen → Lerngedächtnis aktualisieren → nächster unabhängiger Schritt mit Patchgröße - Doku und notwendige infodateien erweitern und aktualisieren in laien optimaler sprache - Dich selbst vergleichend immer weiter selbst bewerten und benennen wo du dich wie verbessern wirst und was dir dabei helfen wird , auch dokumentieren - Versionierung und Repoaktualisierung prüfen und bestätigen`
 
 Klare Entscheidungen nicht unnötig aufschieben. Offene Punkte explizit als offen, konfigurierbar oder Annahme markieren.
 
-## 3. Kleinste robuste Änderung
+## 3. Kleinste robuste Änderung mit detaildaten
 
 - Keine Doppelarchitektur.
 - Keine vorsorgliche Komplexität.
