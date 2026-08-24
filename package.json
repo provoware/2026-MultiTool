@@ -8,9 +8,10 @@
     "lint:html": "htmlhint \"src/ui/*.html\"",
     "lint": "npm-run-all lint:js lint:html",
     "test:foundation:lifecycle": "node tests/foundation/lifecycle_failure_matrix.mjs",
+    "test:foundation:lifecycle-race": "node tests/foundation/process_exit_race.mjs",
     "test:foundation:knowledge": "node tests/foundation/knowledge_registry_integrity.mjs",
     "test:foundation:launcher": "node tests/foundation/launcher_slice_e2e.mjs",
-    "test:foundation": "npm-run-all test:foundation:lifecycle test:foundation:knowledge test:foundation:launcher",
+    "test:foundation": "npm-run-all test:foundation:lifecycle test:foundation:lifecycle-race test:foundation:knowledge test:foundation:launcher",
     "check": "npm-run-all lint test:foundation"
   },
   "devDependencies": {
