@@ -7,6 +7,7 @@ const PUBLIC = join(ROOT, 'src', 'ui');
 const host = process.env.PROVOWARE_HOST || '127.0.0.1';
 const port = Number(process.env.PROVOWARE_PORT || 5000);
 const session = process.env.PROVOWARE_SESSION || 'unknown';
+const processOwner = process.env.PROVOWARE_PROCESS_OWNER || 'unknown';
 const checkpointPath = join(ROOT, 'runtime', 'last-checkpoint.json');
 
 const types = { '.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.json':'application/json; charset=utf-8' };
@@ -26,9 +27,9 @@ const server = http.createServer(async (req, res) => {
       return json(res, 200, { status:'saved', ...record });
     }
     if (req.url === '/api/shutdown' && req.method === 'POST') {
-      if (typeof process.send !== 'function') return json(res, 409, { status:'blocked', reason:'no-process-owner' });
+      if (processOwner !== 'launcher') return json(res, 409, { status:'blocked', reason:'no-process-owner' });
       const record = await writeCheckpoint('UI_LOGOUT');
-      res.once('finish', () => process.send({ type:'shutdown-request', reason:'UI_LOGOUT', checkpointDone:true }));
+      res.once('finish', () => void stop('UI_LOGOUT'));
       return json(res, 202, { status:'accepted', checkpointAt:record.at, reason:'UI_LOGOUT' });
     }
 
@@ -49,17 +50,16 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(port, host, () => console.log(`BACKEND_READY http://${host}:${port}`));
 
+let stopping = false;
 async function stop(signal) {
+  if (stopping) return;
+  stopping = true;
   console.log(`BACKEND_SHUTDOWN ${signal}`);
   server.close(() => process.exit(0));
   if (typeof server.closeIdleConnections === 'function') server.closeIdleConnections();
   if (typeof server.closeAllConnections === 'function') server.closeAllConnections();
   setTimeout(() => process.exit(1), 1200).unref();
 }
-
-process.on('message', (message) => {
-  if (message?.type === 'shutdown-authorized') void stop(message.reason || 'UI_LOGOUT');
-});
 process.on('SIGTERM', () => void stop('SIGTERM'));
 process.on('SIGINT', () => void stop('SIGINT'));
 process.on('SIGHUP', () => void stop('SIGHUP'));
