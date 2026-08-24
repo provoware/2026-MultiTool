@@ -9,6 +9,7 @@ import {
   isProcessAlive,
   removePidFileIfStale,
   resolveExecutable,
+  terminateOwnedProcess,
   waitForChildReadiness,
 } from '../../src/core/lifecycle.mjs';
 
@@ -43,6 +44,39 @@ async function runCase(id, title, fn) {
   }
 }
 
+async function runSupervisorSignalCase(signal, expectedMarker) {
+  const dir = await mkdtemp(join(tmpdir(), 'provoware-lifecycle-'));
+  const pidFile = join(dir, 'child.pid');
+  const markerFile = join(dir, 'marker.log');
+  const fixture = new URL('../fixtures/lifecycle_supervisor_fixture.mjs', import.meta.url);
+  const supervisor = spawn(process.execPath, [fixture.pathname, pidFile, markerFile], { stdio: 'ignore' });
+
+  try {
+    const pidText = await waitForFile(pidFile);
+    const childPid = Number(pidText.trim());
+    assert(Number.isInteger(childPid) && childPid > 0, 'Fixture lieferte keine gültige Child-PID.');
+    assert(isProcessAlive(childPid), `Child-Prozess war vor ${signal} nicht aktiv.`);
+
+    supervisor.kill(signal);
+    await new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error(`Supervisor reagierte nicht rechtzeitig auf ${signal}.`)), 2000);
+      supervisor.once('exit', (code) => {
+        clearTimeout(timer);
+        if (code !== 0) reject(new Error(`Supervisor endete mit Code ${code}.`));
+        else resolve();
+      });
+    });
+
+    const marker = await readFile(markerFile, 'utf8');
+    assert(marker.includes(expectedMarker), `${signal}-Shutdown wurde nicht protokolliert.`);
+    assert(marker.includes('CHILD_STOPPED:true'), 'Child-Shutdown wurde nicht bestätigt.');
+    assert(!isProcessAlive(childPid), `Child-Prozess lebt nach ${signal}-Shutdown weiter.`);
+  } finally {
+    if (supervisor.exitCode === null) supervisor.kill('SIGKILL');
+    await rm(dir, { recursive: true, force: true });
+  }
+}
+
 await runCase('REG-LIFE-001', 'Port belegt → sicherer Fallback', async () => {
   const holder = createServer();
   await new Promise((resolve, reject) => {
@@ -74,36 +108,7 @@ await runCase('REG-LIFE-002', 'Backend startet nicht → kein falsches Ready', a
 });
 
 await runCase('REG-LIFE-003', 'Ctrl+C → Child wird kontrolliert beendet', async () => {
-  const dir = await mkdtemp(join(tmpdir(), 'provoware-lifecycle-'));
-  const pidFile = join(dir, 'child.pid');
-  const markerFile = join(dir, 'marker.log');
-  const fixture = new URL('../fixtures/lifecycle_supervisor_fixture.mjs', import.meta.url);
-  const supervisor = spawn(process.execPath, [fixture.pathname, pidFile, markerFile], { stdio: 'ignore' });
-
-  try {
-    const pidText = await waitForFile(pidFile);
-    const childPid = Number(pidText.trim());
-    assert(Number.isInteger(childPid) && childPid > 0, 'Fixture lieferte keine gültige Child-PID.');
-    assert(isProcessAlive(childPid), 'Child-Prozess war vor SIGINT nicht aktiv.');
-
-    supervisor.kill('SIGINT');
-    await new Promise((resolve, reject) => {
-      const timer = setTimeout(() => reject(new Error('Supervisor reagierte nicht rechtzeitig auf SIGINT.')), 2000);
-      supervisor.once('exit', (code) => {
-        clearTimeout(timer);
-        if (code !== 0) reject(new Error(`Supervisor endete mit Code ${code}.`));
-        else resolve();
-      });
-    });
-
-    const marker = await readFile(markerFile, 'utf8');
-    assert(marker.includes('SHUTDOWN_REQUEST:SIGINT'), 'SIGINT-Shutdown wurde nicht protokolliert.');
-    assert(marker.includes('CHILD_STOPPED:true'), 'Child-Shutdown wurde nicht bestätigt.');
-    assert(!isProcessAlive(childPid), 'Child-Prozess lebt nach Supervisor-Shutdown weiter.');
-  } finally {
-    if (supervisor.exitCode === null) supervisor.kill('SIGKILL');
-    await rm(dir, { recursive: true, force: true });
-  }
+  await runSupervisorSignalCase('SIGINT', 'SHUTDOWN_REQUEST:SIGINT');
 });
 
 await runCase('REG-LIFE-004', 'Stale PID → erkennen und nur stale entfernen', async () => {
@@ -131,6 +136,51 @@ await runCase('REG-LIFE-005', 'Dependency fehlt → Preflight erkennt sie', asyn
   const command = `provoware-definitely-missing-${process.pid}-${Date.now()}`;
   const resolved = await resolveExecutable(command);
   assert(resolved === null, 'Garantiert fehlendes Kommando wurde fälschlich gefunden.');
+});
+
+await runCase('REG-LIFE-006', 'SIGTERM → Child wird kontrolliert beendet', async () => {
+  await runSupervisorSignalCase('SIGTERM', 'SHUTDOWN_REQUEST:SIGTERM');
+});
+
+await runCase('REG-LIFE-007', 'Backend-Hang → Timeout führt zu kontrollierter Eskalation', async () => {
+  const child = spawn(
+    process.execPath,
+    ['-e', "process.on('SIGTERM',()=>{}); setInterval(()=>{},1000)"],
+    { stdio: 'ignore' },
+  );
+
+  try {
+    assert(isProcessAlive(child.pid), 'Hang-Fixture ist nicht aktiv gestartet.');
+    const result = await terminateOwnedProcess(child, { timeoutMs: 120, signal: 'SIGTERM' });
+    assert(result.stopped === true, 'Hängender Child-Prozess wurde nicht beendet.');
+    assert(result.escalated === true, 'Timeout führte nicht zur erwarteten SIGKILL-Eskalation.');
+    assert(!isProcessAlive(child.pid), 'Hängender Child-Prozess lebt nach Eskalation weiter.');
+  } finally {
+    if (child.exitCode === null) child.kill('SIGKILL');
+  }
+});
+
+await runCase('REG-LIFE-008', 'Fremder belegter Port → fremden Prozess nicht stören', async () => {
+  const holder = createServer();
+  let connections = 0;
+  holder.on('connection', (socket) => {
+    connections += 1;
+    socket.end();
+  });
+  await new Promise((resolve, reject) => {
+    holder.once('error', reject);
+    holder.listen({ host: '127.0.0.1', port: 0, exclusive: true }, resolve);
+  });
+
+  try {
+    const foreignPort = holder.address().port;
+    const selected = await findAvailablePort(foreignPort, { attempts: 12 });
+    assert(selected !== foreignPort, 'Fremder Port wurde übernommen.');
+    assert(holder.listening === true, 'Fremder Port-Owner wurde durch die Erkennung gestört oder geschlossen.');
+    assert(connections === 0, 'Port-Erkennung hat den fremden Dienst unnötig verbunden oder beeinflusst.');
+  } finally {
+    await new Promise((resolve) => holder.close(resolve));
+  }
 });
 
 const failed = results.filter((entry) => entry.status === 'FAIL');
