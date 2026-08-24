@@ -109,11 +109,11 @@ child.once('exit', async (code) => {
   await rm(pidFile, { force: true });
   if (closing) return;
 
-  let checkpoint = null;
+  let checkpoint;
   try {
     checkpoint = JSON.parse(await readFile(checkpointFile, 'utf8'));
   } catch {
-    checkpoint = null;
+    // Fehlender oder ungültiger Checkpoint kann keinen verifizierten UI-Logout belegen.
   }
 
   const verifiedUiLogout = code === 0
