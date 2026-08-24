@@ -1,151 +1,147 @@
-# 2026-MultiTool
+# PROVOWARE 2026-MultiTool
 
-## Projektbeschreibung
-2026-MultiTool ist eine modulare Sammlung kleiner Web-Tools (Werkzeuge), die in statischen HTML-Dateien bereitstehen und sich leicht erweitern lassen. Ziel ist eine zentrale, barrierearme (zugängliche) Oberfläche zum Verfassen von Texten und Songideen sowie zum Experimentieren mit Genres.
+> **Foundation V0.1.0** – geführtes, offline-first arbeitendes HTML-Tool mit lokalem Backend, transparenter Startroutine, Recovery-Grundlagen und lernenden Qualitätsregeln.
 
-## Zielgruppe
-- Kreative Einsteiger und Fortgeschrittene, die Text- und Songideen schnell festhalten möchten.
-- Menschen mit Assistenzbedarf: klare Sprache, hohe Kontraste, wählbare Farb-Themes (Farbschemata) und Tastaturnavigation.
-- Teams, die eine wartbare, modulare Struktur bevorzugen.
+## Aktueller Entwicklungsstand
 
-## Hauptfunktionen
-- **GenresTool**: HTML-Tool zur Genre-Auswahl und Ideenfindung.
-- **SongtextTool**: HTML-Tool zum Strukturieren von Songtexten.
-- **Index-/Template-Komponenten**: `index_templates_tool.html` als Startpunkt für neue Module.
-- **Start-Routine**: `start.sh` als automatischer Starthelfer (Abhängigkeitsprüfung, Qualitätschecks, Start der Oberfläche).
-- **Themes & Accessibility**: Fokus-Styles, hohe Kontraste und mehrere Themes werden vorgesehen; bitte vorhandene Module bei Erweiterungen um Theme-Switcher ergänzen.
-- **Debug/Logging-Modus**: Aktivierbarer Modus mit erweiterten Protokollen (Log-Dateien) und Fehlersuche.
+Der Neuaufbau läuft auf `rebuild/v0.1.0-foundation`.
 
-## Modulare Struktur
-- **Statische Module**: Einzelne HTML-Dateien (`GenresTool.html`, `SONGTEXTTOOL.html`) bleiben voneinander getrennt und können separat angepasst werden.
-- **System-/Konfigurationsdateien**: Skripte wie `start.sh` sollten künftig in einem `scripts/`-Ordner liegen; Konfigurationen (z. B. Themes, Logging) gehören in `config/` und variable Daten in `data/`.
-- **Erweiterbarkeit**: Neue Module können als eigenständige HTML-Dateien mit gemeinsamen Komponenten (Header, Footer, Kontrast-Styles) hinzugefügt werden.
+Der frühere Repository-Stand ist unverändert gesichert unter `archive/pre-rebuild-2026-08-24`. Der `main`-Branch bleibt unangetastet, bis die Foundation ausreichend grün validiert ist.
 
-## Voraussetzungen
-- Bash-kompatible Shell (für `start.sh`).
-- Node.js ab Version 18 mit npm (für automatische Prüfungen und Startskript).
-- Aktuelle Browser-Version für die HTML-Tools.
-- Optional: Python 3 (für virtuelle Umgebungen) und – für Headless-Checks – die üblichen Systembibliotheken (z. B. `libatk1.0-0t64`, `libgtk-3-0t64`, `libnss3`, `libgbm1`).
+### C2 – Clean Foundation
 
-## Installation
-1. Repository klonen: `git clone <repo-url> && cd 2026-MultiTool`.
-2. Ausführbarkeit sicherstellen (Rechte): `chmod +x start.sh`.
-3. (Optional) Virtuelle Umgebung vorbereiten: `python -m venv .venv && source .venv/bin/activate`.
-4. Abhängigkeiten (Dependencies) prüfen/auflösen: `./start.sh --check-only` (Alias: `--health`) führt die automatischen Prüfungen aus (Linting + Accessibility) und beendet sich danach.
-5. Nur Tests fahren: `./start.sh --test` ruft `npm run check` mit laienfreundlichen Statusmeldungen auf (Linting + HTML + Accessibility) und beendet sich nach den Prüfungen.
+Der alte Produktkern wurde auf dem Rebuild-Branch entfernt. Nicht mehr Teil der neuen Anwendung sind die alten Songtext-/Genre-/Template-HTMLs, alten UI-Assets, Inputpool-Dateien, parallelen Agentenregeln und die alte Server-/Theme-Konfiguration.
 
-## Nutzung
-1. Start-Routine ausführen: `./start.sh` prüft Abhängigkeiten automatisch, löst fehlende Pakete, führt Checks aus und startet die Oberfläche mit Fortschrittsmeldungen.
-2. Alternativ die HTML-Module direkt im Browser öffnen (Doppelklick auf `GenresTool.html` oder `SONGTEXTTOOL.html`).
-3. Theme wechseln: Schalter im Kopfbereich jeder Seite, gespeist aus `config/themes.json` (AA-konform) und geladen über `assets/themes.css`.
-4. Barrierefreiheit (Accessibility): Nutze Tab-Taste zur Navigation, achte auf sichtbare Fokus-Ränder, und aktiviere Screenreader-Hinweise (ARIA-Labels), sobald ergänzt.
+Der neue erste Nutzerweg ist:
 
-## Barrierefreiheit & Themes
-- Hoher Kontrast und Farbwahl: Die AA-Farbwerte liegen zentral in `config/themes.json` und werden per `assets/themes.css` und `assets/ui-library.css` in allen Seiten aktiviert.
-- Tastaturbedienung: Alle interaktiven Elemente sollen mit Tab erreichbar sein und Fokus-Ringe (Focus Outlines) zeigen.
-- Klare Sprache: Fachbegriffe werden in Klammern erklärt, Labels sind kurz und eindeutig.
-- Tooltips (Kurz-Hilfetexte) und Beispieldaten ergänzen die Eingabefelder.
+`Start → Preflight → Backend starten → Readiness → grafische Ampelansicht → Checkpoint → Abbruch/Logout → Shutdown → Verify Closed`
 
-## Debugging & Logging
-- Startparameter: `./start.sh --debug` aktiviert erweitertes Logging (Protokollierung) nach `logs/app.log` und zeigt Detail-Statusmeldungen.
-- Eingaben werden validiert (geprüft) und Ausgaben auf Erfolg kontrolliert; bitte Validation pro Funktion einplanen.
-- Logging-Level (Protokollstufe) wird in `config/start.conf` gesetzt.
-- Log-Pfad und Netzwerkangaben (Host/Port) prüft die Startroutine jetzt automatisch und legt fehlende Ordner an, damit die Protokolle zuverlässig geschrieben werden.
+## Schnellstart für Laien
 
-## Automatische Prüfungen & Tests
-- Automatische Routine: `./start.sh` löst fehlende Abhängigkeiten auf und führt `npm run check` (Linting + Accessibility) aus. Für reine Prüfungen kann `./start.sh --check-only` bzw. `--health` genutzt werden, `./start.sh --test` liefert zusätzlich laienfreundliche Statusmeldungen.
-- Manuelle Ergänzung: Bei Bedarf zusätzlich HTML mit externen Validatoren prüfen, um neue Module abzusichern.
+Auf Linux/Kubuntu:
 
-## Tests (manuell)
-- Öffne die HTML-Dateien im Browser und prüfe Layout, Kontrast und Tastaturnavigation.
-- Kontrolliere, dass Themes lesbar bleiben und keine Inhalte verdeckt werden.
+```bash
+./start.sh
+```
 
-## Support
-- Issues im Repository anlegen; beschreibe Browser, Schritte und gewünschtes Theme.
-- Für schnelle Hilfe: Kurzbeschreibung (Problem), Erwartung (Soll-Verhalten) und Screenshot beilegen.
+Die Startroutine zeigt jeden wichtigen Schritt zusätzlich zu Farben immer mit Symbol und Klartext:
 
-## Weiterführende Tipps für Einsteiger
-- Beginne mit einem Theme, das für dich gut lesbar ist (z. B. hoher Kontrast). 
-- Nutze klare Überschriften und kurze Absätze in deinen Texten, um Ideen zu strukturieren.
-- Speichere regelmäßig Zwischenstände, z. B. durch Kopieren der Texte in eine Datei.
-- Wenn etwas nicht funktioniert, aktiviere den Debug-Modus (`--debug`), um verständliche Hinweise zu erhalten.
-- Prüfe neue Module zuerst isoliert im Browser, bevor du sie in die Hauptnavigation aufnimmst.
+- 🔵 **IN ARBEIT** – Prüfung läuft
+- 🟢 **BESTANDEN** – Schritt erfolgreich
+- 🟡 **HINWEIS** – sicher nutzbar, aber mit Hinweis
+- 🔴 **BLOCKIERT** – sicherer Start derzeit nicht möglich
 
-## Glossar (Kurz erklärt)
-- **Dependency (Abhängigkeit)**: Ein zusätzliches Paket oder Programm, das ein Tool benötigt.
-- **Theme (Farbschema)**: Vordefinierte Farb- und Schriftkombination für bessere Lesbarkeit.
-- **Logging (Protokollierung)**: Mitschreiben von Statusmeldungen zur Fehlersuche.
-- **ARIA**: Attribute, die Screenreadern Hinweise geben und die Zugänglichkeit verbessern.
+Nach erfolgreicher Readiness öffnet der Launcher die lokale Oberfläche im Browser. Das Backend bindet ausschließlich an `127.0.0.1` und ist damit nicht als Netzwerkdienst für andere Rechner gedacht.
 
-Eine kleine Qualitätssicherung für die statischen HTML-Tools mit einfacher Sprache und erklärten Fachbegriffen.
+### Voraussetzung
 
-## Schnellstart mit Autopilot
-- `./start.sh` startet die vollautomatische Routine: prüft npm, installiert Abhängigkeiten, führt Linting (Quellcode-Prüfung) und Accessibility-Checks (Barrierefreiheits-Prüfung) aus und startet danach einen lokalen Server auf http://localhost:5000.
-- Die Ausgaben sind als Fortschrittsschritte protokolliert.
+Runtime: **Node.js >= 18**.
 
-## Manuelle Qualitätsprüfungen
-- `npm install` oder `npm ci` installiert alle Dev-Tools reproduzierbar.
-- `npm run lint` überprüft HTML- und JS-Dateien auf saubere Syntax und Struktur.
-- `npm run check:accessibility` startet einen lokalen Server und prüft die drei HTML-Seiten automatisch mit Pa11y (Threshold 20 Befunde, läuft headless mit `--no-sandbox`, Standard: WCAG 2.1 AA).
-- `npm run check` bündelt alle Checks in einem Befehl.
+Die eigentliche Foundation-Runtime verwendet nur Node-Standardbibliotheken. Entwicklungsabhängigkeiten sind über `package-lock.json` reproduzierbar fixiert und werden nur für Qualitätsprüfungen benötigt.
 
-## CI/CD
-- `.github/workflows/ci.yml` führt auf jedem Push/PR `npm ci` und `npm run check` aus, damit dieselben Prüfungen auch im GitHub-Workflow laufen.
+Fehlt eine Systemabhängigkeit, erklärt der Startweg Zweck und Problem. Systemänderungen mit Root-/Admin-Rechten werden niemals versteckt ausgeführt.
 
-## Ablage wichtiger Dateien
-- `package.json` und `package-lock.json`: definieren und fixieren die Node-Toolchain (eslint, htmlhint, pa11y usw.).
-- `.gitignore`: schließt z. B. `node_modules` von Commits aus.
-- `.htmlhintrc`, `eslint.config.cjs`, `pa11yci.json`, `scripts/accessibility-check.js`: Konfiguration der Checks.
-- `requirements.txt`: Referenzdatei für optionale Python-Abhängigkeiten (derzeit leer; Standard-Setup nutzt nur Node-Tools).
-- `todo.txt`: Offene Verbesserungen, u. a. neue Ideen aus `Inputpool.txt` und Farbthemen für bessere Kontraste.
+## Was der Launcher bereits macht
 
-## Hinweise für Barrierefreiheit
-- Pa11y prüft nach WCAG 2.1 AA (Standard `WCAG2AA`) und bricht ab, wenn mehr als 20 Befunde auftreten.
-- Themes mit gutem Kontrast sind als nächster Schritt im `todo.txt` notiert.
-Dieses Repository bündelt mehrere Tools (z. B. Songtext-, Genre- und Index-Generatoren) und stellt eine zentrale Anlaufstelle für neue Funktionen bereit. Die Pflege der Aufgaben erfolgt über `Inputpool.txt` (Eingang) und `todo.txt` (strukturierte Planung).
+1. Node-Version prüfen.
+2. Runtime-Verzeichnisse sicher anlegen.
+3. einen freien lokalen Port wählen, ohne fremde Prozesse zu beenden.
+4. Backend als eigenen Child-Prozess starten.
+5. `/api/health` bis zur bestätigten Readiness prüfen.
+6. Browser öffnen, sofern möglich.
+7. bei `SIGINT`, `SIGTERM` oder `SIGHUP` einen Checkpoint anfordern.
+8. das eigene Backend kontrolliert beenden.
+9. bei Hängen nach Timeout kontrolliert eskalieren.
+10. PID-Datei entfernen und Prozessende verifizieren.
 
-## Pflegehinweise
-- Neue Ideen landen zuerst im Inputpool, werden dort nach Themen sortiert und anschließend mit Titel, Beschreibung, Priorität und Status in die Todo-Liste übernommen.
-- Halte Einträge barrierearm (einfache Sprache, klare Beispiele) und vermeide Platzhalter oder doppelte Punkte.
-- Automatisiere Prüfungen und Tests, wo möglich, und dokumentiere Änderungen kurz in der Todo-Liste.
-## Startanleitung
-1. Startroutine ausführbar machen (falls nötig): `chmod +x start.sh`
-2. Start mit automatischer Prüfung: `./start.sh`
-    * `--check-only` / `--health`: Nur Prüfungen (Linting + Accessibility, Port-Check) ohne Serverstart.
-    * `--test`: Alias für `--check-only` mit laienfreundlichen Hinweisen zu Linting, HTML-Validierung und Accessibility.
-   * `--no-tests`: Überspringt die Checks (nur sinnvoll für schnelle Demos).
-   * `--debug`: Ausführliches Logging in `logs/app.log` aktivieren.
+Ein Browser-Tab ist **nicht** Process Owner. Der Launcher besitzt und verwaltet das Backend.
 
-Die Routine liest `config/start.conf`, legt fehlende Ordner (`config/`, `logs/`, `data/`) automatisch an, installiert Node-Abhängigkeiten, führt `npm run check` aus und startet danach einen lokalen `http-server` auf Port 5000. Anschließend erfolgt ein kurzer Verfügbarkeits-Check per `curl`.
-Ein übersichtliches Werkzeug-Paket mit statischen HTML-Tools. Ziel ist maximale Barrierefreiheit, klare Bedienung und ein vollautomatischer Start.
+## Grafische Foundation-Oberfläche
 
-## Schnellstart
-1. **Voraussetzungen (Dependencies)**: Linux/Mac/WSL mit `node` (>=18) und `npm`.
-2. **Startskript**: `./start.sh` installiert Abhängigkeiten (falls nötig), führt Checks aus und startet einen lokalen Webserver.
-3. **Nur prüfen (Health-Check)**: `./start.sh --check-only` (Alias: `--health`) validiert Umgebung und endet ohne Serverstart.
-4. **Port ändern (Port = Netzwerk-Adresse)**: `PORT=8080 ./start.sh --no-serve` prüft nur.
+Die erste neue Oberfläche liegt in `src/ui/index.html` und zeigt aktuell bewusst nur den Foundation-Status:
 
-## Bedienung
-- Öffne nach dem Start `http://localhost:5000` im Browser und wähle die gewünschte HTML-Datei aus.
-- Buttons sind farblich hervorgehoben, Eingabefelder besitzen Beispiele (Placeholders) für schnellen Einstieg.
-- Dark/Light-Theme (Helles/Dunkles Farbschema) schaltest du direkt in den Tools um, soweit angeboten.
+- Backend bereit / nicht erreichbar
+- localhost-Schutz
+- aktuelle Session
+- Checkpoint-Prüfung
+- verständliche Gesamtampel
 
-## Features und Standards
-- **Barrierefreiheit**: Klare Kontraste, skalierbares Layout und einfache Sprache. Fachbegriffe stehen in Klammern mit kurzer Erklärung.
-- **Logging & Debug**: `DEBUG=1 ./start.sh --health` zeigt jeden Schritt; regulär nur wichtige Meldungen.
-- **Validierung**: Das Startskript prüft Eingaben (z. B. gültiger Port) und bestätigt Erfolge mit gut lesbaren Meldungen.
-- **Modularität**: Statische HTML-Tools bleiben unabhängig; gemeinsame Abhängigkeiten liegen in den Node-Dev-Tools (`node_modules`), optionale Python-Pakete würden in `requirements.txt` landen.
+Die Oberfläche ist responsiv, tastaturbedienbar, besitzt sichtbare Fokuszustände, eine ARIA-Live-Region für Statusfeedback und berücksichtigt `prefers-reduced-motion`.
 
-## Tests und Qualität
-- **Gesundheitscheck**: `./start.sh --check-only` (Alias: `--health`) kontrolliert, ob Abhängigkeiten installierbar sind und Linting/Accessibility laufen.
-- **Format und Style**: HTML/CSS folgen responsiven Layouts und klaren Kontrastfarben; weitere Linting-Tools können in `requirements.txt` ergänzt werden.
+## Backend-Vertrag
 
-## Struktur
-- `start.sh` – Automatischer Setup- und Startprozess.
-- `requirements.txt` – Zentrale Paketliste (aktuell minimal).
-- `*.html` – Die UI-Tools, direkt im Browser nutzbar.
-- `Inputpool.txt` / `todo.txt` – Aufgaben, Ideen und Umsetzungsstatus.
+Das lokale Backend stellt für die Foundation bereit:
 
-## Support und Erweiterung
-- Wünsche und Ideen zuerst in `Inputpool.txt` notieren; umsetzbare Aufgaben werden in `todo.txt` gepflegt.
-- Erweiterungen sollten modular bleiben (eigenständige Dateien/Ordner) und Kontrast-/Theme-Vorgaben respektieren.
+- `GET /api/health` – Readiness und Session
+- `GET /api/status` – verständlicher Betriebsstatus
+- `POST /api/checkpoint` – kontrollierter Foundation-Checkpoint
+
+Statische Dateien werden ausschließlich aus `src/ui/` ausgeliefert. Pfad-Traversal wird abgewehrt.
+
+## Tests
+
+```bash
+npm ci
+npm run check
+```
+
+Der Foundation-Gate umfasst:
+
+- Lifecycle-Failure-Matrix
+- Knowledge-/Learning-Memory-Integrität
+- Launcher-E2E: Start → Readiness → Checkpoint → SIGTERM → Verify Closed
+- JavaScript-Lint
+- HTML-Strukturprüfung
+
+Zu den gezielten Lifecycle-Fällen gehören unter anderem belegter Port, Backend-Startfehler, `SIGINT`, `SIGTERM`, stale PID, fehlende Dependency, hängendes Backend/Timeout und Schutz fremder Port-Owner.
+
+## Lerngedächtnis
+
+Kanonische Wissensdatei:
+
+`knowledge/LEARNING_MEMORY.jsonl`
+
+Regressionen:
+
+`knowledge/REGRESSION_REGISTRY.jsonl`
+
+Lernkette:
+
+`Beobachtung → Ursache → Lösung → Test → Evidenz → Regel → Regression → zukünftige Prävention`
+
+Aktive Erkenntnisse besitzen Gültigkeitsbereich, Review-/Ablaufdaten und Widerspruchserkennung. Eine einzelne Beobachtung wird niemals ungeprüft zur globalen Regel.
+
+## Verbindliche Projektverträge
+
+- [docs/PROJECT_MASTERPROMPT.md](docs/PROJECT_MASTERPROMPT.md) – Masterauftrag
+- [docs/DEPENDENCY_AUTOPILOT.md](docs/DEPENDENCY_AUTOPILOT.md) – Dependency Autopilot
+- [docs/BACKEND_LIFECYCLE.md](docs/BACKEND_LIFECYCLE.md) – Process Ownership und Shutdown
+- [docs/LEARNING_MEMORY.md](docs/LEARNING_MEMORY.md) – Wissens-/Regel-Governance
+- [docs/EXPERTISE_MATRIX.md](docs/EXPERTISE_MATRIX.md) – multidisziplinäre Qualitätsprüfung
+- [AGENTS.md](AGENTS.md) – verbindlicher Entwicklungsmodus
+
+## Arbeitsmodus
+
+**Continuous Dialog Development**
+
+`Besprechen → stabile Entscheidung → klein implementieren → automatisch prüfen → Fehler gezielt fixen → Regression ergänzen → Lerngedächtnis aktualisieren → nächster unabhängiger Schritt`
+
+Es wird sauber unterschieden zwischen **spezifiziert**, **implementiert**, **automatisch validiert**, **manuell geprüft** und **noch offen**.
+
+## Sicherheit und Self-Healing
+
+Self-Healing ist nur für verstandene, begrenzte, reversible und überprüfbare Fälle zulässig.
+
+Pflichtkette:
+
+`BACKUP → REPAIR → VERIFY → JOURNAL`
+
+Eigene stale PID-Dateien oder rebuildbare Laufzeitdaten dürfen kontrolliert bereinigt werden. Fremde Prozesse, unbekannte Nutzerdaten und nicht verstandene Fehler werden nicht automatisch verändert.
+
+## Projektstatus
+
+Der maschinenlesbare kanonische Stand liegt in [PROJECT_STATUS.json](PROJECT_STATUS.json).
+
+## Leitregel
+
+> **klein → nachvollziehbar → reversibel → testbar → grün → nächster Schritt**

@@ -3,6 +3,10 @@ node_modules/
 npm-debug.log*
 .venv/
 logs/
+runtime/
+data/
+coverage/
+test-results/
+playwright-report/
 __pycache__/
 *.pyc
-__pycache__/

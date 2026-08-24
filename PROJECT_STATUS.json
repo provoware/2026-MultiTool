@@ -1,0 +1,211 @@
+{
+  "schema_version": 1,
+  "project": {
+    "name": "PROVOWARE 2026-MultiTool",
+    "repository": "provoware/2026-MultiTool",
+    "default_branch": "main",
+    "development_branch": "rebuild/v0.1.0-foundation",
+    "archive_branch": "archive/pre-rebuild-2026-08-24"
+  },
+  "rebuild": {
+    "baseline_commit": "714e1c0c531bc23a62cb0d9f039df043e58d598a",
+    "phase": "FOUNDATION_IMPLEMENTATION",
+    "version_target": "0.1.0",
+    "maturity": "R0",
+    "status": "IN_PROGRESS"
+  },
+  "work_mode": "CONTINUOUS_DIALOG_DEVELOPMENT",
+  "contracts": {
+    "master": "docs/PROJECT_MASTERPROMPT.md",
+    "dependencies": "docs/DEPENDENCY_AUTOPILOT.md",
+    "backend_lifecycle": "docs/BACKEND_LIFECYCLE.md",
+    "learning_memory": "docs/LEARNING_MEMORY.md",
+    "expertise_matrix": "docs/EXPERTISE_MATRIX.md",
+    "agents": "AGENTS.md"
+  },
+  "foundation": {
+    "lifecycle_core": "src/core/lifecycle.mjs",
+    "knowledge_core": "src/core/knowledge.mjs",
+    "launcher": "scripts/launcher.mjs",
+    "backend": "src/backend/server.mjs",
+    "foundation_ui": "src/ui/index.html",
+    "learning_memory": "knowledge/LEARNING_MEMORY.jsonl",
+    "regression_registry": "knowledge/REGRESSION_REGISTRY.jsonl",
+    "lifecycle_failure_matrix": "tests/foundation/lifecycle_failure_matrix.mjs",
+    "lifecycle_exit_race_test": "tests/foundation/process_exit_race.mjs",
+    "launcher_e2e_test": "tests/foundation/launcher_slice_e2e.mjs",
+    "desktop_browser_acceptance_test": "tests/foundation/desktop_browser_visual_acceptance.mjs",
+    "knowledge_integrity_test": "tests/foundation/knowledge_registry_integrity.mjs"
+  },
+  "quality": {
+    "specification": "PARTIAL",
+    "implementation": "FOUNDATION_SLICE_PASS",
+    "automated_validation": "PASS_CURRENT_FOUNDATION_SCOPE",
+    "dependency_toolchain": "HARDENED_PASS",
+    "desktop_browser_acceptance": "PASS",
+    "manual_validation": "NOT_RUN",
+    "release_ready": false
+  },
+  "validation": {
+    "c2_acceptance": {
+      "status": "PASS",
+      "candidate_sha": "4c39547be9f419336bc2b991739f4eb0d293665c",
+      "pull_request": 14,
+      "workflow_run_id": 32734599138,
+      "workflow_run_number": 142,
+      "workflow_conclusion": "success",
+      "launcher_end_paths": "2/2 PASS",
+      "verified_path": [
+        "START",
+        "PREFLIGHT",
+        "BACKEND_START",
+        "HEALTH",
+        "LAUNCHER_AUTHORIZED_USER_READY",
+        "CHECKPOINT",
+        "SIGTERM_OR_UI_LOGOUT",
+        "BACKEND_SHUTDOWN",
+        "VERIFY_CLOSED"
+      ]
+    },
+    "dependency_toolchain_hardening": {
+      "status": "PASS",
+      "validated_candidate_sha": "089e05c411311dfb171723db73780b4f0c9ec204",
+      "workflow_run_id": 32736115120,
+      "workflow_run_number": 176,
+      "workflow_conclusion": "success",
+      "lockfile_version": 3,
+      "development_node_requirement": ">=20.19.0",
+      "ci_node": 24,
+      "eslint": "^10.9.0",
+      "direct_dev_dependencies_before": 11,
+      "direct_dev_dependencies_after": 4,
+      "locked_packages_before": 490,
+      "locked_packages_after": 92,
+      "locked_packages_removed": 398,
+      "locked_package_reduction_percent": 81.2,
+      "known_vulnerabilities_before": {
+        "total": 25,
+        "moderate": 4,
+        "high": 19,
+        "critical": 2
+      },
+      "known_vulnerabilities_after": 0,
+      "permanent_gate": [
+        "npm ci --no-audit --no-fund",
+        "npm audit --package-lock-only --audit-level=moderate",
+        "npm run check"
+      ],
+      "note": "Manifest und Lockfile wurden gemeinsam erzeugt und atomar promoviert. Temporäre Kandidaten- und Promote-Workflows wurden danach wieder entfernt."
+    },
+    "c3_desktop_browser_acceptance": {
+      "status": "PASS",
+      "validated_candidate_sha": "163d3f7eb6e2d66a0f01fa1c2f740fa811491767",
+      "workflow_run_id": 32737793660,
+      "workflow_run_number": 186,
+      "workflow_conclusion": "success",
+      "evidence_artifact": "c3-desktop-browser-acceptance",
+      "evidence_artifact_sha256": "7ddb600984ea079ebf083482fc52fea823c53446ae6d8235d1c0ae3b340f2220",
+      "browsers": {
+        "firefox": "153.0.4",
+        "chrome": "151.0.7922.137"
+      },
+      "layout_levels_per_browser": 7,
+      "desktop_zoom_equivalents": [100, 125, 150, 175, 200],
+      "small_window_levels": [100, 200],
+      "zoom_method": "Native Browser-Rendering mit layoutäquivalenter effektiver Viewport-Reduktion; keine Manipulation der Browser-Zoom-UI.",
+      "horizontal_overflow": "PASS",
+      "critical_controls_visible": "PASS",
+      "minimum_click_target_44px": "PASS",
+      "keyboard_focus_order": "PASS",
+      "visible_focus": "PASS",
+      "reduced_motion": "PASS",
+      "contrast_minimum_4_5_to_1": "PASS",
+      "checkpoint_ui": "PASS",
+      "ui_logout": "PASS",
+      "verify_closed": "PASS",
+      "visual_evidence_review": "PASS",
+      "visual_review_note": "Firefox/Chrome Desktop und Extremansichten wurden anhand der CI-Screenshots zusätzlich visuell geprüft; keine horizontale Abschneidung oder Überlagerung erkannt. Vertikales Scrollen bei extrem niedrigen effektiven Viewports ist erwartetes responsives Verhalten."
+    },
+    "lifecycle_failure_matrix": {
+      "status": "PASS",
+      "cases_registered": 8,
+      "cases_passed": 8,
+      "scenarios": [
+        "PORT_OCCUPIED",
+        "BACKEND_START_FAILS",
+        "CTRL_C",
+        "STALE_PID",
+        "DEPENDENCY_MISSING",
+        "SIGTERM",
+        "BACKEND_HANG_TIMEOUT",
+        "FOREIGN_PORT_OWNER"
+      ]
+    },
+    "lifecycle_exit_race": {
+      "status": "PASS",
+      "regression": "REG-LIFE-009",
+      "protects": "Exit-vor-Listener-Race und bounded shutdown"
+    },
+    "launcher_e2e": {
+      "status": "PASS",
+      "sigterm": "PASS",
+      "ui_logout": "PASS",
+      "verify_closed": "PASS"
+    },
+    "knowledge_governance": {
+      "status": "PASS_CURRENT_SCHEMA_V2_SCOPE",
+      "learning_records": 9,
+      "regressions": 14,
+      "schema_version": 2,
+      "cross_references": "PASS_PENDING_CURRENT_HEAD_RERUN",
+      "active_rule_conflicts": 0,
+      "review_due_active_rules": 0
+    },
+    "ci_gate": {
+      "workflow": ".github/workflows/ci.yml",
+      "status": "PASS_PENDING_CURRENT_HEAD_RERUN",
+      "node": 24,
+      "last_browser_validated_sha": "163d3f7eb6e2d66a0f01fa1c2f740fa811491767",
+      "last_browser_workflow_run_id": 32737793660
+    }
+  },
+  "learning": {
+    "new_lessons": [
+      "LESSON-FOUNDATION-0004",
+      "LESSON-FOUNDATION-0005",
+      "LESSON-FOUNDATION-0006",
+      "LESSON-FOUNDATION-0007",
+      "LESSON-FOUNDATION-0008",
+      "LESSON-FOUNDATION-0009"
+    ],
+    "notable_findings": [
+      "Failure-Fixtures benötigen einen expliziten Readiness-Handshake.",
+      "Process-Exit-Warten muss Exit-vor-Listener-Races abfangen und immer zeitlich begrenzt sein.",
+      "Signalhandler des Launchers müssen registriert sein, bevor das Backend einen von außen beobachtbaren Ready-Zustand erreichen kann.",
+      "Backend-Health und nutzerseitige Readiness sind getrennte Zustände; Nutzeraktionen werden erst nach Launcher-Autorisierung freigegeben.",
+      "package.json und package-lock.json sind ein atomarer Dependency-Vertrag und dürfen nicht getrennt bereinigt werden.",
+      "Ein Audit-cleaner Dependency-Satz ist noch nicht ausreichend, wenn ein zentrales Qualitätswerkzeug bereits außerhalb seines Supportfensters liegt; Supportstatus gehört zur Härtung.",
+      "Native Browser-Session-Erzeugung benötigt ein eigenes begrenztes Startzeitbudget und darf nicht denselben kurzen Timeout wie normale WebDriver-Kommandos erben."
+    ]
+  },
+  "checkpoints": {
+    "C0_REPOSITORY_ARCHIVED": "PASS",
+    "C1_REBUILD_CONTRACTS": "PASS",
+    "C2_CLEAN_FOUNDATION": "PASS",
+    "C3_START_ROUTINE": "PASS_BROWSER_ACCEPTED",
+    "C4_PROJECT_STATE": "NOT_STARTED",
+    "C5_LEARNING_MEMORY": "PASS_CURRENT_SCOPE_PENDING_HEAD_RERUN",
+    "C6_RULE_ENGINE": "NOT_STARTED",
+    "C7_FOUNDATION_GATE": "PASS_CURRENT_SCOPE_PENDING_HEAD_RERUN",
+    "DEPENDENCY_TOOLCHAIN_HARDENING": "PASS"
+  },
+  "known_gaps": [
+    "Branch protection for main is currently not enabled.",
+    "Dependency Autopilot is specified and dependency detection exists, but automatic dependency resolution is not implemented yet.",
+    "Browser-Zoom-UI selbst wird in C3 nicht ferngesteuert; die festgelegten Zoomstufen werden als layoutäquivalente effektive Viewports in echten Browser-Engines geprüft.",
+    "Eine manuelle physische Desktop-Interaktion durch einen Menschen wurde nicht durchgeführt; automatisierte Browser-E2E und visuelle Screenshot-Prüfung sind bestanden.",
+    "Project State implementation beyond the launcher session/checkpoint slice is not started.",
+    "Release readiness remains false; C2, Dependency-Hardening und C3 sind Foundation-Checkpoints, kein Release Candidate."
+  ],
+  "next_step": "C4_PROJECT_STATE"
+}
