@@ -55,19 +55,23 @@ async function stop(signal, options = {}) {
   if (stopping) return;
   stopping = true;
   console.log(`BACKEND_SHUTDOWN ${signal}`);
+
+  if (options.deterministicExit === true) {
+    server.close();
+    if (typeof server.closeIdleConnections === 'function') server.closeIdleConnections();
+    if (typeof server.closeAllConnections === 'function') server.closeAllConnections();
+    process.exit(0);
+  }
+
+  const closed = new Promise((resolveClose) => server.once('close', resolveClose));
+  const timeout = new Promise((resolveTimeout) => setTimeout(() => resolveTimeout('timeout'), 1200));
+
   server.close();
   if (typeof server.closeIdleConnections === 'function') server.closeIdleConnections();
   if (typeof server.closeAllConnections === 'function') server.closeAllConnections();
 
-  if (options.deterministicExit === true) {
-    process.exit(0);
-  }
-
-  const timer = setTimeout(() => process.exit(1), 1200);
-  server.once('close', () => {
-    clearTimeout(timer);
-    process.exit(0);
-  });
+  const result = await Promise.race([closed.then(() => 'closed'), timeout]);
+  process.exit(result === 'closed' ? 0 : 1);
 }
 process.on('SIGTERM', () => void stop('SIGTERM'));
 process.on('SIGINT', () => void stop('SIGINT'));
