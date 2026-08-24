@@ -12,7 +12,14 @@ function assert(condition, message){ if(!condition) throw new Error(message); }
 async function waitUntil(fn, timeoutMs=7000, pollMs=80){
   const started=Date.now();
   while(Date.now()-started<timeoutMs){
-    try{const value=await fn();if(value)return value;}catch{}
+    try{
+      const value=await fn();
+      if(value)return value;
+    }catch(error){
+      if(error?.name!=='TimeoutError' && error?.cause?.code!=='ECONNREFUSED'){
+        // Andere kurzzeitige Netzwerkfehler werden bis zum Timeout erneut geprüft.
+      }
+    }
     await new Promise(resolveWait=>setTimeout(resolveWait,pollMs));
   }
   throw new Error('Timeout beim Warten auf erwarteten Zustand.');
@@ -52,12 +59,19 @@ async function runScenario(name, shutdownAction){
     await waitUntil(()=>!isProcessAlive(backendPid),3000);
     assert(!(await pathExists(pidFile)),`${name}: PID-Datei blieb nach Shutdown liegen.`);
     let reachable=true;
-    try{await fetch(`http://127.0.0.1:${port}/api/health`,{signal:AbortSignal.timeout(300)});}catch{reachable=false;}
+    try{
+      await fetch(`http://127.0.0.1:${port}/api/health`,{signal:AbortSignal.timeout(300)});
+    }catch(error){
+      reachable=false;
+      void error;
+    }
     assert(!reachable,`${name}: Backend nach Verify Closed weiterhin erreichbar.`);
     console.log(`🟢 Launcher-E2E ${name}: Checkpoint → Shutdown → Verify Closed PASS`);
   }finally{
     if(launcher.exitCode===null)launcher.kill('SIGKILL');
-    if(backendPid&&isProcessAlive(backendPid)){try{process.kill(backendPid,'SIGKILL');}catch{}}
+    if(backendPid&&isProcessAlive(backendPid)){
+      try{process.kill(backendPid,'SIGKILL');}catch(error){void error;}
+    }
     await rm(pidFile,{force:true});
   }
 }
