@@ -2,15 +2,18 @@
   "name": "2026-multitool",
   "version": "0.1.0",
   "private": true,
-  "description": "Toolchain and quality checks for the 2026 MultiTool static pages.",
+  "description": "Foundation quality toolchain for PROVOWARE 2026-MultiTool.",
   "scripts": {
     "lint:js": "eslint . --ext .js,.mjs,.cjs --no-error-on-unmatched-pattern",
     "lint:html": "htmlhint \"*.html\"",
     "lint": "npm-run-all lint:js lint:html",
     "test:themes": "node scripts/theme-consistency-check.js",
+    "test:foundation:lifecycle": "node tests/foundation/lifecycle_failure_matrix.mjs",
+    "test:foundation:knowledge": "node tests/foundation/knowledge_registry_integrity.mjs",
+    "test:foundation": "npm-run-all test:foundation:lifecycle test:foundation:knowledge",
     "serve": "http-server -p 5000 .",
     "check:accessibility": "start-server-and-test serve http://localhost:5000 \"node scripts/accessibility-check.js\"",
-    "check": "npm-run-all lint test:themes check:accessibility"
+    "check": "npm-run-all lint test:themes test:foundation check:accessibility"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
