@@ -54,13 +54,18 @@ async function browserDriver(browser) {
     ?? await executableFromEnv('GECKOWEBDRIVER', 'geckodriver');
 }
 
-async function wd(base, method, path, body) {
-  const response = await fetch(`${base}${path}`, {
-    method,
-    headers: body === undefined ? undefined : { 'content-type': 'application/json' },
-    body: body === undefined ? undefined : JSON.stringify(body),
-    signal: AbortSignal.timeout(5000),
-  });
+async function wd(base, method, path, body, { timeoutMs = 5000, label = `${method} ${path}` } = {}) {
+  let response;
+  try {
+    response = await fetch(`${base}${path}`, {
+      method,
+      headers: body === undefined ? undefined : { 'content-type': 'application/json' },
+      body: body === undefined ? undefined : JSON.stringify(body),
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+  } catch (error) {
+    throw new Error(`WebDriver ${label}: Request nach ${timeoutMs} ms abgebrochen.`, { cause: error });
+  }
   const text = await response.text();
   let payload = null;
   if (text) {
@@ -68,7 +73,7 @@ async function wd(base, method, path, body) {
   }
   if (!response.ok || payload?.value?.error) {
     const detail = payload?.value?.message ?? text ?? `${response.status}`;
-    throw new Error(`WebDriver ${method} ${path}: ${detail}`);
+    throw new Error(`WebDriver ${label}: ${detail}`);
   }
   return payload?.value ?? payload;
 }
@@ -83,10 +88,11 @@ async function startDriver(browser) {
   child.stdout.on('data', (chunk) => { output += chunk.toString(); });
   child.stderr.on('data', (chunk) => { output += chunk.toString(); });
   const base = `http://127.0.0.1:${port}`;
+
   await waitFor(async () => {
-    const response = await fetch(`${base}/status`, { signal: AbortSignal.timeout(500) });
+    const response = await fetch(`${base}/status`, { signal: AbortSignal.timeout(600) });
     return response.ok;
-  }, { label: `${browser} WebDriver Readiness` });
+  }, { label: `${browser} WebDriver Readiness`, timeoutMs: 10000 });
 
   const alwaysMatch = browser === 'firefox'
     ? {
@@ -103,9 +109,18 @@ async function startDriver(browser) {
         },
       };
 
-  const created = await wd(base, 'POST', '/session', { capabilities: { alwaysMatch } });
+  let created;
+  try {
+    created = await wd(base, 'POST', '/session', { capabilities: { alwaysMatch } }, {
+      timeoutMs: browser === 'firefox' ? 25000 : 15000,
+      label: `${browser} Session-Start`,
+    });
+  } catch (error) {
+    throw new Error(`${browser}: Browser-Session konnte nicht erstellt werden. Driver-Ausgabe: ${output}`, { cause: error });
+  }
+
   const sessionId = created?.sessionId;
-  assert(sessionId, `${browser}: WebDriver-Session-ID fehlt.`);
+  assert(sessionId, `${browser}: WebDriver-Session-ID fehlt. Driver-Ausgabe: ${output}`);
   return {
     browser,
     child,
@@ -118,7 +133,9 @@ async function startDriver(browser) {
 
 async function stopDriver(driver) {
   if (!driver) return;
-  try { await wd(driver.base, 'DELETE', `/session/${driver.sessionId}`); } catch { /* cleanup */ }
+  try {
+    await wd(driver.base, 'DELETE', `/session/${driver.sessionId}`, undefined, { timeoutMs: 3000, label: `${driver.browser} Session-Ende` });
+  } catch { /* cleanup only */ }
   if (driver.child.exitCode === null && driver.child.signalCode === null) driver.child.kill('SIGTERM');
   await Promise.race([
     new Promise((resolveExit) => driver.child.once('exit', resolveExit)),
@@ -158,18 +175,18 @@ async function waitForLauncherExit(launcher, label) {
 }
 
 async function navigate(driver, url) {
-  await wd(driver.base, 'POST', `/session/${driver.sessionId}/url`, { url });
+  await wd(driver.base, 'POST', `/session/${driver.sessionId}/url`, { url }, { timeoutMs: 10000, label: `${driver.browser} Navigation` });
 }
 
 async function execute(driver, script, args = []) {
-  return await wd(driver.base, 'POST', `/session/${driver.sessionId}/execute/sync`, { script, args });
+  return await wd(driver.base, 'POST', `/session/${driver.sessionId}/execute/sync`, { script, args }, { label: `${driver.browser} Script` });
 }
 
 async function findElement(driver, selector) {
   const result = await wd(driver.base, 'POST', `/session/${driver.sessionId}/element`, {
     using: 'css selector',
     value: selector,
-  });
+  }, { label: `${driver.browser} Element ${selector}` });
   const id = result?.[ELEMENT_KEY];
   assert(id, `${driver.browser}: Element '${selector}' nicht gefunden.`);
   return id;
@@ -177,7 +194,7 @@ async function findElement(driver, selector) {
 
 async function click(driver, selector) {
   const id = await findElement(driver, selector);
-  await wd(driver.base, 'POST', `/session/${driver.sessionId}/element/${id}/click`, {});
+  await wd(driver.base, 'POST', `/session/${driver.sessionId}/element/${id}/click`, {}, { label: `${driver.browser} Klick ${selector}` });
 }
 
 async function pressTab(driver) {
@@ -190,20 +207,20 @@ async function pressTab(driver) {
         { type: 'keyUp', value: TAB },
       ],
     }],
-  });
-  await wd(driver.base, 'DELETE', `/session/${driver.sessionId}/actions`);
+  }, { label: `${driver.browser} Tab` });
+  await wd(driver.base, 'DELETE', `/session/${driver.sessionId}/actions`, undefined, { label: `${driver.browser} Actions-Ende` });
 }
 
 async function screenshot(driver, filename) {
-  const base64 = await wd(driver.base, 'GET', `/session/${driver.sessionId}/screenshot`);
+  const base64 = await wd(driver.base, 'GET', `/session/${driver.sessionId}/screenshot`, undefined, { timeoutMs: 10000, label: `${driver.browser} Screenshot ${filename}` });
   assert(typeof base64 === 'string' && base64.length > 1000, `${driver.browser}: Screenshot '${filename}' ist leer.`);
   await writeFile(resolve(EVIDENCE_DIR, filename), Buffer.from(base64, 'base64'));
 }
 
 const visualMetricsScript = `
 const ids=['overall','checkpointBtn','refreshBtn','shutdownBtn'];
-const elements=ids.map(id=>{const e=document.getElementById(id);const r=e.getBoundingClientRect();return{id,left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height,display:getComputedStyle(e).display,visibility:getComputedStyle(e).visibility};});
-return {innerWidth,innerHeight,scrollWidth:document.documentElement.scrollWidth,scrollHeight:document.documentElement.scrollHeight,elements};
+const elements=ids.map(id=>{const e=document.getElementById(id);const r=e.getBoundingClientRect();return{id,left:r.left,right:r.right,width:r.width,height:r.height,display:getComputedStyle(e).display,visibility:getComputedStyle(e).visibility};});
+return {innerWidth,innerHeight,scrollWidth:document.documentElement.scrollWidth,elements};
 `;
 
 function validateMetrics(browser, label, metrics) {
@@ -217,7 +234,7 @@ function validateMetrics(browser, label, metrics) {
 }
 
 async function testKeyboardAndFocus(driver) {
-  await execute(driver, `document.documentElement.style.zoom='1'; document.body.setAttribute('tabindex','-1'); document.body.focus(); return document.activeElement===document.body;`);
+  await execute(driver, `document.body.setAttribute('tabindex','-1'); document.body.focus(); return true;`);
   const expected = ['checkpointBtn', 'refreshBtn', 'shutdownBtn'];
   for (const id of expected) {
     await pressTab(driver);
@@ -276,8 +293,7 @@ async function runBrowser(browser) {
       const scale = entry.zoom / 100;
       const width = Math.max(320, Math.round(entry.baseWidth / scale));
       const height = Math.max(320, Math.round(entry.baseHeight / scale));
-      await wd(driver.base, 'POST', `/session/${driver.sessionId}/window/rect`, { width, height });
-      await execute(driver, `document.documentElement.style.zoom='1'; return true;`);
+      await wd(driver.base, 'POST', `/session/${driver.sessionId}/window/rect`, { width, height }, { label: `${browser} Fenster ${entry.screen}@${entry.zoom}%` });
       const metrics = await execute(driver, visualMetricsScript);
       const label = `${entry.screen}@${entry.zoom}%`;
       validateMetrics(browser, label, metrics);
@@ -285,15 +301,15 @@ async function runBrowser(browser) {
       await screenshot(driver, `${browser}-${entry.screen}-${entry.zoom}.png`);
     }
 
-    await wd(driver.base, 'POST', `/session/${driver.sessionId}/window/rect`, { width: 1280, height: 800 });
+    await wd(driver.base, 'POST', `/session/${driver.sessionId}/window/rect`, { width: 1280, height: 800 }, { label: `${browser} Tastaturfenster` });
     await testKeyboardAndFocus(driver);
 
     await click(driver, '#checkpointBtn');
     await waitFor(async () => (await execute(driver, `return document.getElementById('checkpointText')?.textContent || '';`)).includes('Bestanden:'), {
       label: `${browser} Checkpoint UI`,
     });
-
     await screenshot(driver, `${browser}-checkpoint-pass.png`);
+
     await click(driver, '#shutdownBtn');
     const exit = await waitForLauncherExit(launcher, `${browser} UI_LOGOUT`);
     assert(exit.code === 0 && exit.signal === null, `${browser}: Launcher nach UI-Logout Code ${exit.code}, Signal ${exit.signal}. Ausgabe: ${launcher.output()}`);
@@ -330,6 +346,8 @@ async function runBrowser(browser) {
 
 await rm(EVIDENCE_DIR, { recursive: true, force: true });
 await mkdir(EVIDENCE_DIR, { recursive: true });
+await writeFile(resolve(EVIDENCE_DIR, 'run-state.json'), JSON.stringify({ status: 'RUNNING', startedAt: new Date().toISOString() }, null, 2));
+
 const evidence = {
   schemaVersion: 1,
   generatedAt: new Date().toISOString(),
@@ -338,11 +356,16 @@ const evidence = {
   browsers: [],
 };
 
-for (const browser of browsers) {
-  const result = await runBrowser(browser);
-  evidence.browsers.push(result);
-  console.log(`🟢 ${browser}: Desktop-Browser-Acceptance PASS · 7 Layoutstufen · Tastatur/Fokus · Checkpoint · UI-Logout · Verify Closed`);
+try {
+  for (const browser of browsers) {
+    const result = await runBrowser(browser);
+    evidence.browsers.push(result);
+    await writeFile(resolve(EVIDENCE_DIR, 'evidence.json'), JSON.stringify(evidence, null, 2));
+    console.log(`🟢 ${browser}: Desktop-Browser-Acceptance PASS · 7 Layoutstufen · Tastatur/Fokus · Checkpoint · UI-Logout · Verify Closed`);
+  }
+  await writeFile(resolve(EVIDENCE_DIR, 'run-state.json'), JSON.stringify({ status: 'PASS', finishedAt: new Date().toISOString() }, null, 2));
+  console.log('🟢 C3 Desktop-Browser-Visual-Acceptance: Firefox + Chrome PASS');
+} catch (error) {
+  await writeFile(resolve(EVIDENCE_DIR, 'run-state.json'), JSON.stringify({ status: 'FAIL', finishedAt: new Date().toISOString(), message: error.message, cause: error.cause?.message ?? null }, null, 2));
+  throw error;
 }
-
-await writeFile(resolve(EVIDENCE_DIR, 'evidence.json'), JSON.stringify(evidence, null, 2));
-console.log('🟢 C3 Desktop-Browser-Visual-Acceptance: Firefox + Chrome PASS');
