@@ -29,6 +29,7 @@ Die vollständigen Entwicklungs-, Qualitäts- und Architekturregeln stehen in:
 - **[docs/PROJECT_MASTERPROMPT.md](docs/PROJECT_MASTERPROMPT.md)** – verbindlicher Masterauftrag für den Neuaufbau
 - **[docs/DEPENDENCY_AUTOPILOT.md](docs/DEPENDENCY_AUTOPILOT.md)** – automatische und transparente Abhängigkeitsauflösung
 - **[docs/BACKEND_LIFECYCLE.md](docs/BACKEND_LIFECYCLE.md)** – automatischer Backend-Start, kontrollierter Shutdown, Logout-/Abbruchbehandlung
+- **[docs/LEARNING_MEMORY.md](docs/LEARNING_MEMORY.md)** – Gültigkeit, Review, Ablauf und Widerspruchsschutz des Lerngedächtnisses
 - **[docs/EXPERTISE_MATRIX.md](docs/EXPERTISE_MATRIX.md)** – multidisziplinäre Prüf- und Entwicklungs-Expertisen
 
 Diese Dokumente sind Teil des Projektvertrags und müssen bei relevanten Änderungen synchron gehalten werden.
@@ -134,18 +135,21 @@ Scheitert `VERIFY`, folgt Rollback statt stiller Fortsetzung.
 
 Bestätigte Erfahrungen sollen langfristig Fehler reduzieren.
 
-Geplant:
+Geplant bzw. im Foundation-Aufbau angelegt:
 
 - `knowledge/DECISIONS.jsonl`
 - `knowledge/OPEN_QUESTIONS.jsonl`
 - `knowledge/EXCLUSIONS.jsonl`
 - `knowledge/LEARNING_MEMORY.jsonl`
+- `knowledge/REGRESSION_REGISTRY.jsonl`
 
 Lernkette:
 
 `Beobachtung → Ursache → Lösung → Test → Evidenz → Regel → Regression → zukünftige Prävention`
 
-Eine einzelne Beobachtung wird niemals ungeprüft zur globalen Regel.
+Eine einzelne Beobachtung wird niemals ungeprüft zur globalen Regel. Bestätigte Regeln besitzen zusätzlich einen Gültigkeitsbereich, Review-Termin und optionales Ablaufdatum. Widersprechende aktive Regeln mit überlappendem Gültigkeitsbereich blockieren die Knowledge-Integrity-Prüfung, solange keine explizite Ablösung dokumentiert ist.
+
+Details: [docs/LEARNING_MEMORY.md](docs/LEARNING_MEMORY.md)
 
 ## Qualität und Expertisen
 
