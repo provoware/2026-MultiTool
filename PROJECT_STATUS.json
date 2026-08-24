@@ -19,11 +19,13 @@
     "master": "docs/PROJECT_MASTERPROMPT.md",
     "dependencies": "docs/DEPENDENCY_AUTOPILOT.md",
     "backend_lifecycle": "docs/BACKEND_LIFECYCLE.md",
+    "learning_memory": "docs/LEARNING_MEMORY.md",
     "expertise_matrix": "docs/EXPERTISE_MATRIX.md",
     "agents": "AGENTS.md"
   },
   "foundation": {
     "lifecycle_core": "src/core/lifecycle.mjs",
+    "knowledge_core": "src/core/knowledge.mjs",
     "learning_memory": "knowledge/LEARNING_MEMORY.jsonl",
     "regression_registry": "knowledge/REGRESSION_REGISTRY.jsonl",
     "lifecycle_failure_matrix": "tests/foundation/lifecycle_failure_matrix.mjs",
@@ -38,35 +40,52 @@
   },
   "validation": {
     "lifecycle_failure_matrix": {
-      "status": "PASS",
-      "cases": 5,
-      "passed": 5,
-      "scenarios": [
-        "PORT_OCCUPIED",
-        "BACKEND_START_FAILS",
-        "CTRL_C",
-        "STALE_PID",
-        "DEPENDENCY_MISSING"
-      ]
+      "status": "FOCUSED_PASS_PENDING_FULL_RERUN",
+      "cases_registered": 8,
+      "previous_cases_passed": 5,
+      "new_cases_focused_passed": 3,
+      "new_scenarios": [
+        "SIGTERM",
+        "BACKEND_HANG_TIMEOUT",
+        "FOREIGN_PORT_OWNER"
+      ],
+      "note": "Die drei neuen Szenarien wurden nach einem gefundenen und behobenen Readiness-Race fokussiert ausgeführt. Der vollständige 8er-Lauf bleibt als CI-/Foundation-Gate zu bestätigen."
     },
-    "knowledge_integrity": {
-      "status": "PASS",
-      "learning_records": 3,
-      "regressions": 6,
-      "checks": [
-        "JSONL_PARSE",
-        "UNIQUE_IDS",
-        "STATUS_ENUMS",
-        "CONFIDENCE_RANGE",
-        "LEARNING_REGRESSION_CROSS_REFERENCES",
-        "LOCAL_EVIDENCE_PATHS_EXIST",
-        "REGRESSION_TEST_PATHS_EXIST"
-      ]
+    "knowledge_governance": {
+      "status": "FOCUSED_CORE_PASS_PENDING_FULL_REGISTRY_RERUN",
+      "learning_records": 6,
+      "regressions": 10,
+      "schema_version": 2,
+      "implemented": [
+        "RULE_KEY",
+        "DECISION_EFFECT",
+        "PROJECT_PLATFORM_ENVIRONMENT_SCOPE",
+        "VALID_FROM_VALID_UNTIL",
+        "REVIEW_AT",
+        "EXPIRES_AT",
+        "SUPERSEDES",
+        "CONTRADICTION_DETECTION"
+      ],
+      "focused_checks_passed": [
+        "SYNTHETIC_CONTRADICTION_DETECTED",
+        "SUPERSEDES_RESOLVES_CONTRADICTION",
+        "INVALID_DATE_REJECTED",
+        "REVIEW_AND_EXPIRY_CLASSIFICATION"
+      ],
+      "note": "Der vollständige JSONL-/Cross-Reference-/Evidence-Lauf nach Schema-V2 bleibt im Foundation-Gate erneut zu bestätigen."
     },
     "ci_gate": {
       "workflow": ".github/workflows/ci.yml",
       "status": "CONFIGURED_NOT_YET_CONFIRMED_GREEN"
     }
+  },
+  "learning": {
+    "new_lessons": [
+      "LESSON-FOUNDATION-0004",
+      "LESSON-FOUNDATION-0005",
+      "LESSON-FOUNDATION-0006"
+    ],
+    "notable_finding": "Der erste Hang-Test enthielt selbst eine Race Condition, weil SIGTERM vor registriertem Handler gesendet werden konnte. Der Test verwendet nun einen expliziten READY-Handshake."
   },
   "checkpoints": {
     "C0_REPOSITORY_ARCHIVED": "PASS",
@@ -74,7 +93,7 @@
     "C2_CLEAN_FOUNDATION": "NOT_STARTED",
     "C3_START_ROUTINE": "PARTIAL",
     "C4_PROJECT_STATE": "NOT_STARTED",
-    "C5_LEARNING_MEMORY": "PASS_MINIMAL",
+    "C5_LEARNING_MEMORY": "PASS_EXTENDED_PENDING_FULL_GATE",
     "C6_RULE_ENGINE": "NOT_STARTED",
     "C7_FOUNDATION_GATE": "PARTIAL"
   },
@@ -84,6 +103,7 @@
     "Dependency Autopilot is specified and dependency detection primitive exists, but automatic resolution is not implemented yet.",
     "Backend lifecycle primitives and failure tests exist, but the real application backend/launcher is not implemented yet.",
     "GitHub Actions foundation gate is configured but its latest run has not yet been confirmed green.",
+    "The complete eight-case lifecycle matrix and full Schema-V2 knowledge registry must still be confirmed together by the complete foundation gate.",
     "No new HTML Foundation UI or Project State implementation exists yet."
   ],
   "next_step": "C2_CLEAN_FOUNDATION"
