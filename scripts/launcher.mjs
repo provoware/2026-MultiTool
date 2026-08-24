@@ -34,38 +34,6 @@ const child = spawn(process.execPath, ['src/backend/server.mjs'], {
 });
 await writeFile(pidFile, String(child.pid), 'utf8');
 
-const healthUrl = `http://${host}:${port}/api/health`;
-const ready = await waitForChildReadiness(child, {
-  timeoutMs: 5000,
-  pollMs: 100,
-  readinessProbe: async () => {
-    try {
-      const response = await fetch(healthUrl, { signal: AbortSignal.timeout(500) });
-      return response.ok;
-    } catch { return false; }
-  },
-});
-if (!ready.ready) {
-  status('🔴','BLOCKIERT',`Backend nicht bereit: ${ready.reason}`);
-  await terminateOwnedProcess(child, { timeoutMs: 800 });
-  await rm(pidFile, { force: true });
-  process.exit(30);
-}
-status('🟢','BACKEND','Readiness bestätigt');
-status('🟢','BEREIT',`http://${host}:${port}`);
-
-if (!process.argv.includes('--no-open')) {
-  const xdgOpen = process.platform === 'linux' ? await resolveExecutable('xdg-open') : null;
-  if (xdgOpen) {
-    const p = spawn(xdgOpen, [`http://${host}:${port}`], { stdio: 'ignore', detached: true });
-    p.once('error', () => status('🟡','BROWSER','Automatisches Öffnen fehlgeschlagen; URL bitte manuell öffnen.'));
-    p.unref();
-    status('🟢','BROWSER','Oberfläche wird geöffnet');
-  } else {
-    status('🟡','BROWSER',`Kein sicherer Auto-Opener gefunden. Bitte http://${host}:${port} manuell öffnen.`);
-  }
-}
-
 let closing = false;
 async function shutdown(reason) {
   if (closing) return;
@@ -84,9 +52,48 @@ async function shutdown(reason) {
   process.exit(result.stopped ? 0 : 31);
 }
 
+// Kritisch: Signalhandler müssen vor Readiness registriert sein. Sobald das Backend
+// erreichbar werden kann, darf ein SIGINT/SIGTERM/SIGHUP nicht mehr am Supervisor
+// vorbeilaufen und den eigenen Child-Prozess verwaisen lassen.
 process.on('SIGINT', () => void shutdown('SIGINT'));
 process.on('SIGTERM', () => void shutdown('SIGTERM'));
 process.on('SIGHUP', () => void shutdown('SIGHUP'));
+
+const healthUrl = `http://${host}:${port}/api/health`;
+const ready = await waitForChildReadiness(child, {
+  timeoutMs: 5000,
+  pollMs: 100,
+  readinessProbe: async () => {
+    try {
+      const response = await fetch(healthUrl, { signal: AbortSignal.timeout(500) });
+      return response.ok;
+    } catch { return false; }
+  },
+});
+if (!ready.ready) {
+  if (!closing) {
+    status('🔴','BLOCKIERT',`Backend nicht bereit: ${ready.reason}`);
+    await terminateOwnedProcess(child, { timeoutMs: 800 });
+    await rm(pidFile, { force: true });
+    process.exit(30);
+  }
+}
+if (!closing) {
+  status('🟢','BACKEND','Readiness bestätigt');
+  status('🟢','BEREIT',`http://${host}:${port}`);
+}
+
+if (!closing && !process.argv.includes('--no-open')) {
+  const xdgOpen = process.platform === 'linux' ? await resolveExecutable('xdg-open') : null;
+  if (xdgOpen) {
+    const p = spawn(xdgOpen, [`http://${host}:${port}`], { stdio: 'ignore', detached: true });
+    p.once('error', () => status('🟡','BROWSER','Automatisches Öffnen fehlgeschlagen; URL bitte manuell öffnen.'));
+    p.unref();
+    status('🟢','BROWSER','Oberfläche wird geöffnet');
+  } else {
+    status('🟡','BROWSER',`Kein sicherer Auto-Opener gefunden. Bitte http://${host}:${port} manuell öffnen.`);
+  }
+}
 
 child.once('exit', async (code) => {
   await rm(pidFile, { force: true });
