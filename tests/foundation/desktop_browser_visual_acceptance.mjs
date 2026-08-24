@@ -178,6 +178,10 @@ async function navigate(driver, url) {
   await wd(driver.base, 'POST', `/session/${driver.sessionId}/url`, { url }, { timeoutMs: 10000, label: `${driver.browser} Navigation` });
 }
 
+async function refreshPage(driver) {
+  await wd(driver.base, 'POST', `/session/${driver.sessionId}/refresh`, {}, { timeoutMs: 10000, label: `${driver.browser} Seiten-Reload` });
+}
+
 async function execute(driver, script, args = []) {
   return await wd(driver.base, 'POST', `/session/${driver.sessionId}/execute/sync`, { script, args }, { label: `${driver.browser} Script` });
 }
@@ -218,7 +222,7 @@ async function screenshot(driver, filename) {
 }
 
 const visualMetricsScript = `
-const ids=['overall','checkpointBtn','refreshBtn','shutdownBtn'];
+const ids=['overall','projectStateText','checkpointBtn','refreshBtn','shutdownBtn'];
 const elements=ids.map(id=>{const e=document.getElementById(id);const r=e.getBoundingClientRect();return{id,left:r.left,right:r.right,width:r.width,height:r.height,display:getComputedStyle(e).display,visibility:getComputedStyle(e).visibility};});
 return {innerWidth,innerHeight,scrollWidth:document.documentElement.scrollWidth,elements};
 `;
@@ -263,6 +267,10 @@ async function testContrast(driver) {
   for (const [name, ratio] of Object.entries(result)) assert(ratio >= 4.5, `${driver.browser}: Kontrast '${name}' nur ${ratio.toFixed(2)}:1.`);
 }
 
+async function readProjectStateMarker(driver) {
+  return await execute(driver, `const n=document.getElementById('projectStateText'); return {id:n?.dataset.projectId||'',revision:n?.dataset.revision||'',text:n?.textContent||''};`);
+}
+
 async function runBrowser(browser) {
   let driver = null;
   let launcher = null;
@@ -274,6 +282,19 @@ async function runBrowser(browser) {
     await waitFor(async () => (await execute(driver, `return document.getElementById('overall')?.textContent || '';`)).includes('Start erfolgreich'), {
       label: `${browser} UI Startstatus`,
     });
+
+    const projectStateBeforeReload = await readProjectStateMarker(driver);
+    assert(projectStateBeforeReload.id.length >= 8, `${browser}: Projektzustand besitzt keine sichtbare stabile Projekt-ID.`);
+    assert(projectStateBeforeReload.revision === '1', `${browser}: initiale Projektzustands-Revision ist nicht 1.`);
+    assert(projectStateBeforeReload.text.includes('Bestanden:'), `${browser}: Projektzustand wurde in der UI nicht als bestanden gemeldet.`);
+
+    await refreshPage(driver);
+    await waitFor(async () => (await execute(driver, `return document.getElementById('overall')?.textContent || '';`)).includes('Start erfolgreich'), {
+      label: `${browser} UI Startstatus nach Reload`,
+    });
+    const projectStateAfterReload = await readProjectStateMarker(driver);
+    assert(projectStateAfterReload.id === projectStateBeforeReload.id, `${browser}: Projekt-ID änderte sich nach Seiten-Reload.`);
+    assert(projectStateAfterReload.revision === projectStateBeforeReload.revision, `${browser}: Projektzustand wurde beim Reload unnötig neu geschrieben.`);
 
     await testReducedMotion(driver);
     await testContrast(driver);
@@ -328,6 +349,9 @@ async function runBrowser(browser) {
       platformName: driver.capabilities.platformName ?? 'unknown',
       matrix: measurements,
       keyboardOrder: ['checkpointBtn', 'refreshBtn', 'shutdownBtn'],
+      projectStateInitialLoad: 'PASS',
+      projectStateReloadPersistence: 'PASS',
+      projectStateRevisionStableOnReload: 'PASS',
       checkpoint: 'PASS',
       uiLogout: 'PASS',
       verifyClosed: 'PASS',
@@ -361,10 +385,10 @@ try {
     const result = await runBrowser(browser);
     evidence.browsers.push(result);
     await writeFile(resolve(EVIDENCE_DIR, 'evidence.json'), JSON.stringify(evidence, null, 2));
-    console.log(`🟢 ${browser}: Desktop-Browser-Acceptance PASS · 7 Layoutstufen · Tastatur/Fokus · Checkpoint · UI-Logout · Verify Closed`);
+    console.log(`🟢 ${browser}: Desktop-Browser-Acceptance PASS · Project State Reload · 7 Layoutstufen · Tastatur/Fokus · Checkpoint · UI-Logout · Verify Closed`);
   }
   await writeFile(resolve(EVIDENCE_DIR, 'run-state.json'), JSON.stringify({ status: 'PASS', finishedAt: new Date().toISOString() }, null, 2));
-  console.log('🟢 C3 Desktop-Browser-Visual-Acceptance: Firefox + Chrome PASS');
+  console.log('🟢 C3/C4 Desktop-Browser-Acceptance: Firefox + Chrome PASS');
 } catch (error) {
   await writeFile(resolve(EVIDENCE_DIR, 'run-state.json'), JSON.stringify({ status: 'FAIL', finishedAt: new Date().toISOString(), message: error.message, cause: error.cause?.message ?? null }, null, 2));
   throw error;
