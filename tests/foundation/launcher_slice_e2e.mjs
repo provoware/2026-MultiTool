@@ -1,6 +1,5 @@
 import { spawn } from 'node:child_process';
-import { access, mkdtemp, readFile, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { access, readFile, rm } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { isProcessAlive } from '../../src/core/lifecycle.mjs';
 
