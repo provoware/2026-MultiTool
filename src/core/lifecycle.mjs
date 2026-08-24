@@ -113,21 +113,39 @@ export async function waitForChildReadiness(child, options = {}) {
   return { ready: false, reason: 'READINESS_TIMEOUT', exitCode: child.exitCode };
 }
 
+export async function waitForProcessExit(child, timeoutMs = 1200) {
+  if (!child || child.exitCode !== null || child.signalCode !== null) return true;
+
+  return await new Promise((resolve) => {
+    let settled = false;
+    let timer;
+    const finish = (value) => {
+      if (settled) return;
+      settled = true;
+      if (timer) clearTimeout(timer);
+      child.removeListener('exit', onExit);
+      resolve(value);
+    };
+    const onExit = () => finish(true);
+
+    child.once('exit', onExit);
+    timer = setTimeout(() => finish(child.exitCode !== null || child.signalCode !== null), timeoutMs);
+
+    // Race-Schutz: Prozess kann zwischen obiger Vorprüfung und Listener-Registrierung beendet worden sein.
+    if (child.exitCode !== null || child.signalCode !== null) finish(true);
+  });
+}
+
 export async function terminateOwnedProcess(child, options = {}) {
   const timeoutMs = options.timeoutMs ?? 1200;
+  const escalationTimeoutMs = options.escalationTimeoutMs ?? Math.max(500, timeoutMs);
   const signal = options.signal ?? 'SIGTERM';
-  if (!child || child.exitCode !== null) return { stopped: true, escalated: false };
+  if (!child || child.exitCode !== null || child.signalCode !== null) return { stopped: true, escalated: false };
 
   child.kill(signal);
-
-  const stoppedGracefully = await Promise.race([
-    new Promise((resolve) => child.once('exit', () => resolve(true))),
-    new Promise((resolve) => setTimeout(() => resolve(false), timeoutMs)),
-  ]);
-
-  if (stoppedGracefully || child.exitCode !== null) return { stopped: true, escalated: false };
+  if (await waitForProcessExit(child, timeoutMs)) return { stopped: true, escalated: false };
 
   child.kill('SIGKILL');
-  await new Promise((resolve) => child.once('exit', resolve));
-  return { stopped: true, escalated: true };
+  const stoppedAfterEscalation = await waitForProcessExit(child, escalationTimeoutMs);
+  return { stopped: stoppedAfterEscalation, escalated: true };
 }
