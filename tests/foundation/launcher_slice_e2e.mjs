@@ -28,6 +28,7 @@ async function waitForLauncherExit(launcher, timeoutMs, name, outputRef){
   }
   return await new Promise((resolveExit,rejectExit)=>{
     let settled=false;
+    let timer;
     const finish=(fn,value)=>{
       if(settled)return;
       settled=true;
@@ -37,7 +38,7 @@ async function waitForLauncherExit(launcher, timeoutMs, name, outputRef){
     };
     const onExit=(code,signal)=>finish(resolveExit,{code,signal});
     launcher.once('exit',onExit);
-    const timer=setTimeout(()=>finish(rejectExit,new Error(`${name}: Launcher-Exit nach ${timeoutMs} ms nicht eingetreten. Ausgabe: ${outputRef()}`)),timeoutMs);
+    timer=setTimeout(()=>finish(rejectExit,new Error(`${name}: Launcher-Exit nach ${timeoutMs} ms nicht eingetreten. Ausgabe: ${outputRef()}`)),timeoutMs);
     if(launcher.exitCode!==null || launcher.signalCode!==null) finish(resolveExit,{code:launcher.exitCode,signal:launcher.signalCode});
   });
 }
@@ -56,11 +57,13 @@ async function runScenario(name, shutdownAction){
   launcher.stderr.on('data',data=>output+=data);
   let backendPid=null;
   try{
-    const health=await waitUntil(async()=>{
-      const response=await fetch(`http://127.0.0.1:${port}/api/health`,{signal:AbortSignal.timeout(400)});
-      return response.ok?response.json():false;
-    },7000,80,`${name}: Backend-Readiness`);
-    assert(health.status==='ok',`${name}: Health-Status ist nicht ok.`);
+    const readyStatus=await waitUntil(async()=>{
+      const response=await fetch(`http://127.0.0.1:${port}/api/status`,{signal:AbortSignal.timeout(400),cache:'no-store'});
+      if(!response.ok)return false;
+      const body=await response.json();
+      return body.status==='ready'&&body.userReady===true?body:false;
+    },7000,80,`${name}: launcher-autorisierte USER_READY-Readiness`);
+
     backendPid=Number((await readFile(pidFile,'utf8')).trim());
     assert(Number.isInteger(backendPid)&&backendPid>0,`${name}: Backend-PID ungültig.`);
     assert(isProcessAlive(backendPid),`${name}: Backend lebt nach Readiness nicht.`);
@@ -68,7 +71,7 @@ async function runScenario(name, shutdownAction){
     const checkpointResponse=await fetch(`http://127.0.0.1:${port}/api/checkpoint`,{method:'POST'});
     assert(checkpointResponse.ok,`${name}: Checkpoint-API fehlgeschlagen.`);
     const checkpoint=JSON.parse(await readFile(checkpointFile,'utf8'));
-    assert(checkpoint.session===health.session,`${name}: Checkpoint gehört nicht zur aktiven Session.`);
+    assert(checkpoint.session===readyStatus.session,`${name}: Checkpoint gehört nicht zur aktiven Session.`);
 
     await shutdownAction({launcher,port});
     const exit=await waitForLauncherExit(launcher,5000,name,()=>output);
