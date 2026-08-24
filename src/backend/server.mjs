@@ -8,7 +8,9 @@ const host = process.env.PROVOWARE_HOST || '127.0.0.1';
 const port = Number(process.env.PROVOWARE_PORT || 5000);
 const session = process.env.PROVOWARE_SESSION || 'unknown';
 const processOwner = process.env.PROVOWARE_PROCESS_OWNER || 'unknown';
+const controlToken = process.env.PROVOWARE_CONTROL_TOKEN || '';
 const checkpointPath = join(ROOT, 'runtime', 'last-checkpoint.json');
+let userReady = false;
 
 const types = { '.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.json':'application/json; charset=utf-8' };
 const json = (res, code, body) => { res.writeHead(code, { 'content-type':'application/json; charset=utf-8', 'cache-control':'no-store', 'x-content-type-options':'nosniff' }); res.end(JSON.stringify(body)); };
@@ -17,17 +19,28 @@ async function writeCheckpoint(reason) {
   await writeFile(checkpointPath, JSON.stringify(record, null, 2), 'utf8');
   return record;
 }
+function authorizedControlRequest(req) {
+  return processOwner === 'launcher'
+    && controlToken.length >= 20
+    && req.headers['x-provoware-control-token'] === controlToken;
+}
 
 const server = http.createServer(async (req, res) => {
   try {
     if (req.url === '/api/health') return json(res, 200, { status:'ok', session, pid:process.pid, port });
-    if (req.url === '/api/status') return json(res, 200, { status:'ready', session, localOnly: host === '127.0.0.1' });
+    if (req.url === '/api/status') return json(res, 200, { status:userReady?'ready':'starting', session, localOnly: host === '127.0.0.1', userReady });
+    if (req.url === '/api/launcher-ready' && req.method === 'POST') {
+      if (!authorizedControlRequest(req)) return json(res, 403, { status:'blocked', reason:'invalid-control-token' });
+      userReady = true;
+      return json(res, 200, { status:'ready', session });
+    }
     if (req.url === '/api/checkpoint' && req.method === 'POST') {
       const record = await writeCheckpoint('api-checkpoint');
       return json(res, 200, { status:'saved', ...record });
     }
     if (req.url === '/api/shutdown' && req.method === 'POST') {
       if (processOwner !== 'launcher') return json(res, 409, { status:'blocked', reason:'no-process-owner' });
+      if (!userReady) return json(res, 409, { status:'blocked', reason:'launcher-not-ready' });
       const record = await writeCheckpoint('UI_LOGOUT');
       res.once('finish', () => void stop('UI_LOGOUT', { deterministicExit:true }));
       return json(res, 202, { status:'accepted', checkpointAt:record.at, reason:'UI_LOGOUT' });
