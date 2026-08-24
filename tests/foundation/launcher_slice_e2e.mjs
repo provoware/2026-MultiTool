@@ -9,20 +9,37 @@ const pidFile = join(runtimeDir, 'backend.pid');
 const checkpointFile = join(runtimeDir, 'last-checkpoint.json');
 
 function assert(condition, message){ if(!condition) throw new Error(message); }
-async function waitUntil(fn, timeoutMs=7000, pollMs=80){
+async function waitUntil(fn, timeoutMs=7000, pollMs=80, label='Zustand'){
   const started=Date.now();
   while(Date.now()-started<timeoutMs){
     try{
       const value=await fn();
       if(value)return value;
     }catch(error){
-      if(error?.name!=='TimeoutError' && error?.cause?.code!=='ECONNREFUSED'){
-        // Andere kurzzeitige Netzwerkfehler werden bis zum Timeout erneut geprüft.
-      }
+      if(error?.name!=='TimeoutError' && error?.cause?.code!=='ECONNREFUSED') void error;
     }
     await new Promise(resolveWait=>setTimeout(resolveWait,pollMs));
   }
-  throw new Error('Timeout beim Warten auf erwarteten Zustand.');
+  throw new Error(`Timeout beim Warten auf: ${label}.`);
+}
+async function waitForLauncherExit(launcher, timeoutMs, name, outputRef){
+  if(launcher.exitCode!==null || launcher.signalCode!==null){
+    return {code:launcher.exitCode, signal:launcher.signalCode};
+  }
+  return await new Promise((resolveExit,rejectExit)=>{
+    let settled=false;
+    const finish=(fn,value)=>{
+      if(settled)return;
+      settled=true;
+      clearTimeout(timer);
+      launcher.removeListener('exit',onExit);
+      fn(value);
+    };
+    const onExit=(code,signal)=>finish(resolveExit,{code,signal});
+    launcher.once('exit',onExit);
+    const timer=setTimeout(()=>finish(rejectExit,new Error(`${name}: Launcher-Exit nach ${timeoutMs} ms nicht eingetreten. Ausgabe: ${outputRef()}`)),timeoutMs);
+    if(launcher.exitCode!==null || launcher.signalCode!==null) finish(resolveExit,{code:launcher.exitCode,signal:launcher.signalCode});
+  });
 }
 async function pathExists(path){try{await access(path);return true;}catch{return false;}}
 
@@ -42,7 +59,7 @@ async function runScenario(name, shutdownAction){
     const health=await waitUntil(async()=>{
       const response=await fetch(`http://127.0.0.1:${port}/api/health`,{signal:AbortSignal.timeout(400)});
       return response.ok?response.json():false;
-    });
+    },7000,80,`${name}: Backend-Readiness`);
     assert(health.status==='ok',`${name}: Health-Status ist nicht ok.`);
     backendPid=Number((await readFile(pidFile,'utf8')).trim());
     assert(Number.isInteger(backendPid)&&backendPid>0,`${name}: Backend-PID ungültig.`);
@@ -54,9 +71,9 @@ async function runScenario(name, shutdownAction){
     assert(checkpoint.session===health.session,`${name}: Checkpoint gehört nicht zur aktiven Session.`);
 
     await shutdownAction({launcher,port});
-    await waitUntil(()=>launcher.exitCode!==null,5000);
-    assert(launcher.exitCode===0,`${name}: Launcher endete mit Code ${launcher.exitCode}. Ausgabe: ${output}`);
-    await waitUntil(()=>!isProcessAlive(backendPid),3000);
+    const exit=await waitForLauncherExit(launcher,5000,name,()=>output);
+    assert(exit.code===0,`${name}: Launcher endete mit Code ${exit.code}, Signal ${exit.signal}. Ausgabe: ${output}`);
+    await waitUntil(()=>!isProcessAlive(backendPid),3000,80,`${name}: Backend-Prozessende`);
     assert(!(await pathExists(pidFile)),`${name}: PID-Datei blieb nach Shutdown liegen.`);
     let reachable=true;
     try{
@@ -68,7 +85,7 @@ async function runScenario(name, shutdownAction){
     assert(!reachable,`${name}: Backend nach Verify Closed weiterhin erreichbar.`);
     console.log(`🟢 Launcher-E2E ${name}: Checkpoint → Shutdown → Verify Closed PASS`);
   }finally{
-    if(launcher.exitCode===null)launcher.kill('SIGKILL');
+    if(launcher.exitCode===null && launcher.signalCode===null)launcher.kill('SIGKILL');
     if(backendPid&&isProcessAlive(backendPid)){
       try{process.kill(backendPid,'SIGKILL');}catch(error){void error;}
     }
