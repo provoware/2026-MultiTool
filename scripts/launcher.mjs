@@ -1,7 +1,13 @@
 import { spawn } from 'node:child_process';
 import { mkdir, writeFile, rm } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { terminateOwnedProcess, waitForChildReadiness, findAvailablePort, resolveExecutable } from '../src/core/lifecycle.mjs';
+import {
+  terminateOwnedProcess,
+  waitForChildReadiness,
+  waitForProcessExit,
+  findAvailablePort,
+  resolveExecutable,
+} from '../src/core/lifecycle.mjs';
 
 const ROOT = resolve(new URL('..', import.meta.url).pathname);
 const runtime = resolve(ROOT, 'runtime');
@@ -71,8 +77,19 @@ async function shutdown(reason, options = {}) {
     }
   }
 
-  status('🔵','SHUTDOWN','Beende eigenes Backend kontrolliert …');
-  const result = await terminateOwnedProcess(child, { timeoutMs: 1500, escalationTimeoutMs: 1500 });
+  let result;
+  if (options.authorizeChild === true && child.connected) {
+    status('🔵','SHUTDOWN','Autorisiere Backend zum kontrollierten Selbst-Shutdown …');
+    child.send({ type:'shutdown-authorized', reason });
+    const stoppedGracefully = await waitForProcessExit(child, 1500);
+    result = stoppedGracefully
+      ? { stopped:true, escalated:false }
+      : await terminateOwnedProcess(child, { timeoutMs:800, escalationTimeoutMs:800 });
+  } else {
+    status('🔵','SHUTDOWN','Beende eigenes Backend kontrolliert …');
+    result = await terminateOwnedProcess(child, { timeoutMs:1500, escalationTimeoutMs:1500 });
+  }
+
   await rm(pidFile, { force: true });
   status(result.stopped ? '🟢' : '🔴','SHUTDOWN',result.escalated ? 'Backend beendet (Eskalation nötig)' : 'Backend sauber beendet');
   process.exit(result.stopped ? 0 : 31);
@@ -80,7 +97,10 @@ async function shutdown(reason, options = {}) {
 
 child.on('message', (message) => {
   if (message?.type === 'shutdown-request') {
-    void shutdown(message.reason || 'UI_LOGOUT', { checkpointDone: message.checkpointDone === true });
+    void shutdown(message.reason || 'UI_LOGOUT', {
+      checkpointDone: message.checkpointDone === true,
+      authorizeChild: true,
+    });
   }
 });
 process.on('SIGINT', () => void shutdown('SIGINT'));
