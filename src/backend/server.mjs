@@ -10,7 +10,7 @@ const session = process.env.PROVOWARE_SESSION || 'unknown';
 const checkpointPath = join(ROOT, 'runtime', 'last-checkpoint.json');
 
 const types = { '.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.json':'application/json; charset=utf-8' };
-const json = (res, code, body) => { res.writeHead(code, { 'content-type':'application/json; charset=utf-8', 'cache-control':'no-store', 'x-content-type-options':'nosn' }); res.end(JSON.stringify(body)); };
+const json = (res, code, body) => { res.writeHead(code, { 'content-type':'application/json; charset=utf-8', 'cache-control':'no-store', 'x-content-type-options':'nosniff' }); res.end(JSON.stringify(body)); };
 async function writeCheckpoint(reason) {
   const record = { session, pid:process.pid, at:new Date().toISOString(), reason };
   await writeFile(checkpointPath, JSON.stringify(record, null, 2), 'utf8');
@@ -56,6 +56,10 @@ async function stop(signal) {
   if (typeof server.closeAllConnections === 'function') server.closeAllConnections();
   setTimeout(() => process.exit(1), 1200).unref();
 }
+
+process.on('message', (message) => {
+  if (message?.type === 'shutdown-authorized') void stop(message.reason || 'UI_LOGOUT');
+});
 process.on('SIGTERM', () => void stop('SIGTERM'));
 process.on('SIGINT', () => void stop('SIGINT'));
 process.on('SIGHUP', () => void stop('SIGHUP'));
