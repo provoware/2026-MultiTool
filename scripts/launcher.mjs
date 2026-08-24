@@ -56,24 +56,32 @@ if (!process.argv.includes('--no-open')) {
 }
 
 let closing = false;
-async function shutdown(reason) {
+async function shutdown(reason, options = {}) {
   if (closing) return;
   closing = true;
-  status('🔵','CHECKPOINT',`Sichere Session vor ${reason} …`);
-  try {
-    await fetch(`http://${host}:${port}/api/checkpoint`, { method: 'POST', signal: AbortSignal.timeout(1000) });
-  } catch {
-    await writeFile(checkpointFile, JSON.stringify({ session, reason, at: new Date().toISOString(), fallback: true }, null, 2));
+
+  if (options.checkpointDone) {
+    status('🟢','CHECKPOINT',`Session vor ${reason} bereits gesichert`);
+  } else {
+    status('🔵','CHECKPOINT',`Sichere Session vor ${reason} …`);
+    try {
+      await fetch(`http://${host}:${port}/api/checkpoint`, { method: 'POST', signal: AbortSignal.timeout(1000) });
+    } catch {
+      await writeFile(checkpointFile, JSON.stringify({ session, reason, at: new Date().toISOString(), fallback: true }, null, 2));
+    }
   }
+
   status('🔵','SHUTDOWN','Beende eigenes Backend kontrolliert …');
-  const result = await terminateOwnedProcess(child, { timeoutMs: 1500 });
+  const result = await terminateOwnedProcess(child, { timeoutMs: 1500, escalationTimeoutMs: 1500 });
   await rm(pidFile, { force: true });
   status(result.stopped ? '🟢' : '🔴','SHUTDOWN',result.escalated ? 'Backend beendet (Eskalation nötig)' : 'Backend sauber beendet');
   process.exit(result.stopped ? 0 : 31);
 }
 
 child.on('message', (message) => {
-  if (message?.type === 'shutdown-request') void shutdown(message.reason || 'UI_LOGOUT');
+  if (message?.type === 'shutdown-request') {
+    void shutdown(message.reason || 'UI_LOGOUT', { checkpointDone: message.checkpointDone === true });
+  }
 });
 process.on('SIGINT', () => void shutdown('SIGINT'));
 process.on('SIGTERM', () => void shutdown('SIGTERM'));
