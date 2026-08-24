@@ -14,7 +14,7 @@ function parseJsonl(text, label) {
       try {
         return JSON.parse(line);
       } catch (error) {
-        throw new Error(`${label}: ungültiges JSON in Zeile ${index + 1}: ${error.message}`);
+        throw new Error(`${label}: ungültiges JSON in Zeile ${index + 1}: ${error.message}`, { cause: error });
       }
     });
   if (!rows.length) throw new Error(`${label}: Datei enthält keine Datensätze.`);
