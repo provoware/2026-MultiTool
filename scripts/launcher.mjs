@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { writeFile, rm } from 'node:fs/promises';
+import { mkdir, writeFile, rm } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { terminateOwnedProcess, waitForChildReadiness, findAvailablePort, resolveExecutable } from '../src/core/lifecycle.mjs';
 
@@ -9,6 +9,7 @@ const pidFile = resolve(runtime, 'backend.pid');
 const checkpointFile = resolve(runtime, 'last-checkpoint.json');
 const host = '127.0.0.1';
 const preferredPort = Number(process.env.PORT || 5000);
+await mkdir(runtime, { recursive: true });
 const port = await findAvailablePort(preferredPort, { host, attempts: 30 });
 const session = `${Date.now()}-${process.pid}`;
 
@@ -18,7 +19,7 @@ status('🔵','BACKEND',`Session ${session}, Port ${port}`);
 const child = spawn(process.execPath, ['src/backend/server.mjs'], {
   cwd: ROOT,
   env: { ...process.env, PROVOWARE_HOST: host, PROVOWARE_PORT: String(port), PROVOWARE_SESSION: session },
-  stdio: ['ignore','inherit','inherit'],
+  stdio: ['ignore','inherit','inherit','ipc'],
 });
 await writeFile(pidFile, String(child.pid), 'utf8');
 
@@ -70,6 +71,10 @@ async function shutdown(reason) {
   status(result.stopped ? '🟢' : '🔴','SHUTDOWN',result.escalated ? 'Backend beendet (Eskalation nötig)' : 'Backend sauber beendet');
   process.exit(result.stopped ? 0 : 31);
 }
+
+child.on('message', (message) => {
+  if (message?.type === 'shutdown-request') void shutdown(message.reason || 'UI_LOGOUT');
+});
 process.on('SIGINT', () => void shutdown('SIGINT'));
 process.on('SIGTERM', () => void shutdown('SIGTERM'));
 process.on('SIGHUP', () => void shutdown('SIGHUP'));
