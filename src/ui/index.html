@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PROVOWARE 2026-MultiTool</title>
+<style>
+:root{color-scheme:light;--bg:#f5f7fb;--panel:#fff;--text:#172033;--muted:#667085;--blue:#2563eb;--green:#15803d;--amber:#b45309;--red:#b91c1c;--line:#d9e0ea;--focus:#7c3aed}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.55 system-ui,sans-serif}.shell{max-width:1120px;margin:auto;padding:24px}.top{display:flex;gap:16px;align-items:center;justify-content:space-between;margin-bottom:20px}.brand h1{margin:0;font-size:clamp(1.5rem,3vw,2.2rem)}.brand p{margin:.25rem 0;color:var(--muted)}.badge{padding:.45rem .75rem;border:1px solid var(--line);border-radius:999px;background:var(--panel);font-weight:700}.grid{display:grid;grid-template-columns:2fr 1fr;gap:20px}.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:0 8px 24px rgba(23,32,51,.06)}h2{margin-top:0}.steps{display:grid;gap:12px}.step{display:grid;grid-template-columns:2rem 1fr;gap:12px;align-items:start;padding:12px;border:1px solid var(--line);border-radius:12px}.icon{font-size:1.2rem}.status-ok{color:var(--green)}.status-work{color:var(--blue)}.status-warn{color:var(--amber)}.status-bad{color:var(--red)}button{min-height:44px;border:0;border-radius:10px;padding:.7rem 1rem;font:inherit;font-weight:700;cursor:pointer}button.primary{background:var(--blue);color:white}button.secondary{background:#eef2ff;color:var(--text)}button:focus-visible,a:focus-visible{outline:3px solid var(--focus);outline-offset:3px}.actions{display:flex;gap:10px;flex-wrap:wrap}.meta{display:grid;gap:10px}.meta div{padding:10px 0;border-bottom:1px solid var(--line)}.meta strong{display:block}.small{color:var(--muted);font-size:.93rem}#live{position:absolute;left:-9999px}@media(max-width:760px){.grid{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}.shell{padding:14px}}@media(prefers-reduced-motion:no-preference){.card{transition:transform .15s ease}.card:hover{transform:translateY(-1px)}}
+</style>
+</head>
+<body>
+<div class="shell">
+<header class="top"><div class="brand"><h1>PROVOWARE 2026-MultiTool</h1><p>Foundation V0.1.0 · lokaler, transparenter Start</p></div><div id="overall" class="badge">🔵 Prüfe System …</div></header>
+<main class="grid">
+<section class="card" aria-labelledby="today"><h2 id="today">Heute</h2><p>Der erste echte Nutzerweg ist aktiv. Diese Ansicht zeigt, was beim Start tatsächlich geprüft wurde.</p><div class="steps" id="steps">
+<div class="step"><div class="icon">🔵</div><div><strong>Backend</strong><div id="backendText" class="small">Verbindung wird geprüft …</div></div></div>
+<div class="step"><div class="icon">🔵</div><div><strong>Lokaler Betrieb</strong><div id="localText" class="small">Prüfung läuft …</div></div></div>
+<div class="step"><div class="icon">🔵</div><div><strong>Checkpoint</strong><div id="checkpointText" class="small">Noch nicht getestet.</div></div></div>
+</div><div class="actions" style="margin-top:18px"><button class="primary" id="checkpointBtn">Checkpoint jetzt prüfen</button><button class="secondary" id="refreshBtn">Status neu prüfen</button></div></section>
+<aside class="card" aria-labelledby="details"><h2 id="details">Transparenz</h2><div class="meta"><div><strong>Modus</strong><span>Einfach / Foundation</span></div><div><strong>Netzwerk</strong><span>Nur localhost</span></div><div><strong>Backend-Ownership</strong><span>Launcher verwaltet Prozess</span></div><div><strong>Beenden</strong><span>Checkpoint → Shutdown → Verify</span></div></div><p class="small">Farbe ist nur Unterstützung. Jeder Zustand wird zusätzlich mit Symbol und Klartext angegeben.</p></aside>
+</main>
+<div id="live" aria-live="polite"></div>
+</div>
+<script>
+const $=id=>document.getElementById(id);const live=t=>$('live').textContent=t;
+async function refresh(){try{const r=await fetch('/api/status',{cache:'no-store'});const s=await r.json();$('backendText').textContent=`Bereit · Session ${s.session}`;$('localText').textContent=s.localOnly?'Bestanden: Backend nur lokal erreichbar.':'Warnung: Backend nicht nur lokal gebunden.';$('overall').textContent=s.localOnly?'🟢 Start erfolgreich':'🟡 Start mit Hinweis';live($('overall').textContent)}catch(e){$('backendText').textContent='Fehler: Backend nicht erreichbar.';$('overall').textContent='🔴 Backend nicht erreichbar';live('Backend nicht erreichbar')}}
+$('checkpointBtn').addEventListener('click',async()=>{try{const r=await fetch('/api/checkpoint',{method:'POST'});const s=await r.json();$('checkpointText').textContent=`Bestanden: ${new Date(s.at).toLocaleTimeString()}`;live('Checkpoint erfolgreich gespeichert')}catch{$('checkpointText').textContent='Fehler: Checkpoint konnte nicht gespeichert werden.';live('Checkpoint fehlgeschlagen')}});$('refreshBtn').addEventListener('click',refresh);refresh();
+</script>
+</body></html>
