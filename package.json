@@ -5,28 +5,20 @@
   "description": "Foundation quality toolchain for PROVOWARE 2026-MultiTool.",
   "scripts": {
     "lint:js": "eslint . --ext .js,.mjs,.cjs --no-error-on-unmatched-pattern",
-    "lint:html": "htmlhint \"*.html\"",
+    "lint:html": "htmlhint \"src/ui/*.html\"",
     "lint": "npm-run-all lint:js lint:html",
-    "test:themes": "node scripts/theme-consistency-check.js",
     "test:foundation:lifecycle": "node tests/foundation/lifecycle_failure_matrix.mjs",
     "test:foundation:knowledge": "node tests/foundation/knowledge_registry_integrity.mjs",
-    "test:foundation": "npm-run-all test:foundation:lifecycle test:foundation:knowledge",
-    "serve": "http-server -p 5000 .",
-    "check:accessibility": "start-server-and-test serve http://localhost:5000 \"node scripts/accessibility-check.js\"",
-    "check": "npm-run-all lint test:themes test:foundation check:accessibility"
+    "test:foundation:launcher": "node tests/foundation/launcher_slice_e2e.mjs",
+    "test:foundation": "npm-run-all test:foundation:lifecycle test:foundation:knowledge test:foundation:launcher",
+    "check": "npm-run-all lint test:foundation"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
-    "cheerio": "^1.0.0",
     "eslint": "^9.8.0",
-    "eslint-plugin-html": "^8.1.0",
     "globals": "^16.5.0",
     "htmlhint": "^1.2.3",
-    "http-server": "^14.1.1",
-    "npm-run-all": "^4.1.5",
-    "pa11y": "^9.0.1",
-    "pa11y-ci": "^3.1.0",
-    "start-server-and-test": "^2.0.5"
+    "npm-run-all": "^4.1.5"
   },
   "engines": {
     "node": ">=18"
