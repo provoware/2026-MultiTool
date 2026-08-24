@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { readFile, writeFile, rm } from 'node:fs/promises';
+import { writeFile, rm } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { terminateOwnedProcess, waitForChildReadiness, findAvailablePort } from '../src/core/lifecycle.mjs';
 
