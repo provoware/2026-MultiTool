@@ -26,85 +26,120 @@
   "foundation": {
     "lifecycle_core": "src/core/lifecycle.mjs",
     "knowledge_core": "src/core/knowledge.mjs",
+    "launcher": "scripts/launcher.mjs",
+    "backend": "src/backend/server.mjs",
+    "foundation_ui": "src/ui/index.html",
     "learning_memory": "knowledge/LEARNING_MEMORY.jsonl",
     "regression_registry": "knowledge/REGRESSION_REGISTRY.jsonl",
     "lifecycle_failure_matrix": "tests/foundation/lifecycle_failure_matrix.mjs",
+    "lifecycle_exit_race_test": "tests/foundation/process_exit_race.mjs",
+    "launcher_e2e_test": "tests/foundation/launcher_slice_e2e.mjs",
     "knowledge_integrity_test": "tests/foundation/knowledge_registry_integrity.mjs"
   },
   "quality": {
     "specification": "PARTIAL",
-    "implementation": "PARTIAL",
-    "automated_validation": "PARTIAL_PASS",
+    "implementation": "FOUNDATION_SLICE_PASS",
+    "automated_validation": "PASS_CURRENT_FOUNDATION_SCOPE",
     "manual_validation": "NOT_RUN",
     "release_ready": false
   },
   "validation": {
+    "c2_acceptance": {
+      "status": "PASS",
+      "candidate_sha": "4c39547be9f419336bc2b991739f4eb0d293665c",
+      "pull_request": 14,
+      "workflow_run_id": 32734599138,
+      "workflow_run_number": 142,
+      "workflow_conclusion": "success",
+      "launcher_end_paths": "2/2 PASS",
+      "verified_path": [
+        "START",
+        "PREFLIGHT",
+        "BACKEND_START",
+        "HEALTH",
+        "LAUNCHER_AUTHORIZED_USER_READY",
+        "CHECKPOINT",
+        "SIGTERM_OR_UI_LOGOUT",
+        "BACKEND_SHUTDOWN",
+        "VERIFY_CLOSED"
+      ]
+    },
     "lifecycle_failure_matrix": {
-      "status": "FOCUSED_PASS_PENDING_FULL_RERUN",
+      "status": "PASS",
       "cases_registered": 8,
-      "previous_cases_passed": 5,
-      "new_cases_focused_passed": 3,
-      "new_scenarios": [
+      "cases_passed": 8,
+      "scenarios": [
+        "PORT_OCCUPIED",
+        "BACKEND_START_FAILS",
+        "CTRL_C",
+        "STALE_PID",
+        "DEPENDENCY_MISSING",
         "SIGTERM",
         "BACKEND_HANG_TIMEOUT",
         "FOREIGN_PORT_OWNER"
-      ],
-      "note": "Die drei neuen Szenarien wurden nach einem gefundenen und behobenen Readiness-Race fokussiert ausgeführt. Der vollständige 8er-Lauf bleibt als CI-/Foundation-Gate zu bestätigen."
+      ]
+    },
+    "lifecycle_exit_race": {
+      "status": "PASS",
+      "regression": "REG-LIFE-009",
+      "protects": "Exit-vor-Listener-Race und bounded shutdown"
+    },
+    "launcher_e2e": {
+      "status": "PASS",
+      "sigterm": "PASS",
+      "ui_logout": "PASS",
+      "verify_closed": "PASS"
     },
     "knowledge_governance": {
-      "status": "FOCUSED_CORE_PASS_PENDING_FULL_REGISTRY_RERUN",
-      "learning_records": 6,
-      "regressions": 10,
+      "status": "PASS_CURRENT_SCHEMA_V2_SCOPE",
+      "learning_records": 8,
+      "regressions": 13,
       "schema_version": 2,
-      "implemented": [
-        "RULE_KEY",
-        "DECISION_EFFECT",
-        "PROJECT_PLATFORM_ENVIRONMENT_SCOPE",
-        "VALID_FROM_VALID_UNTIL",
-        "REVIEW_AT",
-        "EXPIRES_AT",
-        "SUPERSEDES",
-        "CONTRADICTION_DETECTION"
-      ],
-      "focused_checks_passed": [
-        "SYNTHETIC_CONTRADICTION_DETECTED",
-        "SUPERSEDES_RESOLVES_CONTRADICTION",
-        "INVALID_DATE_REJECTED",
-        "REVIEW_AND_EXPIRY_CLASSIFICATION"
-      ],
-      "note": "Der vollständige JSONL-/Cross-Reference-/Evidence-Lauf nach Schema-V2 bleibt im Foundation-Gate erneut zu bestätigen."
+      "cross_references": "PASS",
+      "active_rule_conflicts": 0,
+      "review_due_active_rules": 0
     },
     "ci_gate": {
       "workflow": ".github/workflows/ci.yml",
-      "status": "CONFIGURED_NOT_YET_CONFIRMED_GREEN"
+      "status": "PASS",
+      "node": 24,
+      "candidate_sha": "4c39547be9f419336bc2b991739f4eb0d293665c",
+      "workflow_run_id": 32734599138
     }
   },
   "learning": {
     "new_lessons": [
       "LESSON-FOUNDATION-0004",
       "LESSON-FOUNDATION-0005",
-      "LESSON-FOUNDATION-0006"
+      "LESSON-FOUNDATION-0006",
+      "LESSON-FOUNDATION-0007",
+      "LESSON-FOUNDATION-0008"
     ],
-    "notable_finding": "Der erste Hang-Test enthielt selbst eine Race Condition, weil SIGTERM vor registriertem Handler gesendet werden konnte. Der Test verwendet nun einen expliziten READY-Handshake."
+    "notable_findings": [
+      "Failure-Fixtures benötigen einen expliziten Readiness-Handshake.",
+      "Process-Exit-Warten muss Exit-vor-Listener-Races abfangen und immer zeitlich begrenzt sein.",
+      "Signalhandler des Launchers müssen registriert sein, bevor das Backend einen von außen beobachtbaren Ready-Zustand erreichen kann.",
+      "Backend-Health und nutzerseitige Readiness sind getrennte Zustände; Nutzeraktionen werden erst nach Launcher-Autorisierung freigegeben.",
+      "package.json und package-lock.json sind ein atomarer Dependency-Vertrag und dürfen nicht getrennt bereinigt werden."
+    ]
   },
   "checkpoints": {
     "C0_REPOSITORY_ARCHIVED": "PASS",
     "C1_REBUILD_CONTRACTS": "PASS",
-    "C2_CLEAN_FOUNDATION": "NOT_STARTED",
-    "C3_START_ROUTINE": "PARTIAL",
+    "C2_CLEAN_FOUNDATION": "PASS",
+    "C3_START_ROUTINE": "PASS_CORE_E2E_BROWSER_VISUAL_PENDING",
     "C4_PROJECT_STATE": "NOT_STARTED",
-    "C5_LEARNING_MEMORY": "PASS_EXTENDED_PENDING_FULL_GATE",
+    "C5_LEARNING_MEMORY": "PASS_CURRENT_SCOPE",
     "C6_RULE_ENGINE": "NOT_STARTED",
-    "C7_FOUNDATION_GATE": "PARTIAL"
+    "C7_FOUNDATION_GATE": "PASS_CURRENT_SCOPE"
   },
   "known_gaps": [
-    "Legacy product files still exist on the rebuild branch and must be removed or intentionally replaced during C2.",
     "Branch protection for main is currently not enabled.",
-    "Dependency Autopilot is specified and dependency detection primitive exists, but automatic resolution is not implemented yet.",
-    "Backend lifecycle primitives and failure tests exist, but the real application backend/launcher is not implemented yet.",
-    "GitHub Actions foundation gate is configured but its latest run has not yet been confirmed green.",
-    "The complete eight-case lifecycle matrix and full Schema-V2 knowledge registry must still be confirmed together by the complete foundation gate.",
-    "No new HTML Foundation UI or Project State implementation exists yet."
+    "Dependency Autopilot is specified and dependency detection exists, but automatic dependency resolution is not implemented yet.",
+    "The inherited development dependency set is still oversized: the confirmed C2 gate installed 490 npm packages and reported 25 known vulnerabilities (4 moderate, 19 high, 2 critical). This does not affect the package-free normal runtime path but must be hardened before larger feature work.",
+    "Browser opening is implemented defensively, but a real desktop-browser visual acceptance run is still pending.",
+    "Project State implementation beyond the launcher session/checkpoint slice is not started.",
+    "Release readiness remains false; C2 is a foundation checkpoint, not a release candidate."
   ],
-  "next_step": "C2_CLEAN_FOUNDATION"
+  "next_step": "DEPENDENCY_TOOLCHAIN_HARDENING"
 }
