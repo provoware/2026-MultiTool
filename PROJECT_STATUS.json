@@ -9,7 +9,7 @@
   },
   "rebuild": {
     "baseline_commit": "714e1c0c531bc23a62cb0d9f039df043e58d598a",
-    "phase": "FOUNDATION_CONTRACT",
+    "phase": "FOUNDATION_IMPLEMENTATION",
     "version_target": "0.1.0",
     "maturity": "R0",
     "status": "IN_PROGRESS"
@@ -22,29 +22,69 @@
     "expertise_matrix": "docs/EXPERTISE_MATRIX.md",
     "agents": "AGENTS.md"
   },
+  "foundation": {
+    "lifecycle_core": "src/core/lifecycle.mjs",
+    "learning_memory": "knowledge/LEARNING_MEMORY.jsonl",
+    "regression_registry": "knowledge/REGRESSION_REGISTRY.jsonl",
+    "lifecycle_failure_matrix": "tests/foundation/lifecycle_failure_matrix.mjs",
+    "knowledge_integrity_test": "tests/foundation/knowledge_registry_integrity.mjs"
+  },
   "quality": {
     "specification": "PARTIAL",
-    "implementation": "NOT_STARTED",
-    "automated_validation": "NOT_RUN",
+    "implementation": "PARTIAL",
+    "automated_validation": "PARTIAL_PASS",
     "manual_validation": "NOT_RUN",
     "release_ready": false
   },
+  "validation": {
+    "lifecycle_failure_matrix": {
+      "status": "PASS",
+      "cases": 5,
+      "passed": 5,
+      "scenarios": [
+        "PORT_OCCUPIED",
+        "BACKEND_START_FAILS",
+        "CTRL_C",
+        "STALE_PID",
+        "DEPENDENCY_MISSING"
+      ]
+    },
+    "knowledge_integrity": {
+      "status": "PASS",
+      "learning_records": 3,
+      "regressions": 6,
+      "checks": [
+        "JSONL_PARSE",
+        "UNIQUE_IDS",
+        "STATUS_ENUMS",
+        "CONFIDENCE_RANGE",
+        "LEARNING_REGRESSION_CROSS_REFERENCES",
+        "LOCAL_EVIDENCE_PATHS_EXIST",
+        "REGRESSION_TEST_PATHS_EXIST"
+      ]
+    },
+    "ci_gate": {
+      "workflow": ".github/workflows/ci.yml",
+      "status": "CONFIGURED_NOT_YET_CONFIRMED_GREEN"
+    }
+  },
   "checkpoints": {
     "C0_REPOSITORY_ARCHIVED": "PASS",
-    "C1_REBUILD_CONTRACTS": "IN_PROGRESS",
+    "C1_REBUILD_CONTRACTS": "PASS",
     "C2_CLEAN_FOUNDATION": "NOT_STARTED",
-    "C3_START_ROUTINE": "NOT_STARTED",
+    "C3_START_ROUTINE": "PARTIAL",
     "C4_PROJECT_STATE": "NOT_STARTED",
-    "C5_LEARNING_MEMORY": "NOT_STARTED",
+    "C5_LEARNING_MEMORY": "PASS_MINIMAL",
     "C6_RULE_ENGINE": "NOT_STARTED",
-    "C7_FOUNDATION_GATE": "NOT_STARTED"
+    "C7_FOUNDATION_GATE": "PARTIAL"
   },
   "known_gaps": [
     "Legacy product files still exist on the rebuild branch and must be removed or intentionally replaced during C2.",
     "Branch protection for main is currently not enabled.",
-    "Dependency Autopilot is specified but not implemented yet.",
-    "Backend lifecycle is specified but not implemented yet.",
-    "No new foundation test suite or CI gate has been executed yet."
+    "Dependency Autopilot is specified and dependency detection primitive exists, but automatic resolution is not implemented yet.",
+    "Backend lifecycle primitives and failure tests exist, but the real application backend/launcher is not implemented yet.",
+    "GitHub Actions foundation gate is configured but its latest run has not yet been confirmed green.",
+    "No new HTML Foundation UI or Project State implementation exists yet."
   ],
   "next_step": "C2_CLEAN_FOUNDATION"
 }
