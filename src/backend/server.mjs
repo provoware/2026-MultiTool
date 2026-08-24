@@ -29,7 +29,7 @@ const server = http.createServer(async (req, res) => {
     if (req.url === '/api/shutdown' && req.method === 'POST') {
       if (processOwner !== 'launcher') return json(res, 409, { status:'blocked', reason:'no-process-owner' });
       const record = await writeCheckpoint('UI_LOGOUT');
-      res.once('finish', () => void stop('UI_LOGOUT'));
+      res.once('finish', () => void stop('UI_LOGOUT', { deterministicExit:true }));
       return json(res, 202, { status:'accepted', checkpointAt:record.at, reason:'UI_LOGOUT' });
     }
 
@@ -51,14 +51,23 @@ const server = http.createServer(async (req, res) => {
 server.listen(port, host, () => console.log(`BACKEND_READY http://${host}:${port}`));
 
 let stopping = false;
-async function stop(signal) {
+async function stop(signal, options = {}) {
   if (stopping) return;
   stopping = true;
   console.log(`BACKEND_SHUTDOWN ${signal}`);
-  server.close(() => process.exit(0));
+  server.close();
   if (typeof server.closeIdleConnections === 'function') server.closeIdleConnections();
   if (typeof server.closeAllConnections === 'function') server.closeAllConnections();
-  setTimeout(() => process.exit(1), 1200).unref();
+
+  if (options.deterministicExit === true) {
+    process.exit(0);
+  }
+
+  const timer = setTimeout(() => process.exit(1), 1200);
+  server.once('close', () => {
+    clearTimeout(timer);
+    process.exit(0);
+  });
 }
 process.on('SIGTERM', () => void stop('SIGTERM'));
 process.on('SIGINT', () => void stop('SIGINT'));
