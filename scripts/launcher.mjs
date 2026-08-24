@@ -1,0 +1,79 @@
+import { spawn } from 'node:child_process';
+import { readFile, writeFile, rm } from 'node:fs/promises';
+import { resolve } from 'node:path';
+import { terminateOwnedProcess, waitForChildReadiness, findAvailablePort } from '../src/core/lifecycle.mjs';
+
+const ROOT = resolve(new URL('..', import.meta.url).pathname);
+const runtime = resolve(ROOT, 'runtime');
+const pidFile = resolve(runtime, 'backend.pid');
+const checkpointFile = resolve(runtime, 'last-checkpoint.json');
+const host = '127.0.0.1';
+const preferredPort = Number(process.env.PORT || 5000);
+const port = await findAvailablePort(preferredPort, { host, attempts: 30 });
+const session = `${Date.now()}-${process.pid}`;
+
+const status = (symbol, phase, text) => console.log(`${symbol} ${phase}  ${text}`);
+status('🔵','BACKEND',`Session ${session}, Port ${port}`);
+
+const child = spawn(process.execPath, ['src/backend/server.mjs'], {
+  cwd: ROOT,
+  env: { ...process.env, PROVOWARE_HOST: host, PROVOWARE_PORT: String(port), PROVOWARE_SESSION: session },
+  stdio: ['ignore','inherit','inherit'],
+});
+await writeFile(pidFile, String(child.pid), 'utf8');
+
+const healthUrl = `http://${host}:${port}/api/health`;
+const ready = await waitForChildReadiness(child, {
+  timeoutMs: 5000,
+  pollMs: 100,
+  readinessProbe: async () => {
+    try {
+      const response = await fetch(healthUrl, { signal: AbortSignal.timeout(500) });
+      return response.ok;
+    } catch { return false; }
+  },
+});
+if (!ready.ready) {
+  status('🔴','BLOCKIERT',`Backend nicht bereit: ${ready.reason}`);
+  await terminateOwnedProcess(child, { timeoutMs: 800 });
+  await rm(pidFile, { force: true });
+  process.exit(30);
+}
+status('🟢','BACKEND','Readiness bestätigt');
+status('🟢','BEREIT',`http://${host}:${port}`);
+
+if (!process.argv.includes('--no-open')) {
+  const opener = process.platform === 'linux' ? ['xdg-open', [`http://${host}:${port}`]] : null;
+  if (opener) {
+    const p = spawn(opener[0], opener[1], { stdio: 'ignore', detached: true });
+    p.unref();
+  }
+}
+
+let closing = false;
+async function shutdown(reason) {
+  if (closing) return;
+  closing = true;
+  status('🔵','CHECKPOINT',`Sichere Session vor ${reason} …`);
+  try {
+    await fetch(`http://${host}:${port}/api/checkpoint`, { method: 'POST', signal: AbortSignal.timeout(1000) });
+  } catch {
+    await writeFile(checkpointFile, JSON.stringify({ session, reason, at: new Date().toISOString(), fallback: true }, null, 2));
+  }
+  status('🔵','SHUTDOWN','Beende eigenes Backend kontrolliert …');
+  const result = await terminateOwnedProcess(child, { timeoutMs: 1500 });
+  await rm(pidFile, { force: true });
+  status(result.stopped ? '🟢' : '🔴','SHUTDOWN',result.escalated ? 'Backend beendet (Eskalation nötig)' : 'Backend sauber beendet');
+  process.exit(result.stopped ? 0 : 31);
+}
+process.on('SIGINT', () => void shutdown('SIGINT'));
+process.on('SIGTERM', () => void shutdown('SIGTERM'));
+process.on('SIGHUP', () => void shutdown('SIGHUP'));
+child.once('exit', async (code) => {
+  await rm(pidFile, { force: true });
+  if (!closing) {
+    status('🔴','BACKEND',`Backend unerwartet beendet (Code ${code})`);
+    process.exit(code ?? 32);
+  }
+});
+setInterval(() => {}, 1000);
