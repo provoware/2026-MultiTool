@@ -1,0 +1,42 @@
+name: Dependency v10 promote
+
+on:
+  push:
+    branches:
+      - rebuild/v0.1.0-foundation
+    paths:
+      - '.github/workflows/dependency-v10-promote.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  promote-eslint10:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout exact branch head
+        uses: actions/checkout@v7
+        with:
+          ref: rebuild/v0.1.0-foundation
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+      - name: Build audit and verify ESLint 10 contract
+        run: |
+          cp tools/dependency/package.hardened-v10.json package.json
+          rm -f package-lock.json
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          node -e "const l=require('./package-lock.json'); const n=Object.keys(l.packages).length-1; if(n!==92) throw new Error('Unexpected lock package count: '+n); console.log('LOCK_PACKAGES='+n)"
+          npm ci --no-audit --no-fund
+          npm audit --package-lock-only --audit-level=moderate
+          npm run check
+      - name: Commit manifest and lock atomically
+        run: |
+          git config user.name 'provoware-foundation-bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add package.json package-lock.json
+          git diff --cached --check
+          git commit -m 'build: promote supported ESLint 10 toolchain atomically'
+          git push origin HEAD:rebuild/v0.1.0-foundation
