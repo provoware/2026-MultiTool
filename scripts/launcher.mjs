@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process';
 import { writeFile, rm } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { terminateOwnedProcess, waitForChildReadiness, findAvailablePort } from '../src/core/lifecycle.mjs';
+import { terminateOwnedProcess, waitForChildReadiness, findAvailablePort, resolveExecutable } from '../src/core/lifecycle.mjs';
 
 const ROOT = resolve(new URL('..', import.meta.url).pathname);
 const runtime = resolve(ROOT, 'runtime');
@@ -43,10 +43,14 @@ status('🟢','BACKEND','Readiness bestätigt');
 status('🟢','BEREIT',`http://${host}:${port}`);
 
 if (!process.argv.includes('--no-open')) {
-  const opener = process.platform === 'linux' ? ['xdg-open', [`http://${host}:${port}`]] : null;
-  if (opener) {
-    const p = spawn(opener[0], opener[1], { stdio: 'ignore', detached: true });
+  const xdgOpen = process.platform === 'linux' ? await resolveExecutable('xdg-open') : null;
+  if (xdgOpen) {
+    const p = spawn(xdgOpen, [`http://${host}:${port}`], { stdio: 'ignore', detached: true });
+    p.once('error', () => status('🟡','BROWSER','Automatisches Öffnen fehlgeschlagen; URL bitte manuell öffnen.'));
     p.unref();
+    status('🟢','BROWSER','Oberfläche wird geöffnet');
+  } else {
+    status('🟡','BROWSER',`Kein sicherer Auto-Opener gefunden. Bitte http://${host}:${port} manuell öffnen.`);
   }
 }
 
