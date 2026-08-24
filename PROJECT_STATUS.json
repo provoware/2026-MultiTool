@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "project": {
+    "name": "PROVOWARE 2026-MultiTool",
+    "repository": "provoware/2026-MultiTool",
+    "default_branch": "main",
+    "development_branch": "rebuild/v0.1.0-foundation",
+    "archive_branch": "archive/pre-rebuild-2026-08-24"
+  },
+  "rebuild": {
+    "baseline_commit": "714e1c0c531bc23a62cb0d9f039df043e58d598a",
+    "phase": "FOUNDATION_CONTRACT",
+    "version_target": "0.1.0",
+    "maturity": "R0",
+    "status": "IN_PROGRESS"
+  },
+  "work_mode": "CONTINUOUS_DIALOG_DEVELOPMENT",
+  "contracts": {
+    "master": "docs/PROJECT_MASTERPROMPT.md",
+    "dependencies": "docs/DEPENDENCY_AUTOPILOT.md",
+    "backend_lifecycle": "docs/BACKEND_LIFECYCLE.md",
+    "expertise_matrix": "docs/EXPERTISE_MATRIX.md",
+    "agents": "AGENTS.md"
+  },
+  "quality": {
+    "specification": "PARTIAL",
+    "implementation": "NOT_STARTED",
+    "automated_validation": "NOT_RUN",
+    "manual_validation": "NOT_RUN",
+    "release_ready": false
+  },
+  "checkpoints": {
+    "C0_REPOSITORY_ARCHIVED": "PASS",
+    "C1_REBUILD_CONTRACTS": "IN_PROGRESS",
+    "C2_CLEAN_FOUNDATION": "NOT_STARTED",
+    "C3_START_ROUTINE": "NOT_STARTED",
+    "C4_PROJECT_STATE": "NOT_STARTED",
+    "C5_LEARNING_MEMORY": "NOT_STARTED",
+    "C6_RULE_ENGINE": "NOT_STARTED",
+    "C7_FOUNDATION_GATE": "NOT_STARTED"
+  },
+  "known_gaps": [
+    "Legacy product files still exist on the rebuild branch and must be removed or intentionally replaced during C2.",
+    "Branch protection for main is currently not enabled.",
+    "Dependency Autopilot is specified but not implemented yet.",
+    "Backend lifecycle is specified but not implemented yet.",
+    "No new foundation test suite or CI gate has been executed yet."
+  ],
+  "next_step": "C2_CLEAN_FOUNDATION"
+}
