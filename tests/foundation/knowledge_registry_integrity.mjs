@@ -1,4 +1,4 @@
-import { readFile } from 'node:fs/promises';
+import { access, readFile } from 'node:fs/promises';
 
 const ROOT = new URL('../../', import.meta.url);
 const learningPath = new URL('knowledge/LEARNING_MEMORY.jsonl', ROOT);
@@ -36,6 +36,18 @@ function requireUniqueIds(rows, label) {
   }
 }
 
+async function requireLocalPath(path, owner) {
+  if (typeof path !== 'string' || !path.includes('/')) return;
+  if (/^[a-z]+:\/\//i.test(path)) return;
+  if (path.startsWith('/') || path.includes('..')) throw new Error(`${owner}: unsicherer lokaler Pfad '${path}'.`);
+
+  try {
+    await access(new URL(path, ROOT));
+  } catch {
+    throw new Error(`${owner}: lokaler Verweis existiert nicht: '${path}'.`);
+  }
+}
+
 const learning = parseJsonl(await readFile(learningPath, 'utf8'), 'LEARNING_MEMORY');
 const regressions = parseJsonl(await readFile(regressionPath, 'utf8'), 'REGRESSION_REGISTRY');
 
@@ -55,6 +67,7 @@ for (const lesson of learning) {
   if (typeof lesson.confidence !== 'number' || lesson.confidence < 0 || lesson.confidence > 100) {
     throw new Error(`Lesson ${lesson.id}: confidence muss zwischen 0 und 100 liegen.`);
   }
+  for (const evidencePath of lesson.evidence ?? []) await requireLocalPath(evidencePath, `Lesson ${lesson.id}`);
 }
 
 for (const regression of regressions) {
@@ -66,6 +79,7 @@ for (const regression of regressions) {
   if (!allowedRegressionStatus.has(regression.status)) {
     throw new Error(`Regression ${regression.id}: unbekannter Status '${regression.status}'.`);
   }
+  await requireLocalPath(regression.test_file, `Regression ${regression.id}`);
 }
 
 const lessonIds = new Set(learning.map((item) => item.id));
@@ -87,4 +101,4 @@ for (const lesson of learning) {
 
 console.log(`🟢 Learning Memory: ${learning.length} Datensätze gültig und eindeutig.`);
 console.log(`🟢 Regression Registry: ${regressions.length} Datensätze gültig und eindeutig.`);
-console.log('🟢 Cross-References zwischen Lernen und Regressionen sind konsistent.');
+console.log('🟢 Cross-References und lokale Evidence-/Testpfade sind konsistent.');
