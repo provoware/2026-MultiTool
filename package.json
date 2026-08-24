@@ -10,9 +10,10 @@
     "test:foundation:lifecycle": "node tests/foundation/lifecycle_failure_matrix.mjs",
     "test:foundation:lifecycle-race": "node tests/foundation/process_exit_race.mjs",
     "test:foundation:knowledge": "node tests/foundation/knowledge_registry_integrity.mjs",
+    "test:foundation:project-state": "node tests/foundation/project_state_contract.mjs",
     "test:foundation:launcher": "node tests/foundation/launcher_slice_e2e.mjs",
     "test:foundation:browser": "node tests/foundation/desktop_browser_visual_acceptance.mjs",
-    "test:foundation": "npm run test:foundation:lifecycle && npm run test:foundation:lifecycle-race && npm run test:foundation:knowledge && npm run test:foundation:launcher",
+    "test:foundation": "npm run test:foundation:lifecycle && npm run test:foundation:lifecycle-race && npm run test:foundation:knowledge && npm run test:foundation:project-state && npm run test:foundation:launcher",
     "check": "npm run lint && npm run test:foundation"
   },
   "devDependencies": {

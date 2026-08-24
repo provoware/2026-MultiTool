@@ -15,18 +15,39 @@
 <section class="card" aria-labelledby="today"><h2 id="today">Heute</h2><p>Der erste echte Nutzerweg ist aktiv. Diese Ansicht zeigt, was beim Start tatsächlich geprüft wurde.</p><div class="steps" id="steps">
 <div class="step"><div class="icon">🔵</div><div><strong>Backend</strong><div id="backendText" class="small">Verbindung wird geprüft …</div></div></div>
 <div class="step"><div class="icon">🔵</div><div><strong>Lokaler Betrieb</strong><div id="localText" class="small">Prüfung läuft …</div></div></div>
+<div class="step"><div class="icon">🔵</div><div><strong>Projektzustand</strong><div id="projectStateText" class="small">Lokaler Projektspeicher wird geprüft …</div></div></div>
 <div class="step"><div class="icon">🔵</div><div><strong>Checkpoint</strong><div id="checkpointText" class="small">Noch nicht getestet.</div></div></div>
 <div class="step"><div class="icon">🟢</div><div><strong>Sicheres Beenden</strong><div id="shutdownText" class="small">Launcher übernimmt Checkpoint → Shutdown → Verify Closed.</div></div></div>
 </div><div class="actions" style="margin-top:18px"><button class="primary" id="checkpointBtn">Checkpoint jetzt prüfen</button><button class="secondary" id="refreshBtn">Status neu prüfen</button><button class="danger" id="shutdownBtn">Tool sicher beenden</button></div></section>
-<aside class="card" aria-labelledby="details"><h2 id="details">Transparenz</h2><div class="meta"><div><strong>Modus</strong><span>Einfach / Foundation</span></div><div><strong>Netzwerk</strong><span>Nur localhost</span></div><div><strong>Backend-Ownership</strong><span>Launcher verwaltet Prozess</span></div><div><strong>Beenden</strong><span>UI fragt an → Launcher prüft und beendet</span></div></div><p class="small">Farbe ist nur Unterstützung. Jeder Zustand wird zusätzlich mit Symbol und Klartext angegeben.</p></aside>
+<aside class="card" aria-labelledby="details"><h2 id="details">Transparenz</h2><div class="meta"><div><strong>Modus</strong><span>Einfach / Foundation</span></div><div><strong>Projektdaten</strong><span>Ein kanonischer Zustand · lokal in IndexedDB</span></div><div><strong>Netzwerk</strong><span>Nur localhost</span></div><div><strong>Backend-Ownership</strong><span>Launcher verwaltet Prozess</span></div><div><strong>Beenden</strong><span>UI fragt an → Launcher prüft und beendet</span></div></div><p class="small">Farbe ist nur Unterstützung. Jeder Zustand wird zusätzlich mit Symbol und Klartext angegeben.</p></aside>
 </main>
 <div id="live" aria-live="polite"></div>
 </div>
-<script>
+<script type="module">
+import { loadOrCreateProjectState } from './project-state.mjs';
 const $=id=>document.getElementById(id);const live=t=>$('live').textContent=t;
-async function refresh(){try{const r=await fetch('/api/status',{cache:'no-store'});const s=await r.json();$('backendText').textContent=`Bereit · Session ${s.session}`;$('localText').textContent=s.localOnly?'Bestanden: Backend nur lokal erreichbar.':'Warnung: Backend nicht nur lokal gebunden.';$('overall').textContent=s.localOnly?'🟢 Start erfolgreich':'🟡 Start mit Hinweis';live($('overall').textContent)}catch{$('backendText').textContent='Fehler: Backend nicht erreichbar.';$('overall').textContent='🔴 Backend nicht erreichbar';live('Backend nicht erreichbar')}}
+let projectStateReady=false;
+let projectStateFailed=false;
+
+async function initProjectState(){
+  try{
+    const state=await loadOrCreateProjectState();
+    projectStateReady=true;
+    const node=$('projectStateText');
+    node.textContent=`Bestanden: lokal gespeichert · Schema ${state.schema_version} · Revision ${state.revision}`;
+    node.dataset.projectId=state.project_id;
+    node.dataset.revision=String(state.revision);
+  }catch(error){
+    projectStateFailed=true;
+    $('projectStateText').textContent=`Nicht verfügbar: ${error.code??'PS-UNKNOWN'} · Es wurden keine Projektdaten geschrieben.`;
+    live('Lokaler Projektzustand ist nicht verfügbar');
+  }
+}
+async function refresh(){try{const r=await fetch('/api/status',{cache:'no-store'});const s=await r.json();$('backendText').textContent=`Bereit · Session ${s.session}`;$('localText').textContent=s.localOnly?'Bestanden: Backend nur lokal erreichbar.':'Warnung: Backend nicht nur lokal gebunden.';if(projectStateFailed){$('overall').textContent='🟡 Start ohne Projektspeicher'}else if(s.localOnly&&projectStateReady){$('overall').textContent='🟢 Start erfolgreich'}else{$('overall').textContent='🔵 Start wird geprüft'}live($('overall').textContent)}catch{$('backendText').textContent='Fehler: Backend nicht erreichbar.';$('overall').textContent='🔴 Backend nicht erreichbar';live('Backend nicht erreichbar')}}
 $('checkpointBtn').addEventListener('click',async()=>{try{const r=await fetch('/api/checkpoint',{method:'POST'});const s=await r.json();$('checkpointText').textContent=`Bestanden: ${new Date(s.at).toLocaleTimeString()}`;live('Checkpoint erfolgreich gespeichert')}catch{$('checkpointText').textContent='Fehler: Checkpoint konnte nicht gespeichert werden.';live('Checkpoint fehlgeschlagen')}});
 $('shutdownBtn').addEventListener('click',async()=>{const btn=$('shutdownBtn');btn.disabled=true;$('shutdownText').textContent='Beenden angefordert: Launcher erstellt Checkpoint und schließt Backend …';$('overall').textContent='🔵 Sicheres Beenden läuft …';live('Sicheres Beenden wurde angefordert');try{const r=await fetch('/api/shutdown',{method:'POST'});if(!r.ok)throw new Error();$('shutdownText').textContent='Anforderung angenommen. Backend wird kontrolliert geschlossen.'}catch{$('shutdownText').textContent='Beenden konnte nicht angefordert werden. Schließe das Startterminal mit Strg+C.';btn.disabled=false}});
-$('refreshBtn').addEventListener('click',refresh);refresh();
+$('refreshBtn').addEventListener('click',refresh);
+await initProjectState();
+await refresh();
 </script>
 </body></html>

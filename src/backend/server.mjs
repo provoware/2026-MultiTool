@@ -12,7 +12,7 @@ const controlToken = process.env.PROVOWARE_CONTROL_TOKEN || '';
 const checkpointPath = join(ROOT, 'runtime', 'last-checkpoint.json');
 let userReady = false;
 
-const types = { '.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.json':'application/json; charset=utf-8' };
+const types = { '.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.mjs':'text/javascript; charset=utf-8','.json':'application/json; charset=utf-8' };
 const json = (res, code, body) => { res.writeHead(code, { 'content-type':'application/json; charset=utf-8', 'cache-control':'no-store', 'x-content-type-options':'nosniff' }); res.end(JSON.stringify(body)); };
 async function writeCheckpoint(reason) {
   const record = { session, pid:process.pid, at:new Date().toISOString(), reason };
