@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "contract_version": "0.3.0",
+  "pipeline_order": ["SCHNELL", "TIEF", "FREIGABE"],
+  "stages": {
+    "SCHNELL": {
+      "purpose": "Schnelle, deterministische Vorpruefung fuer jede Aenderung.",
+      "required": [
+        "locked_dependencies",
+        "dependency_audit",
+        "javascript_lint",
+        "html_lint",
+        "foundation_core_tests",
+        "governance_contract"
+      ],
+      "tauri_when_present": ["cargo_fmt", "cargo_check", "cargo_clippy"]
+    },
+    "TIEF": {
+      "purpose": "Vollstaendige Integrations- und Bedienpruefung des Kandidaten.",
+      "requires_stage": "SCHNELL",
+      "required": [
+        "foundation_full_tests",
+        "browser_acceptance",
+        "failure_matrix",
+        "project_state_contract"
+      ],
+      "tauri_when_present": ["cargo_test", "tauri_native_e2e"]
+    },
+    "FREIGABE": {
+      "purpose": "Paket bauen, frisch pruefen und exakt dieses Paket freigeben.",
+      "requires_stage": "TIEF",
+      "required": [
+        "tauri_source_present",
+        "single_candidate_commit",
+        "release_build",
+        "fresh_artifact_test",
+        "sha256",
+        "release_manifest",
+        "sbom_or_equivalent_dependency_inventory",
+        "known_limitations"
+      ],
+      "fail_if_tauri_missing": true,
+      "rebuild_after_testing_forbidden": true
+    }
+  },
+  "artifact_policy": {
+    "green_fast_runs": "no_permanent_artifacts",
+    "green_deep_runs": "no_permanent_artifacts_except_required_visual_evidence",
+    "failed_runs": "short_lived_diagnostics_only",
+    "release_runs": "retain_release_evidence"
+  },
+  "data_policy": {
+    "real_user_data_in_ci": false,
+    "generated_test_data": "temporary_only",
+    "logs_must_avoid_private_paths": true
+  },
+  "promotion_policy": {
+    "release_requires_same_commit_as_tested_candidate": true,
+    "release_requires_same_artifacts_as_fresh_test": true,
+    "warnings_do_not_override_blocking_failures": true
+  }
+}
