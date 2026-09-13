@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "governance_version": "0.3.0",
+  "name": "PROFI-Governance-Basis",
+  "frozen_at": "2026-09-14",
+  "repository": "provoware/2026-MultiTool",
+  "baseline_branch": "main",
+  "baseline_commit": "6a57590c533a5e1094d78550041ece5eb79c8570",
+  "product_maturity": "FOUNDATION",
+  "release_ready": false,
+  "local_user_tests_required_before_release": false,
+  "tauri_repository_state": "NOT_YET_PRESENT",
+  "pipeline": {
+    "order": ["SCHNELL", "TIEF", "FREIGABE"],
+    "fail_closed": true,
+    "tested_artifact_must_equal_released_artifact": true
+  },
+  "p0_modules_locked_until_pipeline_green": [
+    "werkzeug-zentrale",
+    "systemstatus",
+    "speicheruebersicht",
+    "flexible-arbeitsflaeche",
+    "hilfe-zentrale"
+  ],
+  "rule": "Keine P0-Modulimplementierung vor nachweisbar gruener Cloud-Pipeline."
+}
