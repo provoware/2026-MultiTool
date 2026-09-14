@@ -89,7 +89,7 @@ function setupWorkspaceControls() {
       } catch {
         renderWorkspaceVisibility();
         $('workspaceHelp').textContent = 'Die Änderung gilt für diese Sitzung, konnte aber nicht dauerhaft gespeichert werden.';
-        live('Ansicht wurde nicht gespeichert. Die Änderung gilt nur für diese Sitzung.');
+        live(`${panel.label} ist jetzt ${visible ? 'sichtbar' : 'ausgeblendet'}. Die Änderung gilt nur für diese Sitzung.`);
       } finally {
         toggle.disabled = false;
       }
