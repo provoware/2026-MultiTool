@@ -57,6 +57,13 @@ pub fn list_tools() -> Vec<ToolInfo> {
             ToolState::Ready,
             true,
         ),
+        tool(
+            "system_status",
+            "Systemstatus",
+            "Zeigt sichere Basisinformationen zu Programm, Sitzung und lokalem Speicher.",
+            ToolState::Ready,
+            true,
+        ),
     ]
 }
 
@@ -76,11 +83,11 @@ mod tests {
     }
 
     #[test]
-    fn first_p0_slice_is_read_only() {
+    fn current_p0_slices_are_read_only() {
         for tool in list_tools() {
             assert!(
                 tool.read_only,
-                "P0.1 darf noch keine Schreibfunktion freigeben"
+                "P0.1 und P0.2 dürfen noch keine Schreibfunktion freigeben"
             );
         }
     }
