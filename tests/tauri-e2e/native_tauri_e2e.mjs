@@ -81,6 +81,14 @@ async function projectMarker(sessionId) {
   return await execute(sessionId, `const n=document.getElementById('projectStateText'); return {id:n?.dataset.projectId||'',revision:n?.dataset.revision||'',text:n?.textContent||''}`);
 }
 
+async function toolCenterMarker(sessionId) {
+  return await execute(sessionId, `return {
+    count: document.querySelectorAll('#toolsList .tool-item').length,
+    text: document.getElementById('toolsList')?.textContent || '',
+    summary: document.getElementById('toolsSummary')?.textContent || ''
+  }`);
+}
+
 await access(APP, fsConstants.X_OK);
 await access(DRIVER, fsConstants.X_OK);
 await rm(DATA_DIR, { recursive:true, force:true });
@@ -93,7 +101,13 @@ let driverOutput = '';
 driver.stdout.on('data', (chunk) => { driverOutput += chunk.toString(); });
 driver.stderr.on('data', (chunk) => { driverOutput += chunk.toString(); });
 
-const evidence = { status:'RUNNING', projectPersistence:false, checkpoint:false, safeShutdown:false };
+const evidence = {
+  status:'RUNNING',
+  projectPersistence:false,
+  checkpoint:false,
+  toolCenter:false,
+  safeShutdown:false,
+};
 let firstSession = null;
 let secondSession = null;
 
@@ -107,6 +121,12 @@ try {
   const before = await projectMarker(firstSession);
   assert(before.id.length >= 8, 'Projektkennung fehlt im ersten Start.');
   assert(before.revision === '1', 'Unerwartete Projekt-Revision beim ersten Start.');
+
+  const tools = await toolCenterMarker(firstSession);
+  assert(tools.count >= 2, 'Werkzeug-Zentrale zeigt nicht alle eingebauten Werkzeuge.');
+  assert(tools.text.includes('Werkzeug-Zentrale'), 'Werkzeug-Zentrale fehlt in der Werkzeugliste.');
+  assert(tools.summary.includes('Werkzeugen bereit'), 'Werkzeug-Zentrale zeigt keinen verständlichen Gesamtzustand.');
+  evidence.toolCenter = true;
 
   await click(firstSession, '#checkpointBtn');
   await waitFor(async () => (await execute(firstSession, `return document.getElementById('checkpointText')?.textContent || ''`)).includes('Gesichert:'), { label:'Zwischenstand gesichert' });
@@ -131,7 +151,7 @@ try {
 
   evidence.status = 'PASS';
   await writeFile(resolve(EVIDENCE_DIR, 'tauri-e2e.json'), JSON.stringify(evidence, null, 2));
-  console.log('🟢 Native Tauri-E2E: Start · SQLite-Persistenz · Zwischenstand · Neustart · sicheres Beenden PASS');
+  console.log('🟢 Native Tauri-E2E: Start · Werkzeug-Zentrale · SQLite-Persistenz · Zwischenstand · Neustart · sicheres Beenden PASS');
 } catch (error) {
   evidence.status = 'FAIL';
   evidence.message = error.message;
