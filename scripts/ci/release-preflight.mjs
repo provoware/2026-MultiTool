@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const root = process.cwd();
+const expectBlocked = process.argv.includes('--expect-blocked');
 const cargo = path.join(root, 'src-tauri', 'Cargo.toml');
 const tauriConfigCandidates = [
   path.join(root, 'src-tauri', 'tauri.conf.json'),
@@ -18,10 +19,21 @@ if (!tauriConfigCandidates.some((candidate) => fs.existsSync(candidate))) {
 fs.mkdirSync(path.join(root, 'runtime', 'ci-evidence'), { recursive: true });
 const result = {
   check: 'release_preflight',
+  expected_blockade_test: expectBlocked,
   status: failures.length ? 'BLOCKIERT' : 'BESTANDEN',
   failures
 };
 fs.writeFileSync(path.join(root, 'runtime', 'ci-evidence', 'release-preflight.json'), `${JSON.stringify(result, null, 2)}\n`);
+
+if (expectBlocked) {
+  if (failures.length) {
+    console.log('🟢 FREIGABE-Schutztest bestanden: Der Foundation-Stand wird erwartungsgemaess blockiert.');
+    for (const failure of failures) console.log(`- ${failure}`);
+    process.exit(0);
+  }
+  console.error('🔴 FREIGABE-Schutztest fehlgeschlagen: Der Stand ist unerwartet freigabefaehig.');
+  process.exit(1);
+}
 
 if (failures.length) {
   console.error('🔴 FREIGABE ist bewusst blockiert.');
