@@ -64,6 +64,13 @@ pub fn list_tools() -> Vec<ToolInfo> {
             ToolState::Ready,
             true,
         ),
+        tool(
+            "storage_overview",
+            "Speicherübersicht",
+            "Zeigt eingehängte lokale Datenträger mit Gesamtgröße und freiem Speicher.",
+            ToolState::Ready,
+            true,
+        ),
     ]
 }
 
@@ -87,7 +94,7 @@ mod tests {
         for tool in list_tools() {
             assert!(
                 tool.read_only,
-                "P0.1 und P0.2 dürfen noch keine Schreibfunktion freigeben"
+                "P0.1 bis P0.3 dürfen noch keine Schreibfunktion freigeben"
             );
         }
     }
