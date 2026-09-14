@@ -1,44 +1,68 @@
 # Tauri-Migration 0.3.1 – native Foundation
 
-## Ziel
+## 🎯 Ziel
 
 Diese Iteration ersetzt ausschließlich die frühere produktive Node-/localhost-/Launcher-Foundation durch einen nativen Tauri-2-Programmkern.
 
-Es werden **keine P0-Module** ergänzt.
+**🔒 Keine P0-Module in dieser Iteration.**
 
-## Aktiver Produktweg
+## 🚦 Leseschlüssel
 
-`HTML/CSS/JavaScript → Tauri-Aufruf → Rust → SQLite`
+- 🟢 **BESTANDEN / BESTÄTIGT** – automatisch geprüft oder strukturell abgeschlossen.
+- 🟡 **IN ARBEIT / PRÜFUNG** – umgesetzt oder gestartet, aber noch nicht vollständig bestätigt.
+- 🔴 **BLOCKIERT / FEHLER** – Freigabe ist gesperrt; Ursache muss behoben werden.
+- 🔵 **INFO** – wichtige technische Information ohne Fehlerstatus.
+- ⚪ **OFFEN** – noch nicht begonnen oder noch nicht an der Reihe.
+- 🔒 **GESPERRT** – bewusst nicht freigegeben.
+
+> **Regel:** Ein Punkt wird erst 🟢, wenn der passende automatische Nachweis wirklich erfolgreich gelaufen ist.
+
+## 🧭 Aktiver Produktweg
+
+```text
+HTML/CSS/JavaScript
+        ↓
+      Tauri 2
+        ↓
+       Rust
+        ↓
+      SQLite
+```
 
 Es gibt in dieser Foundation genau:
 
-- einen produktiven Programmprozess: Tauri,
-- einen Systemkern: Rust,
-- einen fachlichen lokalen Speicher: SQLite,
-- eine sichtbare HTML-Oberfläche.
+- 🔵 einen produktiven Programmprozess: **Tauri**,
+- 🔵 einen Systemkern: **Rust**,
+- 🔵 einen fachlichen lokalen Speicher: **SQLite**,
+- 🔵 eine sichtbare Oberfläche: **HTML/CSS/JavaScript**.
 
-## Bereits umgestellt
+## 🟢 Bereits strukturell umgestellt
 
-- Programmstatus kommt aus Rust.
-- Projektzustand liegt in SQLite.
-- Zwischenstände werden in SQLite angehängt.
-- Sicheres Beenden sichert zuerst einen Zwischenstand.
-- Die frühere IndexedDB-Projektzustandsdatei ist aus dem produktiven Weg entfernt.
-- Der frühere localhost-Server und eigene Launcher sind aus dem produktiven Weg entfernt.
-- Alte Lifecycle-Nachweise bleiben nur als historische Dokumentation erhalten.
+- 🟢 Programmstatus kommt aus Rust.
+- 🟢 Projektzustand liegt in SQLite.
+- 🟢 Zwischenstände werden in SQLite angehängt.
+- 🟢 Sicheres Beenden sichert zuerst einen Zwischenstand.
+- 🟢 Die frühere IndexedDB-Projektzustandsdatei ist aus dem produktiven Weg entfernt.
+- 🟢 Der frühere localhost-Server und eigene Launcher sind aus dem produktiven Weg entfernt.
+- 🟢 Alte Lifecycle-Nachweise bleiben als historische Dokumentation erhalten, aber nicht als aktive Architektur.
+- 🟢 Linux-Systemabhängigkeiten für Tauri werden zentral über `scripts/ci/install-tauri-linux-deps.sh` verwaltet.
 
-## Prüftrennung
+## 🧪 Prüftrennung
 
 ### SCHNELL
 
-Prüft:
+Prüft den kleinen, frühen Pflichtumfang:
 
 - Governance-Vertrag,
 - HTML und JavaScript,
 - Wissens- und Regressionskonsistenz,
+- vorhandenes `Cargo.lock`,
+- Linux-Tauri-Voraussetzungen im Modus `core`,
 - Rust-Formatierung,
 - `cargo check --locked`,
-- Clippy ohne zugelassene Warnungen.
+- Clippy mit `-D warnings`.
+
+**🔴 Regel:** Wenn SCHNELL rot ist, startet TIEF nicht.
 
 ### TIEF
 
@@ -48,25 +72,30 @@ Prüft zusätzlich:
 - 100–200-%-Skalierung,
 - Kontrast und reduzierte Bewegung,
 - sicheren Browserzustand ohne nativen Programmkern,
+- Linux-Tauri-Voraussetzungen im Modus `e2e`,
 - Rust-Tests,
 - echten Tauri-Start über `tauri-driver`,
 - SQLite-Persistenz über einen Neustart,
 - Zwischenstand,
 - sicheres Beenden.
 
+**🔴 Regel:** TIEF darf erst nach vollständig grünem SCHNELL laufen.
+
 ### FREIGABE
 
-Bleibt von Paketbau und Veröffentlichung getrennt. Diese Iteration wird erst als Fundament übernommen, wenn SCHNELL und TIEF für denselben Kandidaten grün sind.
+Bleibt von Paketbau und Veröffentlichung getrennt.
 
-## Abhängigkeiten
+**🔒 Regel:** Diese Foundation wird erst freigabefähig, wenn **SCHNELL und TIEF für denselben Kandidaten 🟢** sind.
 
-Produktiv neu:
+## 📦 Abhängigkeiten
+
+### Produktiv neu
 
 - Tauri 2,
 - Serde,
 - rusqlite mit eingebettetem SQLite.
 
-Bewusst nicht eingeführt:
+### Bewusst nicht eingeführt
 
 - React,
 - Vue,
@@ -76,16 +105,32 @@ Bewusst nicht eingeführt:
 - zweite Datenbank,
 - zusätzliches Ende-zu-Ende-Testframework.
 
-## Schutzregeln
+## 🛡️ Schutzregeln
 
-1. Keine zweite aktive Backendarchitektur.
-2. Keine zweite kanonische Speicherung des Projektzustands.
-3. Datenbankzugriffe erhalten eine begrenzte Wartezeit.
-4. Beenden darf erst nach bestätigtem Zwischenstand erfolgen.
-5. Browserbetrieb ohne Tauri bleibt sicher gesperrt und verändert keine Projektdaten.
-6. Alte Regressionen werden nicht gelöscht, aber als zurückgezogen gekennzeichnet, wenn ihre Architektur entfernt wurde.
-7. Keine P0-Funktion vor grüner nativer Foundation.
+1. 🟢 Keine zweite aktive Backendarchitektur.
+2. 🟢 Keine zweite kanonische Speicherung des Projektzustands.
+3. 🟢 Datenbankzugriffe erhalten eine begrenzte Wartezeit.
+4. 🟢 Beenden darf erst nach bestätigtem Zwischenstand erfolgen.
+5. 🟢 Browserbetrieb ohne Tauri bleibt sicher gesperrt und verändert keine Projektdaten.
+6. 🟢 Alte Regressionen werden nicht gelöscht, sondern bei entfernter Architektur als zurückgezogen gekennzeichnet.
+7. 🔒 Keine P0-Funktion vor grüner nativer Foundation.
 
-## Aktueller Nachweisstatus
+## 🔧 Linux-Abhängigkeiten – eine Quelle statt Doppelpflege
 
-Der Text beschreibt den Soll- und Implementierungsstand. Als **automatisch geprüft** gilt ein Punkt erst nach einem tatsächlich grünen GitHub-Actions-Lauf der dazugehörigen Stufe.
+Die Pipeline pflegt keine getrennten Paketlisten mehr.
+
+```text
+scripts/ci/install-tauri-linux-deps.sh core
+    └─ SCHNELL: Kompilier- und Lint-Voraussetzungen
+
+scripts/ci/install-tauri-linux-deps.sh e2e
+    └─ TIEF: core + WebKitWebDriver + Xvfb
+```
+
+Das Skript installiert nicht nur Pakete, sondern validiert anschließend auch die tatsächlich benötigten Werkzeuge und Bibliotheken.
+
+## 📋 Nachweisstatus
+
+Der **aktuelle Laufstatus** steht zusätzlich in `docs/STATUS_0.3.1.md`.
+
+Dieser Migrationsvertrag beschreibt Architektur, Schutzregeln und Prüfkette. Ein technischer Punkt darf in Statusdateien erst dann als **🟢 automatisch bestätigt** markiert werden, wenn der zugehörige GitHub-Actions-Lauf erfolgreich beendet wurde.
