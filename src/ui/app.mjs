@@ -265,7 +265,7 @@ function markCoreUnavailable(error) {
   $('storageList').textContent = 'Es wurden keine Datenträger verändert.';
   $('toolsSummary').textContent = '🔴 Werkzeugliste nicht erreichbar';
   $('toolsList').textContent = 'Es wurden keine Werkzeuge gestartet oder verändert.';
-  $('workspaceSummary').textContent = '🟡 Ansicht wird nicht gespeichert';
+  $('workspaceSummary').textContent = '🟢 Standardansicht';
   $('workspaceHelp').textContent = 'Du kannst Bereiche in dieser Sitzung ausblenden. Dauerhaft speichern ist ohne Programmkern nicht möglich.';
   $('overall').textContent = '🔴 Programmkern nicht erreichbar';
   setStorageActionsEnabled(false);
