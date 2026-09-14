@@ -1,7 +1,15 @@
 import { storageStatePresentation } from './storage-display.mjs';
+import {
+  WORKSPACE_PANELS,
+  defaultWorkspaceVisibility,
+  resetWorkspaceVisibility,
+  setWorkspacePanelVisibility,
+  visibleWorkspaceCount,
+} from './workspace-visibility.mjs';
 
 const $ = (id) => document.getElementById(id);
 const live = (text) => { $('live').textContent = text; };
+let workspaceVisibility = defaultWorkspaceVisibility();
 
 function runtimeInvoke() {
   const invoke = globalThis.__TAURI__?.core?.invoke;
@@ -15,6 +23,50 @@ function setStorageActionsEnabled(enabled) {
   for (const id of ['checkpointBtn', 'shutdownBtn']) {
     $(id).disabled = !enabled;
   }
+}
+
+function workspacePanelElement(panelId) {
+  return document.querySelector(`[data-workspace-panel="${panelId}"]`);
+}
+
+function workspaceToggleElement(panelId) {
+  return document.querySelector(`[data-workspace-toggle="${panelId}"]`);
+}
+
+function renderWorkspaceVisibility() {
+  for (const panel of WORKSPACE_PANELS) {
+    const target = workspacePanelElement(panel.id);
+    const toggle = workspaceToggleElement(panel.id);
+    const visible = workspaceVisibility[panel.id] !== false;
+    if (!target || !toggle) throw new Error(`Arbeitsbereich fehlt: ${panel.id}`);
+    target.hidden = !visible;
+    toggle.checked = visible;
+  }
+
+  const visibleCount = visibleWorkspaceCount(workspaceVisibility);
+  $('workspaceSummary').textContent = visibleCount === WORKSPACE_PANELS.length
+    ? '🟢 Standardansicht'
+    : `🔵 ${visibleCount} von ${WORKSPACE_PANELS.length} Bereichen sichtbar`;
+}
+
+function setupWorkspaceControls() {
+  for (const panel of WORKSPACE_PANELS) {
+    const toggle = workspaceToggleElement(panel.id);
+    if (!toggle) throw new Error(`Sichtbarkeitsschalter fehlt: ${panel.id}`);
+    toggle.addEventListener('change', () => {
+      workspaceVisibility = setWorkspacePanelVisibility(workspaceVisibility, panel.id, toggle.checked);
+      renderWorkspaceVisibility();
+      live(`${panel.label} ist jetzt ${toggle.checked ? 'sichtbar' : 'ausgeblendet'}.`);
+    });
+  }
+
+  $('workspaceResetBtn').addEventListener('click', () => {
+    workspaceVisibility = resetWorkspaceVisibility();
+    renderWorkspaceVisibility();
+    live('Standardansicht wurde wiederhergestellt.');
+  });
+
+  renderWorkspaceVisibility();
 }
 
 async function loadProjectState() {
@@ -249,5 +301,6 @@ $('shutdownBtn').addEventListener('click', async () => {
   }
 });
 
+setupWorkspaceControls();
 setStorageActionsEnabled(false);
 await refresh();

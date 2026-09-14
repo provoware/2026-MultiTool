@@ -17,7 +17,42 @@
     </header>
 
     <main class="grid">
-      <section class="card" aria-labelledby="today">
+      <section class="card workspace-card" aria-labelledby="workspaceTitle">
+        <div class="section-heading">
+          <div>
+            <h2 id="workspaceTitle">Ansicht anpassen</h2>
+            <p>Blende Bereiche aus, die du gerade nicht brauchst. Die Inhalte werden nur verborgen und nicht verändert.</p>
+          </div>
+          <div id="workspaceSummary" class="badge">🟢 Standardansicht</div>
+        </div>
+
+        <fieldset class="workspace-options" aria-describedby="workspaceHelp">
+          <legend class="visually-hidden">Sichtbare Bereiche</legend>
+          <label class="workspace-option" for="workspaceToggleToday">
+            <input id="workspaceToggleToday" type="checkbox" data-workspace-toggle="today" checked>
+            <span>Heute</span>
+          </label>
+          <label class="workspace-option" for="workspaceToggleSystemStatus">
+            <input id="workspaceToggleSystemStatus" type="checkbox" data-workspace-toggle="system-status" checked>
+            <span>Systemstatus</span>
+          </label>
+          <label class="workspace-option" for="workspaceToggleStorage">
+            <input id="workspaceToggleStorage" type="checkbox" data-workspace-toggle="storage" checked>
+            <span>Speicherübersicht</span>
+          </label>
+          <label class="workspace-option" for="workspaceToggleTools">
+            <input id="workspaceToggleTools" type="checkbox" data-workspace-toggle="tools" checked>
+            <span>Werkzeug-Zentrale</span>
+          </label>
+        </fieldset>
+
+        <div class="actions workspace-actions">
+          <button class="secondary" id="workspaceResetBtn" type="button">Ansicht zurücksetzen</button>
+        </div>
+        <p id="workspaceHelp" class="small">Die Auswahl gilt nur bis zum Schließen oder Neuladen des Programms. Danach erscheint wieder die Standardansicht.</p>
+      </section>
+
+      <section id="panelToday" class="card" data-workspace-panel="today" aria-labelledby="today">
         <h2 id="today">Heute</h2>
         <p>Diese Ansicht zeigt nur die wichtigsten Grundlagen. Zusätzliche Werkzeuge werden schrittweise und geprüft ergänzt.</p>
 
@@ -51,7 +86,7 @@
         </div>
       </section>
 
-      <aside class="card" aria-labelledby="systemStatusTitle">
+      <aside id="panelSystemStatus" class="card" data-workspace-panel="system-status" aria-labelledby="systemStatusTitle">
         <h2 id="systemStatusTitle">Systemstatus</h2>
         <div class="meta" id="systemStatus">
           <div><strong>Betriebssystem</strong><span id="osText">Wird geprüft …</span></div>
@@ -63,7 +98,7 @@
         <p class="small">Nur sichere Basisinformationen. Keine Prozesssteuerung, keine Systemänderung und keine umfangreiche Hardwarediagnose.</p>
       </aside>
 
-      <section class="card tools-card" aria-labelledby="storageTitle">
+      <section id="panelStorage" class="card tools-card" data-workspace-panel="storage" aria-labelledby="storageTitle">
         <div class="section-heading">
           <div>
             <h2 id="storageTitle">Speicherübersicht</h2>
@@ -76,7 +111,7 @@
         </div>
       </section>
 
-      <section class="card tools-card" aria-labelledby="toolsTitle">
+      <section id="panelTools" class="card tools-card" data-workspace-panel="tools" aria-labelledby="toolsTitle">
         <div class="section-heading">
           <div>
             <h2 id="toolsTitle">Werkzeug-Zentrale</h2>
