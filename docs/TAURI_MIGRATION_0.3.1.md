@@ -6,7 +6,19 @@ Diese Iteration ersetzt ausschließlich die frühere produktive Node-/localhost-
 
 **🔒 Keine P0-Module in dieser Iteration.**
 
-## 🚦 Leseschlüssel
+## 🚦 Nachweisstand
+
+```text
+Architektur / Migration      🟢 ██████████ umgesetzt
+SCHNELL                      🟢 ██████████ automatisch bestanden
+TIEF                         🟢 ██████████ automatisch bestanden
+FREIGABE-VORPRÜFUNG          🔒 noch eigener nächster Schritt
+P0-Module                    🔒 nicht Bestandteil von 0.3.1
+```
+
+**🟢 Die native Foundation hat SCHNELL und TIEF für denselben Implementierungskandidaten erfolgreich bestanden.** Grün ist dabei eine notwendige Qualitätsbedingung, aber **keine automatische Freigabe für P0**. Erst Freigabe-Vorprüfung, Abschluss/Frieren und Übernahme dieser Foundation trennen 0.3.1 sauber vom nächsten Funktions-Slice.
+
+## 🎨 Leseschlüssel
 
 - 🟢 **BESTANDEN / BESTÄTIGT** – automatisch geprüft oder strukturell abgeschlossen.
 - 🟡 **IN ARBEIT / PRÜFUNG** – umgesetzt oder gestartet, aber noch nicht vollständig bestätigt.
@@ -45,47 +57,45 @@ Es gibt in dieser Foundation genau:
 - 🟢 Die frühere IndexedDB-Projektzustandsdatei ist aus dem produktiven Weg entfernt.
 - 🟢 Der frühere localhost-Server und eigene Launcher sind aus dem produktiven Weg entfernt.
 - 🟢 Alte Lifecycle-Nachweise bleiben als historische Dokumentation erhalten, aber nicht als aktive Architektur.
-- 🟢 Linux-Systemabhängigkeiten für Tauri werden zentral über `scripts/ci/install-tauri-linux-deps.sh` verwaltet.
+- 🟢 Linux-Systemabhängigkeiten für Tauri werden zentral über `scripts/ci/install-tauri-linux-deps.sh` verwaltet und nach Installation validiert.
 
 ## 🧪 Prüftrennung
 
-### SCHNELL
+### SCHNELL 🟢
 
-Prüft den kleinen, frühen Pflichtumfang:
+Automatisch bestätigt:
 
-- Governance-Vertrag,
-- HTML und JavaScript,
-- Wissens- und Regressionskonsistenz,
-- vorhandenes `Cargo.lock`,
-- Linux-Tauri-Voraussetzungen im Modus `core`,
-- Rust-Formatierung,
-- `cargo check --locked`,
-- Clippy mit `-D warnings`.
+- 🟢 Governance-Vertrag,
+- 🟢 HTML und JavaScript,
+- 🟢 Wissens- und Regressionskonsistenz,
+- 🟢 vorhandenes `Cargo.lock`,
+- 🟢 Linux-Tauri-Voraussetzungen im Modus `core`,
+- 🟢 Rust-Formatierung,
+- 🟢 `cargo check --locked`,
+- 🟢 Clippy mit `-D warnings`.
 
-**🔴 Regel:** Wenn SCHNELL rot ist, startet TIEF nicht.
+**🔴 Schutzregel bleibt aktiv:** Wenn SCHNELL rot ist, startet TIEF nicht.
 
-### TIEF
+### TIEF 🟢
 
-Prüft zusätzlich:
+Automatisch bestätigt:
 
-- Firefox- und Chrome-Darstellung,
-- 100–200-%-Skalierung,
-- Kontrast und reduzierte Bewegung,
-- sicheren Browserzustand ohne nativen Programmkern,
-- Linux-Tauri-Voraussetzungen im Modus `e2e`,
-- Rust-Tests,
-- echten Tauri-Start über `tauri-driver`,
-- SQLite-Persistenz über einen Neustart,
-- Zwischenstand,
-- sicheres Beenden.
+- 🟢 vollständige Web- und Vertragsprüfung,
+- 🟢 Browser-/Darstellungsprüfungen,
+- 🟢 100–200-%-Skalierung,
+- 🟢 sicheren Browserzustand ohne nativen Programmkern,
+- 🟢 Linux-Tauri-Voraussetzungen im Modus `e2e`,
+- 🟢 Rust-Integrationstests,
+- 🟢 echten Tauri-Start über `tauri-driver`,
+- 🟢 SQLite-Persistenz über einen Neustart,
+- 🟢 Zwischenstand,
+- 🟢 sicheres Beenden.
 
-**🔴 Regel:** TIEF darf erst nach vollständig grünem SCHNELL laufen.
+### FREIGABE 🔒
 
-### FREIGABE
+Bleibt von SCHNELL/TIEF sowie Paketbau und Veröffentlichung getrennt.
 
-Bleibt von Paketbau und Veröffentlichung getrennt.
-
-**🔒 Regel:** Diese Foundation wird erst freigabefähig, wenn **SCHNELL und TIEF für denselben Kandidaten 🟢** sind.
+SCHNELL und TIEF sind jetzt die **erfüllten Eingangsvoraussetzungen**. Die Freigabe-Vorprüfung wird als eigener nächster Gate-Schritt ausgeführt, bevor die Foundation eingefroren oder nach `main` übernommen wird.
 
 ## 📦 Abhängigkeiten
 
@@ -113,7 +123,9 @@ Bleibt von Paketbau und Veröffentlichung getrennt.
 4. 🟢 Beenden darf erst nach bestätigtem Zwischenstand erfolgen.
 5. 🟢 Browserbetrieb ohne Tauri bleibt sicher gesperrt und verändert keine Projektdaten.
 6. 🟢 Alte Regressionen werden nicht gelöscht, sondern bei entfernter Architektur als zurückgezogen gekennzeichnet.
-7. 🔒 Keine P0-Funktion vor grüner nativer Foundation.
+7. 🔒 Keine P0-Funktion innerhalb dieses 0.3.1-Slices.
+8. 🔒 P0 bleibt bis Freigabe-Vorprüfung, Abschluss/Frieren und sauberer Trennung in einen neuen Slice gesperrt.
+9. 🔴 Kein Test darf abgeschwächt werden, nur um einen grünen Status zu erzeugen.
 
 ## 🔧 Linux-Abhängigkeiten – eine Quelle statt Doppelpflege
 
@@ -129,8 +141,8 @@ scripts/ci/install-tauri-linux-deps.sh e2e
 
 Das Skript installiert nicht nur Pakete, sondern validiert anschließend auch die tatsächlich benötigten Werkzeuge und Bibliotheken.
 
-## 📋 Nachweisstatus
+## 📋 Statusdatei
 
-Der **aktuelle Laufstatus** steht zusätzlich in `docs/STATUS_0.3.1.md`.
+Der kompakte, laienlesbare Ampelstand steht in `docs/STATUS_0.3.1.md`.
 
-Dieser Migrationsvertrag beschreibt Architektur, Schutzregeln und Prüfkette. Ein technischer Punkt darf in Statusdateien erst dann als **🟢 automatisch bestätigt** markiert werden, wenn der zugehörige GitHub-Actions-Lauf erfolgreich beendet wurde.
+Die Dokumentation verwendet bewusst dieselbe Statussprache wie die Pipeline: **🟢 bestätigt · 🟡 in Prüfung · 🔴 blockiert · 🔵 Info · ⚪ offen · 🔒 gesperrt**. So bedeuten Farben im Chat, in der CI und in den Info-Dateien dasselbe.
