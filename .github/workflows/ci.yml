@@ -10,10 +10,7 @@ on:
         required: true
         default: 'TIEF'
         type: choice
-        options:
-          - SCHNELL
-          - TIEF
-          - FREIGABE
+        options: [SCHNELL, TIEF, FREIGABE]
 
 permissions:
   contents: read
@@ -29,7 +26,7 @@ jobs:
   schnell:
     name: SCHNELL - Vertrag und Kernpruefung
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 18
     steps:
       - name: Exakten Kandidaten laden
         uses: actions/checkout@v7
@@ -55,10 +52,10 @@ jobs:
         run: |
           if [[ -f src-tauri/Cargo.toml ]]; then
             echo "present=true" >> "$GITHUB_OUTPUT"
-            echo "Tauri-Quellstand vorhanden. Rust-Pruefung wird ausgefuehrt."
+            echo "Tauri-Quellstand vorhanden. Rust-Pruefung wird verpflichtend."
           else
             echo "present=false" >> "$GITHUB_OUTPUT"
-            echo "Tauri-Quellstand noch nicht vorhanden. Rust-Pruefung ist fuer diese Foundation nicht anwendbar."
+            echo "Tauri-Quellstand noch nicht vorhanden."
           fi
 
       - name: Rust-Werkzeugkette pruefen
@@ -67,6 +64,21 @@ jobs:
           rustc --version
           cargo --version
           rustup component add rustfmt clippy
+
+      - name: Cargo-Lockdatei pruefen
+        if: steps.tauri.outputs.present == 'true'
+        shell: bash
+        run: |
+          if [[ -f src-tauri/Cargo.lock ]]; then
+            echo "Cargo.lock vorhanden."
+            exit 0
+          fi
+          mkdir -p runtime/ci-evidence
+          (cd src-tauri && cargo generate-lockfile)
+          cp src-tauri/Cargo.lock runtime/ci-evidence/generated-Cargo.lock
+          echo "Cargo.lock fehlte. Eine reproduzierbare Lockdatei wurde als Fehlernachweis erzeugt."
+          echo "Sie muss in den Quellstand uebernommen werden; der Lauf bleibt deshalb absichtlich rot."
+          exit 1
 
       - name: Rust formatieren, kompilieren und linten
         if: steps.tauri.outputs.present == 'true'
@@ -93,7 +105,7 @@ jobs:
       inputs.stufe == 'TIEF' ||
       inputs.stufe == 'FREIGABE'
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 40
     steps:
       - name: Exakten Kandidaten laden
         uses: actions/checkout@v7
@@ -107,7 +119,7 @@ jobs:
       - name: Gesperrte Abhaengigkeiten installieren
         run: npm ci --no-audit --no-fund
 
-      - name: Vollstaendige Foundation- und Browserpruefung
+      - name: Vollstaendige Web- und Vertragspruefung
         run: npm run ci:tief
 
       - name: Tauri-Quellstand erkennen
@@ -128,7 +140,9 @@ jobs:
             libwebkit2gtk-4.1-dev \
             libappindicator3-dev \
             librsvg2-dev \
-            patchelf
+            patchelf \
+            webkit2gtk-driver \
+            xvfb
 
       - name: Rust-Integrationstests ausfuehren
         if: steps.tauri.outputs.present == 'true'
@@ -139,14 +153,13 @@ jobs:
         if: steps.tauri.outputs.present == 'true'
         shell: bash
         run: |
-          if [[ ! -f tests/tauri-e2e/package.json ]]; then
-            echo "Tauri ist vorhanden, aber tests/tauri-e2e/package.json fehlt."
-            echo "Die TIEF-Stufe blockiert, bis echte native E2E-Tests vorhanden sind."
+          if [[ ! -f tests/tauri-e2e/native_tauri_e2e.mjs ]]; then
+            echo "Tauri ist vorhanden, aber der native Ende-zu-Ende-Test fehlt."
             exit 1
           fi
-          cd tests/tauri-e2e
-          npm ci --no-audit --no-fund
-          npm test
+          cargo install tauri-driver --locked
+          (cd src-tauri && cargo build --locked)
+          xvfb-run -a node tests/tauri-e2e/native_tauri_e2e.mjs
 
       - name: Fehlernachweise nur bei Fehler sichern
         if: failure()
