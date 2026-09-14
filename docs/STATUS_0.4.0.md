@@ -2,15 +2,16 @@
 
 ## 🚦 Gesamtstand
 
-**🟡 P0.3 Speicherübersicht ist umgesetzt und wartet auf die Cloud-Prüfung.**
+**🟢 P0.3 Speicherübersicht ist umgesetzt und durch SCHNELL + TIEF einschließlich nativer Tauri-Prüfung bestätigt.**
 
 ```text
 Stabile Tauri-Foundation      🟢 ██████████ 100 % übernommen
 P0.1 Werkzeug-Zentrale        🟢 ██████████ bestätigt und übernommen
 P0.2 Systemstatus             🟢 ██████████ bestätigt und übernommen
-P0.3 Speicherübersicht        🟡 ████████░░ umgesetzt, Prüfung offen
-SCHNELL für P0.3              ⚪ noch nicht bestätigt
-TIEF für P0.3                 🔒 bis SCHNELL grün
+P0.3 Speicherübersicht        🟢 ██████████ umgesetzt und geprüft
+SCHNELL für P0.3              🟢 bestanden
+TIEF für P0.3                 🟢 bestanden
+Native Tauri-Prüfung          🟢 bestanden
 Speicherplatz-Ampel           🔒 eigener späterer Slice
 ```
 
@@ -25,18 +26,49 @@ Speicherplatz-Ampel           🔒 eigener späterer Slice
 
 > **Ampelregel:** Grün gibt es nur nach einem wirklich erfolgreichen automatischen Lauf.
 
-## 🟡 Was P0.3 bereits enthält
+## 🟢 Was P0.3 enthält
 
-- 🟡 lesende Erkennung eingehängter lokaler Datenträger unter Linux,
-- 🟡 verständlicher Name pro Datenträger,
-- 🟡 Einhängeort,
-- 🟡 Gesamtgröße,
-- 🟡 freier Speicher,
-- 🟡 Filter gegen Pseudo-, Netzwerk- und typische AppImage-Sondermounts,
-- 🟡 direkte Linux-Abfrage über `statvfs` statt Shell-Befehl,
-- 🟡 Speicherübersicht als read-only Eintrag in der Werkzeug-Zentrale,
-- 🟡 nativer Tauri-E2E-Nachweis für echte Speicherwerte,
-- 🟡 Regressionstests für P0.1, P0.2, SQLite-Persistenz, Zwischenstand und sicheres Beenden.
+- 🟢 lesende Erkennung eingehängter lokaler Datenträger unter Linux,
+- 🟢 verständlicher Name pro Datenträger,
+- 🟢 Einhängeort,
+- 🟢 Gesamtgröße,
+- 🟢 freier Speicher,
+- 🟢 Filter gegen Pseudo-, Netzwerk- und typische AppImage-Sondermounts,
+- 🟢 direkte Linux-Abfrage über `statvfs` statt Shell-Befehl,
+- 🟢 Speicherübersicht als Nur-Lesen-Eintrag in der Werkzeug-Zentrale,
+- 🟢 nativer Tauri-Nachweis für echte Speicherwerte,
+- 🟢 Regressionstests für P0.1, P0.2, SQLite-Persistenz, Zwischenstand und sicheres Beenden.
+
+## 🧪 Bestätigter Prüfweg
+
+### SCHNELL 🟢
+
+- Governance und Wissen,
+- HTML und JavaScript,
+- Abhängigkeitsprüfung,
+- Cargo-Sperrdatei,
+- Rust-Formatierung,
+- Rust-Kompilierung mit gesperrten Abhängigkeiten,
+- Clippy ohne Warnungen,
+- Rust-Tests für Einhängeorte, Filterung, Namen und Doppelmounts.
+
+### TIEF 🟢
+
+- vollständige Browser- und Vertragsregression,
+- Rust-Integrationstests,
+- echter Tauri-Start,
+- mindestens ein aktiver Datenträger,
+- Einhängeort befüllt,
+- Gesamtgröße größer als null,
+- freier Speicher nicht größer als Gesamtgröße,
+- P0.1 und P0.2 weiterhin korrekt,
+- SQLite-Persistenz,
+- Zwischenstand,
+- sicheres Beenden.
+
+## 🧯 Während der Prüfung behoben
+
+Der erste SCHNELL-Lauf blockierte ausschließlich wegen einer von `rustfmt` geforderten Formatierung. Die Funktion und die Prüfregeln wurden nicht verändert oder abgeschwächt. Danach bestanden SCHNELL und TIEF vollständig.
 
 ## 🛡️ Bewusste Grenzen
 
@@ -48,15 +80,15 @@ Speicherplatz-Ampel           🔒 eigener späterer Slice
 - 🔒 kein Aushängen,
 - 🔒 keine Speicheroptimierung,
 - 🔒 kein Shell-Aufruf wie `df` oder `lsblk`,
-- 🔒 kein Hintergrunddienst und kein Dauer-Polling,
+- 🔒 kein Hintergrunddienst und kein Dauer-Abfragen,
 - 🔒 keine neue Datenbanktabelle,
 - 🔒 keine neue Tauri-Berechtigung.
 
 ## 📦 Abhängigkeiten
 
-P0.3 deklariert `libc = "0.2"` direkt, um die vorhandene Linux-Systemfunktion `statvfs` sauber aus Rust aufzurufen.
+P0.3 deklariert `libc = "0.2"` direkt, um die Linux-Systemfunktion `statvfs` sauber aus Rust aufzurufen.
 
-`libc` war bereits indirekt im bestehenden Cargo-Sperrbestand vorhanden. Es wird **kein großes Systeminformations-Framework** ergänzt.
+`libc` war bereits indirekt im bestehenden Cargo-Sperrbestand vorhanden. Es wurde **kein großes Systeminformations-Paket** ergänzt.
 
 ## 🔵 Versionshinweis
 
@@ -64,4 +96,4 @@ Die sichtbare Programmversion bleibt die echte Rust-Paketversion `0.1.0`. P0.3 v
 
 ## ➡️ Nächster Schritt
 
-**Cargo-Sperrdatei reproduzierbar auf den neuen direkten `libc`-Verweis bringen → Scope prüfen → Draft-PR öffnen → SCHNELL → bei Grün TIEF → erst bei zwei grünen Stufen unverändert nach `main`.**
+**Diesen Dokumentationsstand noch einmal durch SCHNELL → TIEF bestätigen. Danach exakt den grünen Kandidaten nach `main` übernehmen. Erst anschließend darf die getrennte, weiterhin nur lesende Speicherplatz-Ampel geplant werden.**
