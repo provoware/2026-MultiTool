@@ -19,9 +19,25 @@ struct RuntimeState {
 #[derive(Serialize)]
 struct RuntimeStatus {
     status: &'static str,
+    overall_text: &'static str,
+    operating_system: &'static str,
+    program_version: &'static str,
     session: String,
+    core_status: &'static str,
+    core_text: &'static str,
     local_only: bool,
     storage: &'static str,
+    database_status: &'static str,
+    database_text: &'static str,
+}
+
+fn operating_system_name() -> &'static str {
+    match std::env::consts::OS {
+        "linux" => "Linux",
+        "windows" => "Windows",
+        "macos" => "macOS",
+        other => other,
+    }
 }
 
 fn now_millis() -> u128 {
@@ -33,12 +49,30 @@ fn now_millis() -> u128 {
 
 #[tauri::command]
 fn get_status(state: State<'_, RuntimeState>) -> Result<RuntimeStatus, String> {
-    storage::health(&state.database_path)?;
+    let database_ready = storage::health(&state.database_path).is_ok();
+    let (status, overall_text, database_status, database_text) = if database_ready {
+        ("ready", "Alles bereit", "ready", "Bereit · SQLite lokal")
+    } else {
+        (
+            "attention",
+            "Aufmerksamkeit nötig",
+            "attention",
+            "Aufmerksamkeit nötig · lokale Datenbank nicht bereit",
+        )
+    };
+
     Ok(RuntimeStatus {
-        status: "ready",
+        status,
+        overall_text,
+        operating_system: operating_system_name(),
+        program_version: env!("CARGO_PKG_VERSION"),
         session: state.session.clone(),
+        core_status: "ready",
+        core_text: "Bereit",
         local_only: true,
         storage: "sqlite",
+        database_status,
+        database_text,
     })
 }
 
@@ -106,4 +140,15 @@ pub fn run() {
         ])
         .run(tauri::generate_context!())
         .expect("PROVOWARE MultiTool konnte nicht gestartet werden");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn safe_system_status_sources_are_present() {
+        assert!(!operating_system_name().trim().is_empty());
+        assert!(!env!("CARGO_PKG_VERSION").trim().is_empty());
+    }
 }
