@@ -11,6 +11,7 @@ import {
 const $ = (id) => document.getElementById(id);
 const live = (text) => { $('live').textContent = text; };
 let workspaceVisibility = defaultWorkspaceVisibility();
+let workspaceVisibilityInitialized = false;
 
 function runtimeInvoke() {
   const invoke = globalThis.__TAURI__?.core?.invoke;
@@ -32,6 +33,12 @@ function workspacePanelElement(panelId) {
 
 function workspaceToggleElement(panelId) {
   return document.querySelector(`[data-workspace-toggle="${panelId}"]`);
+}
+
+function restoreWorkspaceControlFocus(control, hadFocus) {
+  if (!hadFocus) return;
+  const active = document.activeElement;
+  if (active === document.body || active === null) control.focus({ preventScroll:true });
 }
 
 function renderWorkspaceVisibility(summaryOverride = null) {
@@ -77,6 +84,7 @@ function setupWorkspaceControls() {
     if (!toggle) throw new Error(`Sichtbarkeitsschalter fehlt: ${panel.id}`);
     toggle.addEventListener('change', async () => {
       const visible = toggle.checked;
+      const hadFocus = document.activeElement === toggle;
       workspaceVisibility = setWorkspacePanelVisibility(workspaceVisibility, panel.id, visible);
       renderWorkspaceVisibility();
       toggle.disabled = true;
@@ -92,12 +100,14 @@ function setupWorkspaceControls() {
         live(`${panel.label} ist jetzt ${visible ? 'sichtbar' : 'ausgeblendet'}. Die Änderung gilt nur für diese Sitzung.`);
       } finally {
         toggle.disabled = false;
+        restoreWorkspaceControlFocus(toggle, hadFocus);
       }
     });
   }
 
   $('workspaceResetBtn').addEventListener('click', async () => {
     const button = $('workspaceResetBtn');
+    const hadFocus = document.activeElement === button;
     workspaceVisibility = resetWorkspaceVisibility();
     renderWorkspaceVisibility();
     button.disabled = true;
@@ -113,6 +123,7 @@ function setupWorkspaceControls() {
       live('Standardansicht wurde nur für diese Sitzung wiederhergestellt.');
     } finally {
       button.disabled = false;
+      restoreWorkspaceControlFocus(button, hadFocus);
     }
   });
 
@@ -281,7 +292,10 @@ async function refresh() {
     const status = await runtimeInvoke()('get_status');
     coreAvailable = true;
     renderSystemStatus(status);
-    await loadWorkspaceVisibility();
+    if (!workspaceVisibilityInitialized) {
+      workspaceVisibilityInitialized = true;
+      await loadWorkspaceVisibility();
+    }
 
     let toolsReady = true;
     try {
