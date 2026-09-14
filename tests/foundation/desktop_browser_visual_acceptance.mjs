@@ -170,20 +170,21 @@ async function runBrowser(browser, url) {
     assert(afterReload.systemVisible && afterReload.toggleChecked && afterReload.summary.includes('Standardansicht'), `${browser}: Sichtbarkeit wurde unerlaubt dauerhaft gespeichert.`);
 
     await execute(driver, `
-      globalThis.__workspaceReviewState = { loadCount:0, persisted:{ today:true, 'system-status':true, storage:true, tools:true } };
-      globalThis.__TAURI__ = { core:{ invoke:async (command) => {
-        const state = globalThis.__workspaceReviewState;
-        if (command === 'get_status') return {
-          operating_system:'Testsystem', program_version:'Test', session:'Browser',
-          core_status:'ready', core_text:'Programmkern bereit', database_status:'ready',
-          database_text:'Lokale Datenbank bereit', local_only:true, status:'ready', overall_text:'Alles bereit'
-        };
-        if (command === 'load_workspace_visibility') { state.loadCount += 1; return { ...state.persisted }; }
-        if (command === 'set_workspace_visibility' || command === 'reset_workspace_visibility') throw new Error('Simulierter Schreibfehler');
-        if (command === 'list_tools' || command === 'list_storage_volumes') return [];
-        if (command === 'load_or_create_project_state') return { project_id:'browser-review', revision:1 };
-        throw new Error('Unerwarteter Testbefehl: ' + command);
-      } } };
+      const script = document.createElement('script');
+      script.textContent = [
+        "globalThis.__workspaceReviewState = { loadCount:0, persisted:{ today:true, 'system-status':true, storage:true, tools:true } };",
+        "globalThis.__TAURI__ = { core:{ invoke:async (command) => {",
+        "const state = globalThis.__workspaceReviewState;",
+        "if (command === 'get_status') return { operating_system:'Testsystem', program_version:'Test', session:'Browser', core_status:'ready', core_text:'Programmkern bereit', database_status:'ready', database_text:'Lokale Datenbank bereit', local_only:true, status:'ready', overall_text:'Alles bereit' };",
+        "if (command === 'load_workspace_visibility') { state.loadCount += 1; return { ...state.persisted }; }",
+        "if (command === 'set_workspace_visibility' || command === 'reset_workspace_visibility') throw new Error('Simulierter Schreibfehler');",
+        "if (command === 'list_tools' || command === 'list_storage_volumes') return [];",
+        "if (command === 'load_or_create_project_state') return { project_id:'browser-review', revision:1 };",
+        "throw new Error('Unerwarteter Testbefehl: ' + command);",
+        "} } };"
+      ].join('\\n');
+      document.documentElement.append(script);
+      script.remove();
       document.getElementById('refreshBtn').disabled = false;
       document.getElementById('refreshBtn').click();
       return true;
