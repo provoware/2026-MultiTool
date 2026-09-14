@@ -2,15 +2,17 @@
 
 ## 🚦 Gesamtstand
 
-**🟡 P0.2 Systemstatus ist umgesetzt und wartet auf die Cloud-Prüfung.**
+**🟢 P0.3 Speicherübersicht ist umgesetzt und durch SCHNELL + TIEF einschließlich nativer Tauri-Prüfung bestätigt.**
 
 ```text
 Stabile Tauri-Foundation      🟢 ██████████ 100 % übernommen
 P0.1 Werkzeug-Zentrale        🟢 ██████████ bestätigt und übernommen
-P0.2 Systemstatus             🟡 ████████░░ umgesetzt, Prüfung offen
-SCHNELL für P0.2              ⚪ noch nicht bestätigt
-TIEF für P0.2                 ⚪ noch nicht bestätigt
-P0.3 und weitere Module       🔒 gesperrt
+P0.2 Systemstatus             🟢 ██████████ bestätigt und übernommen
+P0.3 Speicherübersicht        🟢 ██████████ umgesetzt und geprüft
+SCHNELL für P0.3              🟢 bestanden
+TIEF für P0.3                 🟢 bestanden
+Native Tauri-Prüfung          🟢 bestanden
+Speicherplatz-Ampel           🔒 eigener späterer Slice
 ```
 
 ## 🎨 Bedeutung
@@ -24,35 +26,74 @@ P0.3 und weitere Module       🔒 gesperrt
 
 > **Ampelregel:** Grün gibt es nur nach einem wirklich erfolgreichen automatischen Lauf.
 
-## 🟡 Was P0.2 bereits enthält
+## 🟢 Was P0.3 enthält
 
-- 🟡 Betriebssystem aus dem Rust-Kern,
-- 🟡 echte kompilierte Programmversion aus dem Rust-Paket,
-- 🟡 Anzeige der aktiven Sitzung,
-- 🟡 verständlicher Zustand des Programmkerns,
-- 🟡 verständlicher Zustand der lokalen SQLite-Datenbank,
-- 🟡 Gesamtzustand „Alles bereit“ oder „Aufmerksamkeit nötig“,
-- 🟡 Systemstatus als read-only Eintrag in der Werkzeug-Zentrale,
-- 🟡 nativer Tauri-E2E-Nachweis für alle fünf Basisinformationen,
-- 🟡 Regressionstests für P0.1, SQLite-Persistenz, Zwischenstand und sicheres Beenden.
+- 🟢 lesende Erkennung eingehängter lokaler Datenträger unter Linux,
+- 🟢 verständlicher Name pro Datenträger,
+- 🟢 Einhängeort,
+- 🟢 Gesamtgröße,
+- 🟢 freier Speicher,
+- 🟢 Filter gegen Pseudo-, Netzwerk- und typische AppImage-Sondermounts,
+- 🟢 direkte Linux-Abfrage über `statvfs` statt Shell-Befehl,
+- 🟢 Speicherübersicht als Nur-Lesen-Eintrag in der Werkzeug-Zentrale,
+- 🟢 nativer Tauri-Nachweis für echte Speicherwerte,
+- 🟢 Regressionstests für P0.1, P0.2, SQLite-Persistenz, Zwischenstand und sicheres Beenden.
+
+## 🧪 Bestätigter Prüfweg
+
+### SCHNELL 🟢
+
+- Governance und Wissen,
+- HTML und JavaScript,
+- Abhängigkeitsprüfung,
+- Cargo-Sperrdatei,
+- Rust-Formatierung,
+- Rust-Kompilierung mit gesperrten Abhängigkeiten,
+- Clippy ohne Warnungen,
+- Rust-Tests für Einhängeorte, Filterung, Namen und Doppelmounts.
+
+### TIEF 🟢
+
+- vollständige Browser- und Vertragsregression,
+- Rust-Integrationstests,
+- echter Tauri-Start,
+- mindestens ein aktiver Datenträger,
+- Einhängeort befüllt,
+- Gesamtgröße größer als null,
+- freier Speicher nicht größer als Gesamtgröße,
+- P0.1 und P0.2 weiterhin korrekt,
+- SQLite-Persistenz,
+- Zwischenstand,
+- sicheres Beenden.
+
+## 🧯 Während der Prüfung behoben
+
+Der erste SCHNELL-Lauf blockierte ausschließlich wegen einer von `rustfmt` geforderten Formatierung. Die Funktion und die Prüfregeln wurden nicht verändert oder abgeschwächt. Danach bestanden SCHNELL und TIEF vollständig.
 
 ## 🛡️ Bewusste Grenzen
 
-- 🔒 keine Prozesssteuerung,
-- 🔒 keine Systemänderung,
-- 🔒 keine Hardwareinventur,
-- 🔒 kein `/proc`-Scan,
-- 🔒 kein Shell-Aufruf,
-- 🔒 keine Netzwerkdiagnose,
+- 🔒 keine Speicherplatz-Ampel,
+- 🔒 keine Bewertung „normal / knapp / kritisch“,
+- 🔒 keine Bereinigung,
+- 🔒 kein Verschieben,
+- 🔒 kein Löschen,
+- 🔒 kein Aushängen,
+- 🔒 keine Speicheroptimierung,
+- 🔒 kein Shell-Aufruf wie `df` oder `lsblk`,
+- 🔒 kein Hintergrunddienst und kein Dauer-Abfragen,
 - 🔒 keine neue Datenbanktabelle,
-- 🔒 keine neue Berechtigung,
-- 🔒 keine neue Laufzeitbibliothek,
-- 🔒 kein P0.3 in diesem Slice.
+- 🔒 keine neue Tauri-Berechtigung.
+
+## 📦 Abhängigkeiten
+
+P0.3 deklariert `libc = "0.2"` direkt, um die Linux-Systemfunktion `statvfs` sauber aus Rust aufzurufen.
+
+`libc` war bereits indirekt im bestehenden Cargo-Sperrbestand vorhanden. Es wurde **kein großes Systeminformations-Paket** ergänzt.
 
 ## 🔵 Versionshinweis
 
-Die sichtbare Programmversion wird nicht aus dem Projektnamen oder diesem Dokument abgeleitet, sondern direkt aus dem Rust-Paket. Der aktuell kompilierte Paketstand ist weiterhin `0.1.0`. Eine spätere Harmonisierung mit der Projektphase `0.4.0` ist eine getrennte Releaseentscheidung und nicht Bestandteil des read-only Systemstatus.
+Die sichtbare Programmversion bleibt die echte Rust-Paketversion `0.1.0`. P0.3 verändert die Produktversion nicht.
 
 ## ➡️ Nächster Schritt
 
-**SCHNELL und anschließend TIEF für exakt denselben P0.2-Kandidaten ausführen. Erst bei zwei grünen Stufen den unveränderten Slice nach `main` übernehmen.**
+**Nach der Übernahme dieses bestätigten P0.3-Stands nach `main` die Speicherplatz-Ampel als eigenen, weiterhin strikt nur lesenden Slice planen. Grenzwerte, kleine und große Datenträger, read-only Medien, Inode-Mangel und die Trennung zwischen „Speicher knapp“ und „Werkzeugfehler“ müssen vor der Umsetzung als eigener Vertrag festgelegt werden.**

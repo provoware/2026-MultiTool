@@ -2426,6 +2426,7 @@ dependencies = [
 name = "provoware-multitool"
 version = "0.1.0"
 dependencies = [
+ "libc",
  "rusqlite",
  "serde",
  "tauri",

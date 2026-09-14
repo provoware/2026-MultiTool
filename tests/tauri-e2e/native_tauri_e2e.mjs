@@ -99,6 +99,17 @@ async function systemStatusMarker(sessionId) {
   }`);
 }
 
+async function storageOverviewMarker(sessionId) {
+  return await execute(sessionId, `const first=document.querySelector('#storageList .storage-item'); return {
+    count: document.querySelectorAll('#storageList .storage-item').length,
+    summary: document.getElementById('storageSummary')?.textContent || '',
+    text: document.getElementById('storageList')?.textContent || '',
+    mountPoint: first?.dataset.mountPoint || '',
+    totalBytes: first?.dataset.totalBytes || '0',
+    freeBytes: first?.dataset.freeBytes || '0'
+  }`);
+}
+
 await access(APP, fsConstants.X_OK);
 await access(DRIVER, fsConstants.X_OK);
 await rm(DATA_DIR, { recursive:true, force:true });
@@ -117,6 +128,7 @@ const evidence = {
   checkpoint:false,
   toolCenter:false,
   systemStatus:false,
+  storageOverview:false,
   safeShutdown:false,
 };
 let firstSession = null;
@@ -134,9 +146,10 @@ try {
   assert(before.revision === '1', 'Unerwartete Projekt-Revision beim ersten Start.');
 
   const tools = await toolCenterMarker(firstSession);
-  assert(tools.count >= 3, 'Werkzeug-Zentrale zeigt nicht alle eingebauten Werkzeuge.');
+  assert(tools.count >= 4, 'Werkzeug-Zentrale zeigt nicht alle eingebauten Werkzeuge.');
   assert(tools.text.includes('Werkzeug-Zentrale'), 'Werkzeug-Zentrale fehlt in der Werkzeugliste.');
   assert(tools.text.includes('Systemstatus'), 'Systemstatus fehlt in der Werkzeugliste.');
+  assert(tools.text.includes('Speicherübersicht'), 'Speicherübersicht fehlt in der Werkzeugliste.');
   assert(tools.summary.includes('Werkzeugen bereit'), 'Werkzeug-Zentrale zeigt keinen verständlichen Gesamtzustand.');
   evidence.toolCenter = true;
 
@@ -147,6 +160,17 @@ try {
   assert(system.core.includes('🟢') && system.core.includes('Bereit'), 'Programmkern wird nicht als bereit angezeigt.');
   assert(system.database.includes('🟢') && system.database.includes('SQLite'), 'Lokale Datenbank wird nicht als bereit angezeigt.');
   evidence.systemStatus = true;
+
+  const storage = await storageOverviewMarker(firstSession);
+  assert(storage.count >= 1, 'Speicherübersicht zeigt keinen aktiven Datenträger.');
+  assert(storage.summary.includes('Datenträger'), 'Speicherübersicht zeigt keine verständliche Zusammenfassung.');
+  assert(storage.mountPoint.trim().length > 0, 'Einhängeort des ersten Datenträgers fehlt.');
+  const totalBytes = Number(storage.totalBytes);
+  const freeBytes = Number(storage.freeBytes);
+  assert(Number.isFinite(totalBytes) && totalBytes > 0, 'Gesamtgröße des Datenträgers ist ungültig.');
+  assert(Number.isFinite(freeBytes) && freeBytes >= 0 && freeBytes <= totalBytes, 'Freier Speicher des Datenträgers ist ungültig.');
+  assert(storage.text.includes('Gesamt:') && storage.text.includes('Frei:'), 'Speichergrößen werden nicht verständlich angezeigt.');
+  evidence.storageOverview = true;
 
   await click(firstSession, '#checkpointBtn');
   await waitFor(async () => (await execute(firstSession, `return document.getElementById('checkpointText')?.textContent || ''`)).includes('Gesichert:'), { label:'Zwischenstand gesichert' });
@@ -171,7 +195,7 @@ try {
 
   evidence.status = 'PASS';
   await writeFile(resolve(EVIDENCE_DIR, 'tauri-e2e.json'), JSON.stringify(evidence, null, 2));
-  console.log('🟢 Native Tauri-E2E: Start · Systemstatus · Werkzeug-Zentrale · SQLite-Persistenz · Zwischenstand · Neustart · sicheres Beenden PASS');
+  console.log('🟢 Native Tauri-E2E: Start · Systemstatus · Speicherübersicht · Werkzeug-Zentrale · SQLite-Persistenz · Zwischenstand · Neustart · sicheres Beenden PASS');
 } catch (error) {
   evidence.status = 'FAIL';
   evidence.message = error.message;
