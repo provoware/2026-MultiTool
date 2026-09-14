@@ -1,3 +1,5 @@
+import { storageStatePresentation } from './storage-display.mjs';
+
 const $ = (id) => document.getElementById(id);
 const live = (text) => { $('live').textContent = text; };
 
@@ -81,14 +83,20 @@ function renderStorageVolumes(volumes) {
   }
 
   for (const volume of volumes) {
+    const presentation = storageStatePresentation(volume.state);
     const item = document.createElement('article');
     item.className = 'tool-item storage-item';
     item.dataset.mountPoint = volume.mount_point;
     item.dataset.totalBytes = String(volume.total_bytes);
     item.dataset.freeBytes = String(volume.free_bytes);
+    item.dataset.storageState = volume.state ?? 'UNKNOWN';
 
     const title = document.createElement('strong');
     title.textContent = volume.name;
+
+    const state = document.createElement('p');
+    state.className = `storage-state ${presentation.className}`;
+    state.textContent = `${presentation.icon} ${presentation.text}`;
 
     const mount = document.createElement('p');
     mount.className = 'small';
@@ -97,7 +105,7 @@ function renderStorageVolumes(volumes) {
     const sizes = document.createElement('p');
     sizes.textContent = `Gesamt: ${formatStorageSize(volume.total_bytes)} · Frei: ${formatStorageSize(volume.free_bytes)}`;
 
-    item.append(title, mount, sizes);
+    item.append(title, state, mount, sizes);
     list.append(item);
   }
 

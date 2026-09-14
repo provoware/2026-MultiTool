@@ -106,7 +106,9 @@ async function storageOverviewMarker(sessionId) {
     text: document.getElementById('storageList')?.textContent || '',
     mountPoint: first?.dataset.mountPoint || '',
     totalBytes: first?.dataset.totalBytes || '0',
-    freeBytes: first?.dataset.freeBytes || '0'
+    freeBytes: first?.dataset.freeBytes || '0',
+    state: first?.dataset.storageState || '',
+    stateText: first?.querySelector('.storage-state')?.textContent || ''
   }`);
 }
 
@@ -170,6 +172,15 @@ try {
   assert(Number.isFinite(totalBytes) && totalBytes > 0, 'Gesamtgröße des Datenträgers ist ungültig.');
   assert(Number.isFinite(freeBytes) && freeBytes >= 0 && freeBytes <= totalBytes, 'Freier Speicher des Datenträgers ist ungültig.');
   assert(storage.text.includes('Gesamt:') && storage.text.includes('Frei:'), 'Speichergrößen werden nicht verständlich angezeigt.');
+  const expectedStorageLabels = {
+    NORMAL: '🟢 Normal',
+    LOW: '🟡 Speicher wird knapp',
+    CRITICAL: '🔴 Sehr wenig Speicher frei',
+    READ_ONLY: '🔵 Nur Lesen',
+    UNKNOWN: '⚪ Nicht prüfbar',
+  };
+  assert(Object.hasOwn(expectedStorageLabels, storage.state), `Unbekannter Speicherzustand aus dem Backend: ${storage.state}`);
+  assert(storage.stateText.trim() === expectedStorageLabels[storage.state], 'Speicherzustand wird in der Oberfläche nicht exakt dargestellt.');
   evidence.storageOverview = true;
 
   await click(firstSession, '#checkpointBtn');
@@ -195,7 +206,7 @@ try {
 
   evidence.status = 'PASS';
   await writeFile(resolve(EVIDENCE_DIR, 'tauri-e2e.json'), JSON.stringify(evidence, null, 2));
-  console.log('🟢 Native Tauri-E2E: Start · Systemstatus · Speicherübersicht · Werkzeug-Zentrale · SQLite-Persistenz · Zwischenstand · Neustart · sicheres Beenden PASS');
+  console.log('🟢 Native Tauri-E2E: Start · Systemstatus · Speicherzustand · Werkzeug-Zentrale · SQLite-Persistenz · Zwischenstand · Neustart · sicheres Beenden PASS');
 } catch (error) {
   evidence.status = 'FAIL';
   evidence.message = error.message;
