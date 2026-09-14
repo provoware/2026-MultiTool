@@ -147,7 +147,7 @@ async function runBrowser(browser, url) {
       await screenshot(driver, `${browser}-${zoom}.png`);
     }
 
-    return { browser, version:driver.capabilities.browserVersion ?? 'unknown', safeWithoutNativeCore:'PASS', contrast:'PASS', reducedMotion:'PASS', layoutLevels:matrix.length, driverTail:output.slice(-300) };
+    return { browser, version:driver.capabilities.browserVersion ?? 'unknown', safeWithoutNativeCore:'PASS', contrast:'PASS', reducedMotion:'PASS', layoutLevels:matrix.length, driverTail:driver.output().slice(-300) };
   } finally {
     await stopDriver(driver);
   }
