@@ -172,12 +172,13 @@ async function runBrowser(browser, url) {
     await execute(driver, `
       const script = document.createElement('script');
       script.textContent = [
-        "globalThis.__workspaceReviewState = { loadCount:0, persisted:{ today:true, 'system-status':true, storage:true, tools:true } };",
-        "globalThis.__TAURI__ = { core:{ invoke:async (command) => {",
+        "globalThis.__workspaceReviewState = { loadCount:0, failWrites:true, failStatus:false, persisted:{ today:true, 'system-status':true, storage:true, tools:true } };",
+        "globalThis.__TAURI__ = { core:{ invoke:async (command, args={}) => {",
         "const state = globalThis.__workspaceReviewState;",
-        "if (command === 'get_status') return { operating_system:'Testsystem', program_version:'Test', session:'Browser', core_status:'ready', core_text:'Programmkern bereit', database_status:'ready', database_text:'Lokale Datenbank bereit', local_only:true, status:'ready', overall_text:'Alles bereit' };",
+        "if (command === 'get_status') { if (state.failStatus) throw new Error('Simulierter Core-Ausfall'); return { operating_system:'Testsystem', program_version:'Test', session:'Browser', core_status:'ready', core_text:'Programmkern bereit', database_status:'ready', database_text:'Lokale Datenbank bereit', local_only:true, status:'ready', overall_text:'Alles bereit' }; }",
         "if (command === 'load_workspace_visibility') { state.loadCount += 1; return { ...state.persisted }; }",
-        "if (command === 'set_workspace_visibility' || command === 'reset_workspace_visibility') throw new Error('Simulierter Schreibfehler');",
+        "if (command === 'set_workspace_visibility') { if (state.failWrites) throw new Error('Simulierter Schreibfehler'); state.persisted[args.panel] = args.visible; return { ...state.persisted }; }",
+        "if (command === 'reset_workspace_visibility') { if (state.failWrites) throw new Error('Simulierter Schreibfehler'); state.persisted = { today:true, 'system-status':true, storage:true, tools:true }; return { ...state.persisted }; }",
         "if (command === 'list_tools' || command === 'list_storage_volumes') return [];",
         "if (command === 'load_or_create_project_state') return { project_id:'browser-review', revision:1 };",
         "throw new Error('Unerwarteter Testbefehl: ' + command);",
@@ -219,6 +220,58 @@ async function runBrowser(browser, url) {
     }`);
     assert(afterFailedSaveRefresh.hidden && !afterFailedSaveRefresh.checked, `${browser}: Status-Neupruefung verwirft den sitzungslokalen Zustand.`);
     assert(afterFailedSaveRefresh.loadCount === 1, `${browser}: Status-Neupruefung lädt die Persistenz unerwartet erneut.`);
+
+    await execute(driver, `
+      globalThis.__workspaceReviewState.failWrites = false;
+      const toggle = document.querySelector('[data-workspace-toggle="tools"]');
+      toggle.focus();
+      toggle.click();
+      return true;
+    `);
+    const mixedPersistence = await waitFor(async () => {
+      const state = await execute(driver, `return {
+        storageHidden:document.querySelector('[data-workspace-panel="storage"]').hidden,
+        toolsHidden:document.querySelector('[data-workspace-panel="tools"]').hidden,
+        toolsDisabled:document.querySelector('[data-workspace-toggle="tools"]').disabled,
+        help:document.getElementById('workspaceHelp').textContent,
+        loadCount:globalThis.__workspaceReviewState.loadCount
+      }`);
+      return !state.toolsDisabled && state.toolsHidden && state.help.includes('lokal') ? state : false;
+    }, { label:`${browser} erfolgreicher Folgespeicher erhält Sitzungs-Override` });
+    assert(mixedPersistence.storageHidden && mixedPersistence.toolsHidden, `${browser}: Erfolgreicher Folgespeicher verwirft einen früheren Sitzungs-Override.`);
+    assert(mixedPersistence.loadCount === 1, `${browser}: Folgespeicher lädt die Persistenz unerwartet erneut.`);
+
+    await execute(driver, `
+      globalThis.__workspaceReviewState.failStatus = true;
+      document.getElementById('refreshBtn').click();
+      return true;
+    `);
+    await waitFor(async () => (await execute(driver, `return document.getElementById('overall')?.textContent || ''`)).includes('Programmkern nicht erreichbar'), { label:`${browser} simulierter Core-Ausfall` });
+    const coreFallback = await execute(driver, `return {
+      storageHidden:document.querySelector('[data-workspace-panel="storage"]').hidden,
+      toolsHidden:document.querySelector('[data-workspace-panel="tools"]').hidden,
+      summary:document.getElementById('workspaceSummary').textContent,
+      storageChecked:document.querySelector('[data-workspace-toggle="storage"]').checked,
+      toolsChecked:document.querySelector('[data-workspace-toggle="tools"]').checked
+    }`);
+    assert(coreFallback.storageHidden && coreFallback.toolsHidden && !coreFallback.storageChecked && !coreFallback.toolsChecked, `${browser}: Core-Ausfall verändert die aktuelle Sitzungssicht.`);
+    assert(coreFallback.summary.includes('2 von 4'), `${browser}: Core-Ausfall meldet fälschlich die Standardansicht.`);
+
+    await execute(driver, `
+      globalThis.__workspaceReviewState.failStatus = false;
+      globalThis.__workspaceReviewState.failWrites = true;
+      document.getElementById('refreshBtn').disabled = false;
+      document.getElementById('refreshBtn').click();
+      return true;
+    `);
+    await waitFor(async () => (await execute(driver, `return document.getElementById('overall')?.textContent || ''`)).includes('Alles bereit'), { label:`${browser} Erholung nach Core-Ausfall` });
+    const recoveredSession = await execute(driver, `return {
+      storageHidden:document.querySelector('[data-workspace-panel="storage"]').hidden,
+      toolsHidden:document.querySelector('[data-workspace-panel="tools"]').hidden,
+      loadCount:globalThis.__workspaceReviewState.loadCount
+    }`);
+    assert(recoveredSession.storageHidden && recoveredSession.toolsHidden, `${browser}: Erholung nach Core-Ausfall verwirft die Sitzungssicht.`);
+    assert(recoveredSession.loadCount === 1, `${browser}: Erholung nach Core-Ausfall lädt die Persistenz unerwartet erneut.`);
 
     await execute(driver, `
       const button = document.getElementById('workspaceResetBtn');
