@@ -6,7 +6,7 @@ const GIB: u64 = 1024 * MIB;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum StorageState {
+enum StorageState {
     Normal,
     Low,
     Critical,
@@ -31,13 +31,13 @@ struct MountEntry {
     mount_point: String,
     fs_type: String,
     source: String,
-    read_only: bool,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 struct FilesystemMetrics {
     total_bytes: u64,
     free_bytes: u64,
+    read_only: bool,
     total_inodes: Option<u64>,
     free_inodes: Option<u64>,
 }
@@ -50,15 +50,11 @@ fn decode_mount_field(value: &str) -> String {
         .replace("\\134", "\\")
 }
 
-fn has_mount_option(options: &str, expected: &str) -> bool {
-    options.split(',').any(|option| option == expected)
-}
-
 fn parse_mountinfo_line(line: &str) -> Option<MountEntry> {
     let (left, right) = line.split_once(" - ")?;
     let left_fields: Vec<_> = left.split_whitespace().collect();
     let right_fields: Vec<_> = right.split_whitespace().collect();
-    if left_fields.len() < 6 || right_fields.len() < 2 {
+    if left_fields.len() < 5 || right_fields.len() < 2 {
         return None;
     }
 
@@ -66,7 +62,6 @@ fn parse_mountinfo_line(line: &str) -> Option<MountEntry> {
         mount_point: decode_mount_field(left_fields[4]),
         fs_type: right_fields[0].to_string(),
         source: decode_mount_field(right_fields[1]),
-        read_only: has_mount_option(left_fields[5], "ro"),
     })
 }
 
@@ -168,12 +163,8 @@ fn display_name(entry: &MountEntry) -> String {
 }
 
 fn clamped_percentage(total: u64, percent: u64, minimum: u64, maximum: u64) -> u64 {
-    let value = (total as u128)
-        .saturating_mul(percent as u128)
-        .saturating_div(100);
-    value
-        .clamp(minimum as u128, maximum as u128)
-        .min(u64::MAX as u128) as u64
+    let value = u128::from(total).saturating_mul(u128::from(percent)) / 100;
+    value.clamp(u128::from(minimum), u128::from(maximum)) as u64
 }
 
 fn inode_state(total_inodes: Option<u64>, free_inodes: Option<u64>) -> Option<StorageState> {
@@ -186,8 +177,8 @@ fn inode_state(total_inodes: Option<u64>, free_inodes: Option<u64>) -> Option<St
         return Some(StorageState::Unknown);
     }
 
-    let free_scaled = (free as u128).saturating_mul(100);
-    let total_scaled = total as u128;
+    let free_scaled = u128::from(free).saturating_mul(100);
+    let total_scaled = u128::from(total);
     if free_scaled <= total_scaled.saturating_mul(5) {
         Some(StorageState::Critical)
     } else if free_scaled <= total_scaled.saturating_mul(10) {
@@ -204,11 +195,16 @@ fn evaluate_storage_state(
     total_inodes: Option<u64>,
     free_inodes: Option<u64>,
 ) -> StorageState {
-    if read_only {
-        return StorageState::ReadOnly;
-    }
     if total_bytes == 0 || free_bytes > total_bytes {
         return StorageState::Unknown;
+    }
+
+    let inodes = inode_state(total_inodes, free_inodes);
+    if inodes == Some(StorageState::Unknown) {
+        return StorageState::Unknown;
+    }
+    if read_only {
+        return StorageState::ReadOnly;
     }
 
     let critical_threshold = clamped_percentage(total_bytes, 3, 512 * MIB, 20 * GIB);
@@ -221,12 +217,16 @@ fn evaluate_storage_state(
         StorageState::Normal
     };
 
-    match inode_state(total_inodes, free_inodes) {
-        Some(StorageState::Unknown) => StorageState::Unknown,
+    match inodes {
         Some(StorageState::Critical) => StorageState::Critical,
         Some(StorageState::Low) if byte_state == StorageState::Normal => StorageState::Low,
         _ => byte_state,
     }
+}
+
+#[cfg(target_os = "linux")]
+fn statvfs_read_only(flags: libc::c_ulong) -> bool {
+    flags & libc::ST_RDONLY != 0
 }
 
 #[cfg(target_os = "linux")]
@@ -248,20 +248,25 @@ fn filesystem_metrics(mount_point: &str) -> Result<FilesystemMetrics, String> {
 
     // SAFETY: Bei Rückgabewert 0 hat `statvfs` den Datensatz vollständig befüllt.
     let info = unsafe { info.assume_init() };
-    let block_size = info.f_frsize as u128;
-    let total = (info.f_blocks as u128).saturating_mul(block_size);
-    let free = (info.f_bavail as u128).saturating_mul(block_size);
-    let total_bytes = total.min(u64::MAX as u128) as u64;
-    let free_bytes = (free.min(u64::MAX as u128) as u64).min(total_bytes);
-    let total_inodes = info.f_files as u64;
-    let free_inodes = info.f_favail as u64;
-    let inode_values = (total_inodes > 0).then_some((total_inodes, free_inodes.min(total_inodes)));
+    let block_size = u128::from(info.f_frsize);
+    let total = u128::from(info.f_blocks).saturating_mul(block_size);
+    let free = u128::from(info.f_bavail).saturating_mul(block_size);
+    let total_bytes = total.min(u128::from(u64::MAX)) as u64;
+    let free_bytes = (free.min(u128::from(u64::MAX)) as u64).min(total_bytes);
+    let total_inodes = u64::from(info.f_files);
+    let free_inodes = u64::from(info.f_favail);
+    let (total_inodes, free_inodes) = if total_inodes > 0 {
+        (Some(total_inodes), Some(free_inodes))
+    } else {
+        (None, None)
+    };
 
     Ok(FilesystemMetrics {
         total_bytes,
         free_bytes,
-        total_inodes: inode_values.map(|(total, _)| total),
-        free_inodes: inode_values.map(|(_, free)| free),
+        read_only: statvfs_read_only(info.f_flag),
+        total_inodes,
+        free_inodes,
     })
 }
 
@@ -284,7 +289,7 @@ pub fn list_storage_volumes() -> Result<Vec<StorageVolume>, String> {
                 let state = evaluate_storage_state(
                     metrics.total_bytes,
                     metrics.free_bytes,
-                    entry.read_only,
+                    metrics.read_only,
                     metrics.total_inodes,
                     metrics.free_inodes,
                 );
@@ -293,7 +298,7 @@ pub fn list_storage_volumes() -> Result<Vec<StorageVolume>, String> {
                     mount_point: entry.mount_point,
                     total_bytes: metrics.total_bytes,
                     free_bytes: metrics.free_bytes,
-                    read_only: entry.read_only,
+                    read_only: metrics.read_only,
                     total_inodes: metrics.total_inodes,
                     free_inodes: metrics.free_inodes,
                     state,
@@ -336,15 +341,6 @@ mod tests {
     }
 
     #[test]
-    fn parser_reads_read_only_mount_flag() {
-        let entry = parse_mountinfo_line(
-            "60 36 8:33 / /media/test/Archiv ro,relatime - ext4 /dev/sdc1 ro",
-        )
-        .expect("gültiger Mount-Eintrag");
-        assert!(entry.read_only);
-    }
-
-    #[test]
     fn visible_names_are_simple_and_root_is_explicit() {
         let mounts = selected_mounts(SAMPLE);
         assert_eq!(display_name(&mounts[0]), "Systemdatenträger");
@@ -360,18 +356,17 @@ mod tests {
         assert_eq!(mounts[0].mount_point, "/");
     }
 
+    #[cfg(target_os = "linux")]
     #[test]
-    fn read_only_always_wins_over_capacity_warnings() {
-        assert_eq!(
-            evaluate_storage_state(8 * GIB, 0, true, Some(100), Some(0)),
-            StorageState::ReadOnly
-        );
+    fn statvfs_read_only_flag_is_interpreted_directly() {
+        assert!(statvfs_read_only(libc::ST_RDONLY));
+        assert!(!statvfs_read_only(0));
     }
 
     #[test]
-    fn invalid_byte_values_are_unknown() {
+    fn invalid_byte_values_are_unknown_before_other_states() {
         assert_eq!(
-            evaluate_storage_state(0, 0, false, None, None),
+            evaluate_storage_state(0, 0, true, None, None),
             StorageState::Unknown
         );
         assert_eq!(
@@ -381,42 +376,75 @@ mod tests {
     }
 
     #[test]
-    fn small_volume_uses_absolute_minimum_thresholds() {
+    fn read_only_overrides_valid_capacity_warnings() {
         assert_eq!(
-            evaluate_storage_state(8 * GIB, 512 * MIB, false, None, None),
-            StorageState::Critical
-        );
-        assert_eq!(
-            evaluate_storage_state(8 * GIB, 512 * MIB + 1, false, None, None),
-            StorageState::Low
-        );
-        assert_eq!(
-            evaluate_storage_state(8 * GIB, 2 * GIB + 1, false, None, None),
-            StorageState::Normal
+            evaluate_storage_state(8 * GIB, 0, true, Some(100), Some(0)),
+            StorageState::ReadOnly
         );
     }
 
     #[test]
-    fn large_volume_uses_absolute_maximum_thresholds() {
-        let eight_tib = 8 * 1024 * GIB;
+    fn byte_thresholds_cover_minimum_percentage_and_maximum_ranges() {
+        let tib = 1024 * GIB;
+        let cases = [8 * GIB, 16 * GIB, 32 * GIB, 64 * GIB, 256 * GIB, 512 * GIB, tib, 8 * tib];
+
+        for total in cases {
+            let critical = clamped_percentage(total, 3, 512 * MIB, 20 * GIB);
+            let warning = clamped_percentage(total, 10, 2 * GIB, 100 * GIB);
+
+            assert_eq!(
+                evaluate_storage_state(total, critical, false, None, None),
+                StorageState::Critical
+            );
+            if critical < warning {
+                assert_eq!(
+                    evaluate_storage_state(total, critical + 1, false, None, None),
+                    StorageState::Low
+                );
+            }
+            assert_eq!(
+                evaluate_storage_state(total, warning, false, None, None),
+                StorageState::Low
+            );
+            if warning < total {
+                assert_eq!(
+                    evaluate_storage_state(total, warning + 1, false, None, None),
+                    StorageState::Normal
+                );
+            }
+        }
+
+        assert_eq!(clamped_percentage(8 * GIB, 10, 2 * GIB, 100 * GIB), 2 * GIB);
+        assert_eq!(clamped_percentage(8 * GIB, 3, 512 * MIB, 20 * GIB), 512 * MIB);
+        assert_eq!(clamped_percentage(8 * tib, 10, 2 * GIB, 100 * GIB), 100 * GIB);
+        assert_eq!(clamped_percentage(8 * tib, 3, 512 * MIB, 20 * GIB), 20 * GIB);
+    }
+
+    #[test]
+    fn inode_boundaries_match_the_contract() {
+        let total = 1_000;
         assert_eq!(
-            evaluate_storage_state(eight_tib, 20 * GIB, false, None, None),
-            StorageState::Critical
+            evaluate_storage_state(256 * GIB, 100 * GIB, false, Some(total), Some(101)),
+            StorageState::Normal
         );
         assert_eq!(
-            evaluate_storage_state(eight_tib, 20 * GIB + 1, false, None, None),
+            evaluate_storage_state(256 * GIB, 100 * GIB, false, Some(total), Some(100)),
             StorageState::Low
         );
         assert_eq!(
-            evaluate_storage_state(eight_tib, 100 * GIB + 1, false, None, None),
-            StorageState::Normal
+            evaluate_storage_state(256 * GIB, 100 * GIB, false, Some(total), Some(51)),
+            StorageState::Low
+        );
+        assert_eq!(
+            evaluate_storage_state(256 * GIB, 100 * GIB, false, Some(total), Some(50)),
+            StorageState::Critical
         );
     }
 
     #[test]
-    fn inode_pressure_can_raise_the_storage_state() {
+    fn worse_dimension_wins() {
         assert_eq!(
-            evaluate_storage_state(256 * GIB, 100 * GIB, false, Some(1_000), Some(100)),
+            evaluate_storage_state(256 * GIB, 10 * GIB, false, Some(1_000), Some(500)),
             StorageState::Low
         );
         assert_eq!(
@@ -426,7 +454,7 @@ mod tests {
     }
 
     #[test]
-    fn missing_inode_values_do_not_create_a_warning() {
+    fn unavailable_inode_values_do_not_create_a_warning() {
         assert_eq!(
             evaluate_storage_state(256 * GIB, 100 * GIB, false, None, None),
             StorageState::Normal
@@ -435,12 +463,20 @@ mod tests {
             evaluate_storage_state(256 * GIB, 100 * GIB, false, Some(0), Some(0)),
             StorageState::Normal
         );
+        assert_eq!(
+            evaluate_storage_state(256 * GIB, 100 * GIB, false, Some(1_000), None),
+            StorageState::Normal
+        );
     }
 
     #[test]
     fn inconsistent_inode_values_are_unknown() {
         assert_eq!(
             evaluate_storage_state(256 * GIB, 100 * GIB, false, Some(100), Some(101)),
+            StorageState::Unknown
+        );
+        assert_eq!(
+            evaluate_storage_state(256 * GIB, 100 * GIB, true, Some(100), Some(101)),
             StorageState::Unknown
         );
     }
