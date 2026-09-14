@@ -87,7 +87,7 @@ function setupWorkspaceControls() {
         $('workspaceHelp').textContent = 'Deine Auswahl wird lokal auf diesem Gerät gemerkt.';
         live(`${panel.label} ist jetzt ${visible ? 'sichtbar' : 'ausgeblendet'} und wurde lokal gemerkt.`);
       } catch {
-        renderWorkspaceVisibility('🟡 Ansicht wurde nicht gespeichert');
+        renderWorkspaceVisibility();
         $('workspaceHelp').textContent = 'Die Änderung gilt für diese Sitzung, konnte aber nicht dauerhaft gespeichert werden.';
         live('Ansicht wurde nicht gespeichert. Die Änderung gilt nur für diese Sitzung.');
       } finally {
@@ -108,7 +108,7 @@ function setupWorkspaceControls() {
       $('workspaceHelp').textContent = 'Deine Auswahl wird lokal auf diesem Gerät gemerkt.';
       live('Standardansicht wurde wiederhergestellt und lokal gemerkt.');
     } catch {
-      renderWorkspaceVisibility('🟡 Ansicht wurde nicht gespeichert');
+      renderWorkspaceVisibility();
       $('workspaceHelp').textContent = 'Die Standardansicht gilt für diese Sitzung, konnte aber nicht dauerhaft gespeichert werden.';
       live('Standardansicht wurde nur für diese Sitzung wiederhergestellt.');
     } finally {
