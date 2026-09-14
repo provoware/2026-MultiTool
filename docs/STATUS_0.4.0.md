@@ -2,14 +2,15 @@
 
 ## 🚦 Gesamtstand
 
-**🟡 P0.1 Werkzeug-Zentrale ist umgesetzt und wartet auf die Cloud-Prüfung.**
+**🟡 P0.2 Systemstatus ist umgesetzt und wartet auf die Cloud-Prüfung.**
 
 ```text
 Stabile Tauri-Foundation      🟢 ██████████ 100 % übernommen
-P0.1 Werkzeug-Zentrale        🟡 ████████░░ umgesetzt, Prüfung offen
-SCHNELL für P0.1              ⚪ noch nicht bestätigt
-TIEF für P0.1                 ⚪ noch nicht bestätigt
-weitere P0-Module             🔒 gesperrt
+P0.1 Werkzeug-Zentrale        🟢 ██████████ bestätigt und übernommen
+P0.2 Systemstatus             🟡 ████████░░ umgesetzt, Prüfung offen
+SCHNELL für P0.2              ⚪ noch nicht bestätigt
+TIEF für P0.2                 ⚪ noch nicht bestätigt
+P0.3 und weitere Module       🔒 gesperrt
 ```
 
 ## 🎨 Bedeutung
@@ -23,25 +24,35 @@ weitere P0-Module             🔒 gesperrt
 
 > **Ampelregel:** Grün gibt es nur nach einem wirklich erfolgreichen automatischen Lauf.
 
-## 🟡 Was P0.1 bereits enthält
+## 🟡 Was P0.2 bereits enthält
 
-- 🟡 zentrale Werkzeugliste im Rust-Kern,
-- 🟡 Tauri-Befehl zum reinen Lesen der Werkzeugliste,
-- 🟡 Werkzeug-Zentrale in der HTML-Oberfläche,
-- 🟡 verständlicher Zustand pro Werkzeug,
-- 🟡 klare Anzeige „nur ansehen“,
-- 🟡 Rust-Tests für eindeutige Werkzeugkennungen und den Nur-Lesen-Schutz,
-- 🟡 Erweiterung des nativen Tauri-Ende-zu-Ende-Tests.
+- 🟡 Betriebssystem aus dem Rust-Kern,
+- 🟡 echte kompilierte Programmversion aus dem Rust-Paket,
+- 🟡 Anzeige der aktiven Sitzung,
+- 🟡 verständlicher Zustand des Programmkerns,
+- 🟡 verständlicher Zustand der lokalen SQLite-Datenbank,
+- 🟡 Gesamtzustand „Alles bereit“ oder „Aufmerksamkeit nötig“,
+- 🟡 Systemstatus als read-only Eintrag in der Werkzeug-Zentrale,
+- 🟡 nativer Tauri-E2E-Nachweis für alle fünf Basisinformationen,
+- 🟡 Regressionstests für P0.1, SQLite-Persistenz, Zwischenstand und sicheres Beenden.
 
 ## 🛡️ Bewusste Grenzen
 
-- 🔒 kein Ausblenden,
-- 🔒 kein Ein-/Ausschalten,
+- 🔒 keine Prozesssteuerung,
+- 🔒 keine Systemänderung,
+- 🔒 keine Hardwareinventur,
+- 🔒 kein `/proc`-Scan,
+- 🔒 kein Shell-Aufruf,
+- 🔒 keine Netzwerkdiagnose,
 - 🔒 keine neue Datenbanktabelle,
 - 🔒 keine neue Berechtigung,
 - 🔒 keine neue Laufzeitbibliothek,
-- 🔒 kein zweites P0-Modul in diesem Slice.
+- 🔒 kein P0.3 in diesem Slice.
+
+## 🔵 Versionshinweis
+
+Die sichtbare Programmversion wird nicht aus dem Projektnamen oder diesem Dokument abgeleitet, sondern direkt aus dem Rust-Paket. Der aktuell kompilierte Paketstand ist weiterhin `0.1.0`. Eine spätere Harmonisierung mit der Projektphase `0.4.0` ist eine getrennte Releaseentscheidung und nicht Bestandteil des read-only Systemstatus.
 
 ## ➡️ Nächster Schritt
 
-**SCHNELL und anschließend TIEF für exakt diesen P0.1-Kandidaten ausführen. Erst bei zwei grünen Stufen den Slice als bestätigt behandeln.**
+**SCHNELL und anschließend TIEF für exakt denselben P0.2-Kandidaten ausführen. Erst bei zwei grünen Stufen den unveränderten Slice nach `main` übernehmen.**
