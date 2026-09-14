@@ -52,7 +52,7 @@ async function startStaticServer() {
         res.writeHead(403).end('forbidden'); return;
       }
       const data = await readFile(file);
-      res.writeHead(200, { 'content-type': types[extname(file)] ?? 'application/octet-stream', 'cache-control': 'no-store' });
+      res.writeHead(200, { 'content-type': types[extname(file)] ?? 'application/octet-stream', 'cache-control':'no-store' });
       res.end(data);
     } catch (error) {
       res.writeHead(error?.code === 'ENOENT' ? 404 : 500).end('error');
@@ -60,15 +60,15 @@ async function startStaticServer() {
   });
   await new Promise((resolveListen) => server.listen(0, '127.0.0.1', resolveListen));
   const port = server.address().port;
-  return { server, url: `http://127.0.0.1:${port}/` };
+  return { server, url:`http://127.0.0.1:${port}/` };
 }
 
 async function wd(base, method, path, body, timeoutMs = 10000) {
   const response = await fetch(`${base}${path}`, {
     method,
-    headers: body === undefined ? undefined : { 'content-type':'application/json' },
-    body: body === undefined ? undefined : JSON.stringify(body),
-    signal: AbortSignal.timeout(timeoutMs),
+    headers:body === undefined ? undefined : { 'content-type':'application/json' },
+    body:body === undefined ? undefined : JSON.stringify(body),
+    signal:AbortSignal.timeout(timeoutMs),
   });
   const text = await response.text();
   const payload = text ? JSON.parse(text) : null;
@@ -86,7 +86,7 @@ async function startDriver(browser) {
   child.stdout.on('data', (chunk) => { output += chunk.toString(); });
   child.stderr.on('data', (chunk) => { output += chunk.toString(); });
   const base = `http://127.0.0.1:${port}`;
-  await waitFor(async () => (await fetch(`${base}/status`, { signal: AbortSignal.timeout(500) })).ok, { label:`${browser} WebDriver` });
+  await waitFor(async () => (await fetch(`${base}/status`, { signal:AbortSignal.timeout(500) })).ok, { label:`${browser} WebDriver` });
   const alwaysMatch = browser === 'firefox'
     ? { browserName:'firefox', 'moz:firefoxOptions':{ args:['-headless'], prefs:{ 'ui.prefersReducedMotion':1 } } }
     : { browserName:'chrome', 'goog:chromeOptions':{ args:['--headless=new','--no-sandbox','--disable-dev-shm-usage','--force-prefers-reduced-motion'] } };
@@ -169,6 +169,137 @@ async function runBrowser(browser, url) {
     }`);
     assert(afterReload.systemVisible && afterReload.toggleChecked && afterReload.summary.includes('Standardansicht'), `${browser}: Sichtbarkeit wurde unerlaubt dauerhaft gespeichert.`);
 
+    await execute(driver, `
+      const script = document.createElement('script');
+      script.textContent = [
+        "globalThis.__workspaceReviewState = { loadCount:0, failWrites:true, failStatus:false, persisted:{ today:true, 'system-status':true, storage:true, tools:true } };",
+        "globalThis.__TAURI__ = { core:{ invoke:async (command, args={}) => {",
+        "const state = globalThis.__workspaceReviewState;",
+        "if (command === 'get_status') { if (state.failStatus) throw new Error('Simulierter Core-Ausfall'); return { operating_system:'Testsystem', program_version:'Test', session:'Browser', core_status:'ready', core_text:'Programmkern bereit', database_status:'ready', database_text:'Lokale Datenbank bereit', local_only:true, status:'ready', overall_text:'Alles bereit' }; }",
+        "if (command === 'load_workspace_visibility') { state.loadCount += 1; return { ...state.persisted }; }",
+        "if (command === 'set_workspace_visibility') { if (state.failWrites) throw new Error('Simulierter Schreibfehler'); state.persisted[args.panel] = args.visible; return { ...state.persisted }; }",
+        "if (command === 'reset_workspace_visibility') { if (state.failWrites) throw new Error('Simulierter Schreibfehler'); state.persisted = { today:true, 'system-status':true, storage:true, tools:true }; return { ...state.persisted }; }",
+        "if (command === 'list_tools' || command === 'list_storage_volumes') return [];",
+        "if (command === 'load_or_create_project_state') return { project_id:'browser-review', revision:1 };",
+        "throw new Error('Unerwarteter Testbefehl: ' + command);",
+        "} } };"
+      ].join('\\n');
+      document.documentElement.append(script);
+      script.remove();
+      document.getElementById('refreshBtn').disabled = false;
+      document.getElementById('refreshBtn').click();
+      return true;
+    `);
+    await waitFor(async () => (await execute(driver, `return document.getElementById('overall')?.textContent || ''`)).includes('Alles bereit'), { label:`${browser} simulierte native Ansicht` });
+
+    await execute(driver, `
+      const toggle = document.querySelector('[data-workspace-toggle="storage"]');
+      toggle.focus();
+      toggle.click();
+      return true;
+    `);
+    const failedSave = await waitFor(async () => {
+      const state = await execute(driver, `return {
+        focused:document.activeElement?.dataset?.workspaceToggle === 'storage',
+        disabled:document.querySelector('[data-workspace-toggle="storage"]').disabled,
+        hidden:document.querySelector('[data-workspace-panel="storage"]').hidden,
+        help:document.getElementById('workspaceHelp').textContent,
+        loadCount:globalThis.__workspaceReviewState.loadCount
+      }`);
+      return !state.disabled && state.hidden && state.help.includes('diese Sitzung') ? state : false;
+    }, { label:`${browser} fehlgeschlagenes Speichern bleibt sitzungslokal` });
+    assert(failedSave.focused, `${browser}: Fokus ging nach fehlgeschlagenem Speichern verloren.`);
+    assert(failedSave.loadCount === 1, `${browser}: Gespeicherte Ansicht wurde unerwartet mehrfach geladen.`);
+
+    await execute(driver, `document.getElementById('refreshBtn').click(); return true;`);
+    await waitFor(async () => (await execute(driver, `return document.getElementById('overall')?.textContent || ''`)).includes('Alles bereit'), { label:`${browser} Status-Neupruefung nach Speicherfehler` });
+    const afterFailedSaveRefresh = await execute(driver, `return {
+      hidden:document.querySelector('[data-workspace-panel="storage"]').hidden,
+      checked:document.querySelector('[data-workspace-toggle="storage"]').checked,
+      loadCount:globalThis.__workspaceReviewState.loadCount
+    }`);
+    assert(afterFailedSaveRefresh.hidden && !afterFailedSaveRefresh.checked, `${browser}: Status-Neupruefung verwirft den sitzungslokalen Zustand.`);
+    assert(afterFailedSaveRefresh.loadCount === 1, `${browser}: Status-Neupruefung lädt die Persistenz unerwartet erneut.`);
+
+    await execute(driver, `
+      globalThis.__workspaceReviewState.failWrites = false;
+      const toggle = document.querySelector('[data-workspace-toggle="tools"]');
+      toggle.focus();
+      toggle.click();
+      return true;
+    `);
+    const mixedPersistence = await waitFor(async () => {
+      const state = await execute(driver, `return {
+        storageHidden:document.querySelector('[data-workspace-panel="storage"]').hidden,
+        toolsHidden:document.querySelector('[data-workspace-panel="tools"]').hidden,
+        toolsDisabled:document.querySelector('[data-workspace-toggle="tools"]').disabled,
+        help:document.getElementById('workspaceHelp').textContent,
+        loadCount:globalThis.__workspaceReviewState.loadCount
+      }`);
+      return !state.toolsDisabled && state.toolsHidden && state.help.includes('lokal') ? state : false;
+    }, { label:`${browser} erfolgreicher Folgespeicher erhält Sitzungs-Override` });
+    assert(mixedPersistence.storageHidden && mixedPersistence.toolsHidden, `${browser}: Erfolgreicher Folgespeicher verwirft einen früheren Sitzungs-Override.`);
+    assert(mixedPersistence.loadCount === 1, `${browser}: Folgespeicher lädt die Persistenz unerwartet erneut.`);
+
+    await execute(driver, `
+      globalThis.__workspaceReviewState.failStatus = true;
+      document.getElementById('refreshBtn').click();
+      return true;
+    `);
+    await waitFor(async () => (await execute(driver, `return document.getElementById('overall')?.textContent || ''`)).includes('Programmkern nicht erreichbar'), { label:`${browser} simulierter Core-Ausfall` });
+    const coreFallback = await execute(driver, `return {
+      storageHidden:document.querySelector('[data-workspace-panel="storage"]').hidden,
+      toolsHidden:document.querySelector('[data-workspace-panel="tools"]').hidden,
+      summary:document.getElementById('workspaceSummary').textContent,
+      storageChecked:document.querySelector('[data-workspace-toggle="storage"]').checked,
+      toolsChecked:document.querySelector('[data-workspace-toggle="tools"]').checked
+    }`);
+    assert(coreFallback.storageHidden && coreFallback.toolsHidden && !coreFallback.storageChecked && !coreFallback.toolsChecked, `${browser}: Core-Ausfall verändert die aktuelle Sitzungssicht.`);
+    assert(coreFallback.summary.includes('2 von 4'), `${browser}: Core-Ausfall meldet fälschlich die Standardansicht.`);
+
+    await execute(driver, `
+      globalThis.__workspaceReviewState.failStatus = false;
+      globalThis.__workspaceReviewState.failWrites = true;
+      document.getElementById('refreshBtn').disabled = false;
+      document.getElementById('refreshBtn').click();
+      return true;
+    `);
+    await waitFor(async () => (await execute(driver, `return document.getElementById('overall')?.textContent || ''`)).includes('Alles bereit'), { label:`${browser} Erholung nach Core-Ausfall` });
+    const recoveredSession = await execute(driver, `return {
+      storageHidden:document.querySelector('[data-workspace-panel="storage"]').hidden,
+      toolsHidden:document.querySelector('[data-workspace-panel="tools"]').hidden,
+      loadCount:globalThis.__workspaceReviewState.loadCount
+    }`);
+    assert(recoveredSession.storageHidden && recoveredSession.toolsHidden, `${browser}: Erholung nach Core-Ausfall verwirft die Sitzungssicht.`);
+    assert(recoveredSession.loadCount === 1, `${browser}: Erholung nach Core-Ausfall lädt die Persistenz unerwartet erneut.`);
+
+    await execute(driver, `
+      const button = document.getElementById('workspaceResetBtn');
+      button.focus();
+      button.click();
+      return true;
+    `);
+    const failedReset = await waitFor(async () => {
+      const state = await execute(driver, `return {
+        focused:document.activeElement?.id === 'workspaceResetBtn',
+        disabled:document.getElementById('workspaceResetBtn').disabled,
+        allVisible:[...document.querySelectorAll('[data-workspace-panel]')].every(e=>e.hidden===false),
+        help:document.getElementById('workspaceHelp').textContent
+      }`);
+      return !state.disabled && state.allVisible && state.help.includes('diese Sitzung') ? state : false;
+    }, { label:`${browser} fehlgeschlagener Reset bleibt sitzungslokal` });
+    assert(failedReset.focused, `${browser}: Fokus ging nach fehlgeschlagenem Reset verloren.`);
+
+    await execute(driver, `document.getElementById('refreshBtn').click(); return true;`);
+    await waitFor(async () => (await execute(driver, `return document.getElementById('overall')?.textContent || ''`)).includes('Alles bereit'), { label:`${browser} Status-Neupruefung nach Resetfehler` });
+    const afterFailedResetRefresh = await execute(driver, `return {
+      allVisible:[...document.querySelectorAll('[data-workspace-panel]')].every(e=>e.hidden===false),
+      allChecked:[...document.querySelectorAll('[data-workspace-toggle]')].every(e=>e.checked===true),
+      loadCount:globalThis.__workspaceReviewState.loadCount
+    }`);
+    assert(afterFailedResetRefresh.allVisible && afterFailedResetRefresh.allChecked, `${browser}: Status-Neupruefung verwirft den sitzungslokalen Reset.`);
+    assert(afterFailedResetRefresh.loadCount === 1, `${browser}: Persistenz wurde nach Resetfehler unerwartet erneut geladen.`);
+
     const contrast = await execute(driver, `
       function rgb(v){const m=v.match(/rgba?\\((\\d+),\\s*(\\d+),\\s*(\\d+)/);return m?[+m[1],+m[2],+m[3]]:null}
       function lum(c){return c.map(v=>{v/=255;return v<=.04045?v/12.92:Math.pow((v+.055)/1.055,2.4)}).reduce((a,v,i)=>a+v*[.2126,.7152,.0722][i],0)}
@@ -193,7 +324,7 @@ async function runBrowser(browser, url) {
       await screenshot(driver, `${browser}-${zoom}.png`);
     }
 
-    return { browser, version:driver.capabilities.browserVersion ?? 'unknown', safeWithoutNativeCore:'PASS', workspaceVisibility:'PASS', workspaceSessionOnly:'PASS', contrast:'PASS', reducedMotion:'PASS', layoutLevels:matrix.length, driverTail:driver.output().slice(-300) };
+    return { browser, version:driver.capabilities.browserVersion ?? 'unknown', safeWithoutNativeCore:'PASS', workspaceVisibility:'PASS', workspaceSessionOnly:'PASS', workspaceReviewHardening:'PASS', contrast:'PASS', reducedMotion:'PASS', layoutLevels:matrix.length, driverTail:driver.output().slice(-300) };
   } finally {
     await stopDriver(driver);
   }
@@ -206,7 +337,7 @@ const results = [];
 try {
   for (const browser of browsers) results.push(await runBrowser(browser, staticServer.url));
   await writeFile(resolve(EVIDENCE, 'evidence.json'), JSON.stringify({ status:'PASS', method:'static browser visual acceptance; native behavior is tested separately in Tauri E2E', results }, null, 2));
-  console.log('🟢 Browser-Ansicht: Firefox + Chrome PASS · flexible Sitzungssicht · 100–200 % · Kontrast · Reduced Motion · sicherer Zustand ohne nativen Kern');
+  console.log('🟢 Browser-Ansicht: Firefox + Chrome PASS · flexible Sitzungssicht · Review-Hardening · 100–200 % · Kontrast · Reduced Motion · sicherer Zustand ohne nativen Kern');
 } finally {
   await new Promise((resolveClose) => staticServer.server.close(resolveClose));
 }

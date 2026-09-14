@@ -112,6 +112,18 @@ async function storageOverviewMarker(sessionId) {
   }`);
 }
 
+async function workspaceMarker(sessionId) {
+  return await execute(sessionId, `return {
+    storageChecked: document.getElementById('workspaceToggleStorage')?.checked === true,
+    storageDisabled: document.getElementById('workspaceToggleStorage')?.disabled === true,
+    storageHidden: document.getElementById('panelStorage')?.hidden === true,
+    allChecked: [...document.querySelectorAll('[data-workspace-toggle]')].every((node) => node.checked === true),
+    allVisible: [...document.querySelectorAll('[data-workspace-panel]')].every((node) => node.hidden === false),
+    summary: document.getElementById('workspaceSummary')?.textContent || '',
+    help: document.getElementById('workspaceHelp')?.textContent || ''
+  }`);
+}
+
 await access(APP, fsConstants.X_OK);
 await access(DRIVER, fsConstants.X_OK);
 await rm(DATA_DIR, { recursive:true, force:true });
@@ -131,10 +143,13 @@ const evidence = {
   toolCenter:false,
   systemStatus:false,
   storageOverview:false,
+  workspaceVisibilityPersistence:false,
+  workspaceResetPersistence:false,
   safeShutdown:false,
 };
 let firstSession = null;
 let secondSession = null;
+let thirdSession = null;
 
 try {
   await waitFor(async () => {
@@ -183,6 +198,12 @@ try {
   assert(storage.stateText.trim() === expectedStorageLabels[storage.state], 'Speicherzustand wird in der Oberfläche nicht exakt dargestellt.');
   evidence.storageOverview = true;
 
+  await click(firstSession, '#workspaceToggleStorage');
+  await waitFor(async () => {
+    const workspace = await workspaceMarker(firstSession);
+    return !workspace.storageChecked && workspace.storageHidden && !workspace.storageDisabled && workspace.help.includes('lokal');
+  }, { label:'Speicherbereich ausgeblendet und lokal gemerkt' });
+
   await click(firstSession, '#checkpointBtn');
   await waitFor(async () => (await execute(firstSession, `return document.getElementById('checkpointText')?.textContent || ''`)).includes('Gesichert:'), { label:'Zwischenstand gesichert' });
   evidence.checkpoint = true;
@@ -197,16 +218,35 @@ try {
   assert(after.revision === before.revision, 'Projektzustand wurde beim Neustart unnoetig veraendert.');
   evidence.projectPersistence = true;
 
-  await click(secondSession, '#shutdownBtn');
+  const persistedWorkspace = await workspaceMarker(secondSession);
+  assert(!persistedWorkspace.storageChecked && persistedWorkspace.storageHidden, 'Gespeicherte Bereichssichtbarkeit wurde nach Neustart nicht wiederhergestellt.');
+  evidence.workspaceVisibilityPersistence = true;
+
+  await click(secondSession, '#workspaceResetBtn');
   await waitFor(async () => {
-    try { await execute(secondSession, 'return document.title'); return false; } catch { return true; }
+    const workspace = await workspaceMarker(secondSession);
+    return workspace.allChecked && workspace.allVisible && workspace.summary.includes('Standardansicht') && workspace.help.includes('lokal');
+  }, { label:'Standardansicht zurückgesetzt und gespeichert' });
+
+  await endSession(secondSession);
+  secondSession = null;
+
+  thirdSession = await createSession();
+  await waitReady(thirdSession);
+  const resetWorkspace = await workspaceMarker(thirdSession);
+  assert(resetWorkspace.allChecked && resetWorkspace.allVisible, 'Zurückgesetzte Standardansicht blieb nach Neustart nicht erhalten.');
+  evidence.workspaceResetPersistence = true;
+
+  await click(thirdSession, '#shutdownBtn');
+  await waitFor(async () => {
+    try { await execute(thirdSession, 'return document.title'); return false; } catch { return true; }
   }, { timeoutMs:8000, label:'sicheres Beenden' });
   evidence.safeShutdown = true;
-  secondSession = null;
+  thirdSession = null;
 
   evidence.status = 'PASS';
   await writeFile(resolve(EVIDENCE_DIR, 'tauri-e2e.json'), JSON.stringify(evidence, null, 2));
-  console.log('🟢 Native Tauri-E2E: Start · Systemstatus · Speicherzustand · Werkzeug-Zentrale · SQLite-Persistenz · Zwischenstand · Neustart · sicheres Beenden PASS');
+  console.log('🟢 Native Tauri-E2E: Start · Systemstatus · Speicherzustand · Werkzeug-Zentrale · SQLite-Persistenz · Ansichts-Persistenz · Reset · Zwischenstand · Neustart · sicheres Beenden PASS');
 } catch (error) {
   evidence.status = 'FAIL';
   evidence.message = error.message;
@@ -216,6 +256,7 @@ try {
 } finally {
   if (firstSession) await endSession(firstSession);
   if (secondSession) await endSession(secondSession);
+  if (thirdSession) await endSession(thirdSession);
   if (driver.exitCode === null) driver.kill('SIGTERM');
   await delay(300);
   if (driver.exitCode === null) driver.kill('SIGKILL');
