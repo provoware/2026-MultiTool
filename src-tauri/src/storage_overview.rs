@@ -386,7 +386,16 @@ mod tests {
     #[test]
     fn byte_thresholds_cover_minimum_percentage_and_maximum_ranges() {
         let tib = 1024 * GIB;
-        let cases = [8 * GIB, 16 * GIB, 32 * GIB, 64 * GIB, 256 * GIB, 512 * GIB, tib, 8 * tib];
+        let cases = [
+            8 * GIB,
+            16 * GIB,
+            32 * GIB,
+            64 * GIB,
+            256 * GIB,
+            512 * GIB,
+            tib,
+            8 * tib,
+        ];
 
         for total in cases {
             let critical = clamped_percentage(total, 3, 512 * MIB, 20 * GIB);
@@ -415,9 +424,18 @@ mod tests {
         }
 
         assert_eq!(clamped_percentage(8 * GIB, 10, 2 * GIB, 100 * GIB), 2 * GIB);
-        assert_eq!(clamped_percentage(8 * GIB, 3, 512 * MIB, 20 * GIB), 512 * MIB);
-        assert_eq!(clamped_percentage(8 * tib, 10, 2 * GIB, 100 * GIB), 100 * GIB);
-        assert_eq!(clamped_percentage(8 * tib, 3, 512 * MIB, 20 * GIB), 20 * GIB);
+        assert_eq!(
+            clamped_percentage(8 * GIB, 3, 512 * MIB, 20 * GIB),
+            512 * MIB
+        );
+        assert_eq!(
+            clamped_percentage(8 * tib, 10, 2 * GIB, 100 * GIB),
+            100 * GIB
+        );
+        assert_eq!(
+            clamped_percentage(8 * tib, 3, 512 * MIB, 20 * GIB),
+            20 * GIB
+        );
     }
 
     #[test]
