@@ -89,6 +89,16 @@ async function toolCenterMarker(sessionId) {
   }`);
 }
 
+async function systemStatusMarker(sessionId) {
+  return await execute(sessionId, `return {
+    os: document.getElementById('osText')?.textContent || '',
+    version: document.getElementById('versionText')?.textContent || '',
+    session: document.getElementById('sessionText')?.textContent || '',
+    core: document.getElementById('systemCoreText')?.textContent || '',
+    database: document.getElementById('databaseText')?.textContent || ''
+  }`);
+}
+
 await access(APP, fsConstants.X_OK);
 await access(DRIVER, fsConstants.X_OK);
 await rm(DATA_DIR, { recursive:true, force:true });
@@ -106,6 +116,7 @@ const evidence = {
   projectPersistence:false,
   checkpoint:false,
   toolCenter:false,
+  systemStatus:false,
   safeShutdown:false,
 };
 let firstSession = null;
@@ -123,10 +134,19 @@ try {
   assert(before.revision === '1', 'Unerwartete Projekt-Revision beim ersten Start.');
 
   const tools = await toolCenterMarker(firstSession);
-  assert(tools.count >= 2, 'Werkzeug-Zentrale zeigt nicht alle eingebauten Werkzeuge.');
+  assert(tools.count >= 3, 'Werkzeug-Zentrale zeigt nicht alle eingebauten Werkzeuge.');
   assert(tools.text.includes('Werkzeug-Zentrale'), 'Werkzeug-Zentrale fehlt in der Werkzeugliste.');
+  assert(tools.text.includes('Systemstatus'), 'Systemstatus fehlt in der Werkzeugliste.');
   assert(tools.summary.includes('Werkzeugen bereit'), 'Werkzeug-Zentrale zeigt keinen verständlichen Gesamtzustand.');
   evidence.toolCenter = true;
+
+  const system = await systemStatusMarker(firstSession);
+  assert(system.os.trim().length > 0 && !system.os.includes('Wird geprüft'), 'Betriebssystem fehlt im Systemstatus.');
+  assert(system.version.trim().length > 0 && !system.version.includes('Wird geprüft'), 'Programmversion fehlt im Systemstatus.');
+  assert(system.session.includes('Aktiv · sitzung-'), 'Aktive Sitzung wird nicht verständlich angezeigt.');
+  assert(system.core.includes('🟢') && system.core.includes('Bereit'), 'Programmkern wird nicht als bereit angezeigt.');
+  assert(system.database.includes('🟢') && system.database.includes('SQLite'), 'Lokale Datenbank wird nicht als bereit angezeigt.');
+  evidence.systemStatus = true;
 
   await click(firstSession, '#checkpointBtn');
   await waitFor(async () => (await execute(firstSession, `return document.getElementById('checkpointText')?.textContent || ''`)).includes('Gesichert:'), { label:'Zwischenstand gesichert' });
@@ -151,7 +171,7 @@ try {
 
   evidence.status = 'PASS';
   await writeFile(resolve(EVIDENCE_DIR, 'tauri-e2e.json'), JSON.stringify(evidence, null, 2));
-  console.log('🟢 Native Tauri-E2E: Start · Werkzeug-Zentrale · SQLite-Persistenz · Zwischenstand · Neustart · sicheres Beenden PASS');
+  console.log('🟢 Native Tauri-E2E: Start · Systemstatus · Werkzeug-Zentrale · SQLite-Persistenz · Zwischenstand · Neustart · sicheres Beenden PASS');
 } catch (error) {
   evidence.status = 'FAIL';
   evidence.message = error.message;
