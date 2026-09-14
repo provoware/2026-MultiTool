@@ -40,12 +40,22 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--focus); outline
 .meta div { padding: 10px 0; border-bottom: 1px solid var(--line); }
 .meta strong { display: block; }
 .small { color: var(--muted); font-size: .93rem; }
+.tools-card { grid-column: 1 / -1; }
+.section-heading { display: flex; gap: 16px; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; }
+.section-heading h2 { margin-bottom: .25rem; }
+.section-heading p { margin: 0; color: var(--muted); max-width: 68ch; }
+.tool-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.tool-item { border: 1px solid var(--line); border-radius: 12px; padding: 14px; min-width: 0; }
+.tool-item p { margin: .55rem 0 0; }
+.tool-head { display: flex; gap: 12px; justify-content: space-between; align-items: flex-start; }
+.tool-state { white-space: nowrap; font-weight: 700; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 
 @media (max-width: 760px) {
   .grid { grid-template-columns: 1fr; }
-  .top { align-items: flex-start; flex-direction: column; }
+  .top, .section-heading { align-items: flex-start; flex-direction: column; }
   .shell { padding: 14px; }
+  .tool-list { grid-template-columns: 1fr; }
 }
 
 @media (prefers-reduced-motion: no-preference) {
