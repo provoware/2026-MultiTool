@@ -2,67 +2,92 @@
 
 ## 🚦 Gesamtstatus
 
-**🟡 IN PRÜFUNG – native Tauri-Foundation ist implementiert, die vollständige Cloud-Abnahme läuft noch.**
+**🟢 TECHNISCHE FOUNDATION BESTÄTIGT – SCHNELL und TIEF sind für denselben Tauri-Kandidaten vollständig grün durchgelaufen.**
 
 ```text
 Foundation / Architektur     🟢 ██████████ 100 % umgesetzt
 SQLite-Grundlage             🟢 ██████████ 100 % umgesetzt
 Cargo-Reproduzierbarkeit     🟢 ██████████ 100 % umgesetzt
 Linux-Abhängigkeitslogik     🟢 ██████████ 100 % zentralisiert
-SCHNELL                       🟡 ████████░░ automatische Prüfung läuft
-TIEF                          ⚪ ░░░░░░░░░░ wartet auf grünes SCHNELL
-FREIGABE                      🔒 gesperrt
-P0-Module                     🔒 gesperrt
+SCHNELL                       🟢 ██████████ 100 % bestanden
+TIEF                          🟢 ██████████ 100 % bestanden
+FREIGABE                      🔒 noch nicht gestartet
+P0-Module                     🔒 bewusst gesperrt
 ```
 
 ## 🎨 Bedeutung
 
-- 🟢 **Bestanden / bestätigt**
-- 🟡 **Läuft / wird geprüft**
-- 🔴 **Fehler / blockiert**
-- 🔵 **Information**
-- ⚪ **Noch nicht an der Reihe**
-- 🔒 **Bewusst gesperrt**
+- 🟢 **Bestanden / bestätigt** – automatischer Nachweis liegt vor.
+- 🟡 **Läuft / wird geprüft** – noch kein endgültiger Nachweis.
+- 🔴 **Fehler / blockiert** – weitere Stufe darf nicht freigegeben werden.
+- 🔵 **Information** – wichtiger Hinweis ohne Fehlerstatus.
+- ⚪ **Noch nicht an der Reihe** – Prüfung wurde noch nicht begonnen.
+- 🔒 **Bewusst gesperrt** – Freigabe erfolgt erst über das vorgesehene Gate.
 
-## 🔍 Aktueller Prüfpfad
+> **Ampelregel:** Grün wird nur nach einem wirklich erfolgreichen automatischen Lauf vergeben. Ein erwarteter oder plausibler Zustand ist nicht grün.
+
+## 🔍 Bestätigter Prüfpfad
 
 ```text
-SCHNELL
-  ↓ nur bei 🟢
-TIEF
-  ↓ nur bei 🟢
-FREIGABE-VORPRÜFUNG
+SCHNELL  🟢
+  ↓
+TIEF     🟢
+  ↓
+FREIGABE-VORPRÜFUNG  🔒
   ↓
 späterer Release-Bau
 ```
 
-## 🧪 SCHNELL muss bestätigen
+## 🧪 SCHNELL – bestätigt 🟢
 
-- Governance und Wissensverträge
-- HTML-/JavaScript-Lint
-- gesperrte Abhängigkeiten
-- `Cargo.lock`
-- Tauri-Linux-Voraussetzungen `core`
-- `cargo fmt --check`
-- `cargo check --locked`
-- Clippy ohne Warnungen
+Automatisch bestanden:
 
-## 🧪 TIEF muss danach bestätigen
+- 🟢 Governance und Wissensverträge
+- 🟢 HTML-/JavaScript-Lint
+- 🟢 gesperrte npm-Abhängigkeiten
+- 🟢 Security-Audit ohne gemeldete Schwachstellen
+- 🟢 `Cargo.lock`
+- 🟢 Tauri-Linux-Voraussetzungen `core`
+- 🟢 `cargo fmt --check`
+- 🟢 `cargo check --locked`
+- 🟢 Clippy mit `-D warnings`
 
-- Browser-/Darstellungsprüfung
-- 100–200-%-Skalierung
-- sichere Browser-Degradation ohne Tauri
-- Tauri-Linux-Voraussetzungen `e2e`
-- Rust-Tests
-- echter Tauri-Start
-- SQLite-Persistenz nach Neustart
-- Zwischenstand
-- sicheres Beenden
+## 🧪 TIEF – bestätigt 🟢
 
-## 🛡️ Harte Regel
+Automatisch bestanden:
 
-**🔒 Keine P0-Funktion und keine Freigabe, solange SCHNELL und TIEF nicht für denselben Kandidaten vollständig grün sind.**
+- 🟢 vollständige Web- und Vertragsprüfung
+- 🟢 Browser-/Darstellungsprüfung
+- 🟢 100–200-%-Skalierungsprüfungen
+- 🟢 sichere Browser-Degradation ohne Tauri
+- 🟢 Tauri-Linux-Voraussetzungen `e2e`
+- 🟢 Rust-Integrationstests
+- 🟢 echter Tauri-Start über WebDriver
+- 🟢 SQLite-Persistenz über Neustart
+- 🟢 Zwischenstand
+- 🟢 sicheres Beenden
 
-## ➡️ Nächster Schritt
+## 🔧 Behobene reale Blocker dieser Runde
 
-**SCHNELL auf dem aktuellen Branch vollständig grün bekommen. Danach TIEF unverändert durchlaufen lassen und nur echte Fehler minimal korrigieren.**
+```text
+🔴 fehlende Linux-Entwicklungsbibliotheken
+   ↓ zentralisiert + validiert
+🟢 core/e2e-Systemumgebung
+
+🔴 fehlendes src-tauri/icons/icon.png
+   ↓ kleines gültiges RGBA-Foundation-Icon ergänzt
+🟢 Tauri generate_context / cargo check
+```
+
+## 🛡️ Schutzstatus
+
+- 🟢 Keine zweite aktive Backendarchitektur.
+- 🟢 SQLite bleibt die einzige fachliche lokale Laufzeitspeicherung dieser Foundation.
+- 🟢 Tests wurden für Grün nicht abgeschwächt.
+- 🟢 SCHNELL blockiert TIEF bei Fehlern weiterhin automatisch.
+- 🔒 FREIGABE bleibt ein eigener Schritt.
+- 🔒 P0-Module bleiben bis zum Abschluss/Frieren dieser Foundation bewusst gesperrt.
+
+## ➡️ Nächster sinnvoller Schritt
+
+**FREIGABE-VORPRÜFUNG für exakt diese 0.3.1-Foundation ausführen. Erst wenn auch dieses Gate grün ist, den Stand als stabile Tauri-Foundation einfrieren bzw. nach `main` übernehmen. P0-Funktionen erst danach in einem neuen Slice beginnen.**
