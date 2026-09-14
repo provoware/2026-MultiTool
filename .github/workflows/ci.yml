@@ -52,41 +52,49 @@ jobs:
         run: |
           if [[ -f src-tauri/Cargo.toml ]]; then
             echo "present=true" >> "$GITHUB_OUTPUT"
-            echo "Tauri-Quellstand vorhanden. Rust-Pruefung wird verpflichtend."
+            echo "🔵 Tauri-Quellstand vorhanden: native Rust-Pruefung ist verpflichtend."
           else
             echo "present=false" >> "$GITHUB_OUTPUT"
-            echo "Tauri-Quellstand noch nicht vorhanden."
+            echo "🔵 Noch kein Tauri-Quellstand: native Rust-Pruefung entfällt."
           fi
+
+      - name: Linux-Abhaengigkeiten fuer Tauri pruefbar bereitstellen
+        if: steps.tauri.outputs.present == 'true'
+        run: bash scripts/ci/install-tauri-linux-deps.sh core
 
       - name: Rust-Werkzeugkette pruefen
         if: steps.tauri.outputs.present == 'true'
         run: |
+          echo "🟡 Rust-Werkzeugkette wird geprüft."
           rustc --version
           cargo --version
           rustup component add rustfmt clippy
+          echo "🟢 Rust-Werkzeugkette ist bereit."
 
       - name: Cargo-Lockdatei pruefen
         if: steps.tauri.outputs.present == 'true'
         shell: bash
         run: |
           if [[ -f src-tauri/Cargo.lock ]]; then
-            echo "Cargo.lock vorhanden."
+            echo "🟢 Cargo.lock vorhanden: Abhängigkeitsstand ist reproduzierbar festgelegt."
             exit 0
           fi
           mkdir -p runtime/ci-evidence
           (cd src-tauri && cargo generate-lockfile)
           cp src-tauri/Cargo.lock runtime/ci-evidence/generated-Cargo.lock
-          echo "Cargo.lock fehlte. Eine reproduzierbare Lockdatei wurde als Fehlernachweis erzeugt."
-          echo "Sie muss in den Quellstand uebernommen werden; der Lauf bleibt deshalb absichtlich rot."
+          echo "🔴 Cargo.lock fehlt. Eine reproduzierbare Lockdatei wurde als Fehlernachweis erzeugt."
+          echo "ℹ️ Sie muss in den Quellstand übernommen werden; der Lauf bleibt absichtlich rot."
           exit 1
 
       - name: Rust formatieren, kompilieren und linten
         if: steps.tauri.outputs.present == 'true'
         working-directory: src-tauri
         run: |
+          echo "🟡 Rust-Qualitätsgate läuft: Format → Check → Clippy."
           cargo fmt --all -- --check
           cargo check --locked
           cargo clippy --locked --all-targets --all-features -- -D warnings
+          echo "🟢 Rust-Qualitätsgate vollständig bestanden."
 
       - name: Diagnose nur bei Fehler sichern
         if: failure()
@@ -128,38 +136,37 @@ jobs:
         run: |
           if [[ -f src-tauri/Cargo.toml ]]; then
             echo "present=true" >> "$GITHUB_OUTPUT"
+            echo "🔵 Tauri-Quellstand vorhanden: native Integration wird geprüft."
           else
             echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "🔵 Noch kein Tauri-Quellstand: native Integration entfällt."
           fi
 
-      - name: Linux-Abhaengigkeiten fuer Tauri bereitstellen
+      - name: Linux-Abhaengigkeiten fuer Tauri-E2E bereitstellen
         if: steps.tauri.outputs.present == 'true'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            libwebkit2gtk-4.1-dev \
-            libappindicator3-dev \
-            librsvg2-dev \
-            patchelf \
-            webkit2gtk-driver \
-            xvfb
+        run: bash scripts/ci/install-tauri-linux-deps.sh e2e
 
       - name: Rust-Integrationstests ausfuehren
         if: steps.tauri.outputs.present == 'true'
         working-directory: src-tauri
-        run: cargo test --locked --all-targets
+        run: |
+          echo "🟡 Rust-Integrationstests laufen."
+          cargo test --locked --all-targets
+          echo "🟢 Rust-Integrationstests bestanden."
 
       - name: Native Tauri-E2E-Pflicht pruefen
         if: steps.tauri.outputs.present == 'true'
         shell: bash
         run: |
           if [[ ! -f tests/tauri-e2e/native_tauri_e2e.mjs ]]; then
-            echo "Tauri ist vorhanden, aber der native Ende-zu-Ende-Test fehlt."
+            echo "🔴 Tauri ist vorhanden, aber der native Ende-zu-Ende-Test fehlt."
             exit 1
           fi
+          echo "🟡 Nativer Tauri-E2E-Test wird vorbereitet."
           cargo install tauri-driver --locked
           (cd src-tauri && cargo build --locked)
           xvfb-run -a node tests/tauri-e2e/native_tauri_e2e.mjs
+          echo "🟢 Nativer Tauri-E2E-Test bestanden."
 
       - name: Fehlernachweise nur bei Fehler sichern
         if: failure()
