@@ -1,0 +1,58 @@
+name: Cargo Lock Autopilot
+
+on:
+  push:
+    branches-ignore:
+      - main
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cargo-lock-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lockfile:
+    name: Rust-Lockdatei bei Bedarf erzeugen
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Entwicklungsbranch laden
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+
+      - name: Bedarf prüfen
+        id: need
+        shell: bash
+        run: |
+          if [[ -f src-tauri/Cargo.toml && ! -f src-tauri/Cargo.lock ]]; then
+            echo "required=true" >> "$GITHUB_OUTPUT"
+            echo "Cargo.toml vorhanden und Cargo.lock fehlt. Lockdatei wird erzeugt."
+          else
+            echo "required=false" >> "$GITHUB_OUTPUT"
+            echo "Keine Lockdatei-Aktion erforderlich."
+          fi
+
+      - name: Lockdatei reproduzierbar erzeugen
+        if: steps.need.outputs.required == 'true'
+        working-directory: src-tauri
+        run: cargo generate-lockfile
+
+      - name: Nur Cargo.lock uebernehmen
+        if: steps.need.outputs.required == 'true'
+        shell: bash
+        run: |
+          test -f src-tauri/Cargo.lock
+          if [[ -n "$(git status --porcelain --untracked-files=all | grep -v '^?? src-tauri/Cargo.lock$')" ]]; then
+            echo "Unerwartete weitere Aenderung erkannt. Autopilot stoppt."
+            git status --short
+            exit 1
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src-tauri/Cargo.lock
+          git commit -m "Dependencies: Cargo.lock reproduzierbar erzeugen"
+          git push origin "HEAD:${{ github.ref_name }}"
