@@ -84,7 +84,10 @@ mod tests {
     #[test]
     fn first_p0_slice_is_read_only() {
         for tool in list_tools() {
-            assert!(tool.read_only, "P0.1 darf noch keine Schreibfunktion freigeben");
+            assert!(
+                tool.read_only,
+                "P0.1 darf noch keine Schreibfunktion freigeben"
+            );
         }
     }
 }
