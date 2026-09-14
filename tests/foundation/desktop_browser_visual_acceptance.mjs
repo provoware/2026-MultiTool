@@ -7,7 +7,6 @@ import { extname, join, normalize, resolve } from 'node:path';
 const ROOT = resolve(new URL('../..', import.meta.url).pathname);
 const PUBLIC = resolve(ROOT, 'src/ui');
 const EVIDENCE = resolve(ROOT, 'runtime/browser-acceptance');
-const ELEMENT_KEY = 'element-6066-11e4-a52e-4f735466cecf';
 const browsers = ['firefox', 'chrome'];
 const types = { '.html':'text/html; charset=utf-8', '.css':'text/css; charset=utf-8', '.mjs':'text/javascript; charset=utf-8' };
 
@@ -148,7 +147,7 @@ async function runBrowser(browser, url) {
       await screenshot(driver, `${browser}-${zoom}.png`);
     }
 
-    return { browser, version:driver.capabilities.browserVersion ?? 'unknown', safeWithoutNativeCore:'PASS', contrast:'PASS', reducedMotion:'PASS', layoutLevels:matrix.length };
+    return { browser, version:driver.capabilities.browserVersion ?? 'unknown', safeWithoutNativeCore:'PASS', contrast:'PASS', reducedMotion:'PASS', layoutLevels:matrix.length, driverTail:output.slice(-300) };
   } finally {
     await stopDriver(driver);
   }
