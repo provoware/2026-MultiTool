@@ -96,4 +96,4 @@ Die sichtbare Programmversion bleibt die echte Rust-Paketversion `0.1.0`. P0.3 v
 
 ## ➡️ Nächster Schritt
 
-**Diesen Dokumentationsstand noch einmal durch SCHNELL → TIEF bestätigen. Danach exakt den grünen Kandidaten nach `main` übernehmen. Erst anschließend darf die getrennte, weiterhin nur lesende Speicherplatz-Ampel geplant werden.**
+**Nach der Übernahme dieses bestätigten P0.3-Stands nach `main` die Speicherplatz-Ampel als eigenen, weiterhin strikt nur lesenden Slice planen. Grenzwerte, kleine und große Datenträger, read-only Medien, Inode-Mangel und die Trennung zwischen „Speicher knapp“ und „Werkzeugfehler“ müssen vor der Umsetzung als eigener Vertrag festgelegt werden.**
