@@ -1,7 +1,11 @@
 mod storage;
 
 use serde::Serialize;
-use std::{path::PathBuf, thread, time::{Duration, SystemTime, UNIX_EPOCH}};
+use std::{
+    path::PathBuf,
+    thread,
+    time::{Duration, SystemTime, UNIX_EPOCH},
+};
 use tauri::{AppHandle, Manager, State};
 
 #[derive(Clone)]
