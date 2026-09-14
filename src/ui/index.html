@@ -51,16 +51,16 @@
         </div>
       </section>
 
-      <aside class="card" aria-labelledby="details">
-        <h2 id="details">Was ist schon bereit?</h2>
-        <div class="meta">
-          <div><strong>Bedienung</strong><span>Einfach / Grundlage</span></div>
-          <div><strong>Projektdaten</strong><span>Eine lokale SQLite-Datenbank</span></div>
-          <div><strong>Netzwerk</strong><span>Für den Programmkern nicht nötig</span></div>
-          <div><strong>Programmstart</strong><span>Tauri verwaltet den Programmprozess</span></div>
-          <div><strong>Beenden</strong><span>Zwischenstand sichern → Programm schließen</span></div>
+      <aside class="card" aria-labelledby="systemStatusTitle">
+        <h2 id="systemStatusTitle">Systemstatus</h2>
+        <div class="meta" id="systemStatus">
+          <div><strong>Betriebssystem</strong><span id="osText">Wird geprüft …</span></div>
+          <div><strong>Programmversion</strong><span id="versionText">Wird geprüft …</span></div>
+          <div><strong>Sitzung</strong><span id="sessionText">Wird geprüft …</span></div>
+          <div><strong>Programmkern</strong><span id="systemCoreText">🔵 Wird geprüft …</span></div>
+          <div><strong>Lokale Datenbank</strong><span id="databaseText">🔵 Wird geprüft …</span></div>
         </div>
-        <p class="small">Farbe unterstützt nur die Orientierung. Jeder Zustand wird zusätzlich mit Symbol und Klartext erklärt.</p>
+        <p class="small">Nur sichere Basisinformationen. Keine Prozesssteuerung, keine Systemänderung und keine umfangreiche Hardwarediagnose.</p>
       </aside>
 
       <section class="card tools-card" aria-labelledby="toolsTitle">
