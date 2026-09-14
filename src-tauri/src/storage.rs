@@ -294,7 +294,8 @@ mod tests {
 
         let hidden = set_workspace_visibility(&path, "storage", false).expect("Speichern");
         assert_eq!(hidden.get("storage"), Some(&false));
-        let again = set_workspace_visibility(&path, "storage", false).expect("Idempotent speichern");
+        let again =
+            set_workspace_visibility(&path, "storage", false).expect("Idempotent speichern");
         assert_eq!(again, hidden);
         let reopened = load_workspace_visibility(&path).expect("Erneut lesen");
         assert_eq!(reopened.get("storage"), Some(&false));
@@ -319,7 +320,10 @@ mod tests {
         assert!(WORKSPACE_SECTION_IDS
             .iter()
             .all(|section_id| reset.get(*section_id) == Some(&true)));
-        assert_eq!(load_workspace_visibility(&path).expect("Reset erneut lesen"), reset);
+        assert_eq!(
+            load_workspace_visibility(&path).expect("Reset erneut lesen"),
+            reset
+        );
         cleanup(&path);
     }
 }
