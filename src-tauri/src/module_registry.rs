@@ -1,22 +1,15 @@
 use serde::Serialize;
-use std::collections::HashSet;
 
 #[derive(Clone, Copy, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ToolState {
     Ready,
-    Hidden,
-    Disabled,
-    PermissionMissing,
 }
 
 impl ToolState {
     fn text(self) -> &'static str {
         match self {
             Self::Ready => "Bereit",
-            Self::Hidden => "Ausgeblendet",
-            Self::Disabled => "Ausgeschaltet",
-            Self::PermissionMissing => "Berechtigung fehlt",
         }
     }
 }
@@ -70,6 +63,7 @@ pub fn list_tools() -> Vec<ToolInfo> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::collections::HashSet;
 
     #[test]
     fn tool_ids_are_unique_and_non_empty() {
