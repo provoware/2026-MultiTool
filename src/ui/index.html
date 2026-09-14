@@ -19,7 +19,7 @@
     <main class="grid">
       <section class="card" aria-labelledby="today">
         <h2 id="today">Heute</h2>
-        <p>Diese Ansicht zeigt nur die wichtigsten Grundlagen. Es werden noch keine zusätzlichen Werkzeuge geladen.</p>
+        <p>Diese Ansicht zeigt nur die wichtigsten Grundlagen. Zusätzliche Werkzeuge werden schrittweise und geprüft ergänzt.</p>
 
         <div class="steps" id="steps">
           <div class="step">
@@ -62,6 +62,19 @@
         </div>
         <p class="small">Farbe unterstützt nur die Orientierung. Jeder Zustand wird zusätzlich mit Symbol und Klartext erklärt.</p>
       </aside>
+
+      <section class="card tools-card" aria-labelledby="toolsTitle">
+        <div class="section-heading">
+          <div>
+            <h2 id="toolsTitle">Werkzeug-Zentrale</h2>
+            <p>Hier siehst du, welche Werkzeuge wirklich eingebaut und bereit sind. In diesem ersten Schritt kannst du sie nur ansehen.</p>
+          </div>
+          <div id="toolsSummary" class="badge">🔵 Werkzeuge werden geprüft …</div>
+        </div>
+        <div id="toolsList" class="tool-list" aria-live="polite">
+          <p class="small">Werkzeugliste wird geladen …</p>
+        </div>
+      </section>
     </main>
 
     <div id="live" class="visually-hidden" aria-live="polite"></div>
