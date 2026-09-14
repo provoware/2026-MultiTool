@@ -1,5 +1,6 @@
 mod module_registry;
 mod storage;
+mod storage_overview;
 
 use serde::Serialize;
 use std::{
@@ -82,6 +83,11 @@ fn list_tools() -> Vec<module_registry::ToolInfo> {
 }
 
 #[tauri::command]
+fn list_storage_volumes() -> Result<Vec<storage_overview::StorageVolume>, String> {
+    storage_overview::list_storage_volumes()
+}
+
+#[tauri::command]
 fn load_or_create_project_state(
     state: State<'_, RuntimeState>,
 ) -> Result<storage::ProjectState, String> {
@@ -134,6 +140,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             get_status,
             list_tools,
+            list_storage_volumes,
             load_or_create_project_state,
             create_checkpoint,
             request_shutdown
