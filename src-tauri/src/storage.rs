@@ -104,7 +104,8 @@ pub fn load_or_create_project_state(path: &Path, project_id: &str) -> Result<Pro
         )
         .map_err(db_error)?;
 
-    query_state(&connection)?.ok_or_else(|| "Projektzustand konnte nicht angelegt werden.".to_string())
+    query_state(&connection)?
+        .ok_or_else(|| "Projektzustand konnte nicht angelegt werden.".to_string())
 }
 
 pub fn create_checkpoint(path: &Path, reason: &str) -> Result<Checkpoint, String> {
@@ -152,7 +153,10 @@ pub fn health(path: &Path) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::{fs, time::{SystemTime, UNIX_EPOCH}};
+    use std::{
+        fs,
+        time::{SystemTime, UNIX_EPOCH},
+    };
 
     fn test_path(name: &str) -> std::path::PathBuf {
         let stamp = SystemTime::now()
