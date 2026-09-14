@@ -9,8 +9,8 @@ function runtimeInvoke() {
   return invoke;
 }
 
-function setActionsEnabled(enabled) {
-  for (const id of ['checkpointBtn', 'refreshBtn', 'shutdownBtn']) {
+function setStorageActionsEnabled(enabled) {
+  for (const id of ['checkpointBtn', 'shutdownBtn']) {
     $(id).disabled = !enabled;
   }
 }
@@ -24,13 +24,31 @@ async function loadProjectState() {
   return state;
 }
 
-function toolIcon(state) {
+function statusIcon(state) {
   return {
     ready: '🟢',
+    attention: '🟡',
     hidden: '⚪',
     disabled: '🔒',
     permission_missing: '🟡',
   }[state] ?? '🔵';
+}
+
+function toolIcon(state) {
+  return statusIcon(state);
+}
+
+function renderSystemStatus(status) {
+  $('osText').textContent = status.operating_system || 'Nicht verfügbar';
+  $('versionText').textContent = status.program_version || 'Nicht verfügbar';
+  $('sessionText').textContent = status.session ? `Aktiv · ${status.session}` : 'Nicht verfügbar';
+  $('systemCoreText').textContent = `${statusIcon(status.core_status)} ${status.core_text}`;
+  $('databaseText').textContent = `${statusIcon(status.database_status)} ${status.database_text}`;
+  $('coreText').textContent = `${status.core_text} · Sitzung aktiv`;
+  $('localText').textContent = status.local_only
+    ? 'Bestanden: Der Programmkern arbeitet nur auf diesem Gerät.'
+    : 'Hinweis: Der Programmkern meldet eine unerwartete Verbindung.';
+  $('overall').textContent = `${statusIcon(status.status)} ${status.overall_text}`;
 }
 
 function renderTools(tools) {
@@ -71,29 +89,56 @@ function renderTools(tools) {
   $('toolsSummary').textContent = `🟢 ${ready} von ${tools.length} Werkzeugen bereit`;
 }
 
+function markCoreUnavailable(error) {
+  const message = error?.message ?? 'unbekannter Fehler';
+  $('coreText').textContent = `Nicht bereit: ${message}`;
+  $('projectStateText').textContent = 'Es wurden keine Projektdaten verändert.';
+  $('osText').textContent = 'Nicht verfügbar';
+  $('versionText').textContent = 'Nicht verfügbar';
+  $('sessionText').textContent = 'Nicht verfügbar';
+  $('systemCoreText').textContent = '🔴 Programmkern nicht erreichbar';
+  $('databaseText').textContent = '🔵 Nicht geprüft · Programmkern nicht erreichbar';
+  $('toolsSummary').textContent = '🔴 Werkzeugliste nicht erreichbar';
+  $('toolsList').textContent = 'Es wurden keine Werkzeuge gestartet oder verändert.';
+  $('overall').textContent = '🔴 Programmkern nicht erreichbar';
+  setStorageActionsEnabled(false);
+  live('Programmkern nicht erreichbar');
+}
+
 async function refresh() {
+  setStorageActionsEnabled(false);
+  $('refreshBtn').disabled = true;
+
   try {
-    const [status, , tools] = await Promise.all([
-      runtimeInvoke()('get_status'),
-      loadProjectState(),
-      runtimeInvoke()('list_tools'),
-    ]);
-    $('coreText').textContent = `Bereit · Sitzung ${status.session}`;
-    $('localText').textContent = status.local_only
-      ? 'Bestanden: Der Programmkern arbeitet nur auf diesem Gerät.'
-      : 'Hinweis: Der Programmkern meldet eine unerwartete Verbindung.';
-    renderTools(tools);
-    $('overall').textContent = status.local_only ? '🟢 Alles bereit' : '🟡 Bitte prüfen';
-    setActionsEnabled(true);
+    const status = await runtimeInvoke()('get_status');
+    renderSystemStatus(status);
+
+    let toolsReady = true;
+    try {
+      renderTools(await runtimeInvoke()('list_tools'));
+    } catch {
+      toolsReady = false;
+      $('toolsSummary').textContent = '🟡 Werkzeugliste braucht Aufmerksamkeit';
+      $('toolsList').textContent = 'Die Werkzeugliste konnte nicht gelesen werden. Es wurde nichts verändert.';
+    }
+
+    let projectReady = true;
+    try {
+      await loadProjectState();
+    } catch {
+      projectReady = false;
+      $('projectStateText').textContent = 'Aufmerksamkeit nötig · lokaler Projektspeicher nicht lesbar.';
+      $('databaseText').textContent = '🟡 Aufmerksamkeit nötig · lokale Datenbank nicht bereit';
+    }
+
+    const ready = status.status === 'ready' && projectReady && toolsReady;
+    $('overall').textContent = ready ? '🟢 Alles bereit' : '🟡 Aufmerksamkeit nötig';
+    setStorageActionsEnabled(status.status === 'ready' && projectReady);
     live($('overall').textContent);
   } catch (error) {
-    $('coreText').textContent = `Nicht bereit: ${error?.message ?? 'unbekannter Fehler'}`;
-    $('projectStateText').textContent = 'Es wurden keine Projektdaten verändert.';
-    $('toolsSummary').textContent = '🔴 Werkzeugliste nicht erreichbar';
-    $('toolsList').textContent = 'Es wurden keine Werkzeuge gestartet oder verändert.';
-    $('overall').textContent = '🔴 Programmkern nicht erreichbar';
-    setActionsEnabled(false);
-    live('Programmkern nicht erreichbar');
+    markCoreUnavailable(error);
+  } finally {
+    $('refreshBtn').disabled = false;
   }
 }
 
@@ -130,5 +175,5 @@ $('shutdownBtn').addEventListener('click', async () => {
   }
 });
 
-setActionsEnabled(false);
+setStorageActionsEnabled(false);
 await refresh();
