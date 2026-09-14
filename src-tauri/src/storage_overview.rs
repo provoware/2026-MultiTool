@@ -253,8 +253,8 @@ fn filesystem_metrics(mount_point: &str) -> Result<FilesystemMetrics, String> {
     let free = u128::from(info.f_bavail).saturating_mul(block_size);
     let total_bytes = total.min(u128::from(u64::MAX)) as u64;
     let free_bytes = (free.min(u128::from(u64::MAX)) as u64).min(total_bytes);
-    let total_inodes = u64::from(info.f_files);
-    let free_inodes = u64::from(info.f_favail);
+    let total_inodes = info.f_files;
+    let free_inodes = info.f_favail;
     let (total_inodes, free_inodes) = if total_inodes > 0 {
         (Some(total_inodes), Some(free_inodes))
     } else {
