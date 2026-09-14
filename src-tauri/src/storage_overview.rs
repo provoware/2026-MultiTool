@@ -175,7 +175,7 @@ pub fn list_storage_volumes() -> Result<Vec<StorageVolume>, String> {
     let mountinfo = std::fs::read_to_string("/proc/self/mountinfo")
         .map_err(|error| format!("Eingehängte Datenträger konnten nicht gelesen werden: {error}"))?;
 
-    let volumes = selected_mounts(&mountinfo)
+    let volumes: Vec<_> = selected_mounts(&mountinfo)
         .into_iter()
         .filter_map(|entry| {
             let (total_bytes, free_bytes) = filesystem_space(&entry.mount_point).ok()?;
@@ -187,6 +187,10 @@ pub fn list_storage_volumes() -> Result<Vec<StorageVolume>, String> {
             })
         })
         .collect();
+
+    if volumes.is_empty() {
+        return Err("Kein lesbarer lokaler Datenträger wurde gefunden".to_string());
+    }
 
     Ok(volumes)
 }
