@@ -123,6 +123,52 @@ async function runBrowser(browser, url) {
     assert(safety.disabled, `${browser}: Aktionen sind ohne nativen Programmkern nicht gesperrt.`);
     assert(safety.live === 'polite', `${browser}: ARIA-Live-Region fehlt.`);
 
+    const workspaceInitial = await execute(driver, `return {
+      toggles:[...document.querySelectorAll('[data-workspace-toggle]')].map(e=>({id:e.dataset.workspaceToggle,checked:e.checked,label:document.querySelector('label[for="'+e.id+'"]')?.textContent.trim()||''})),
+      panels:[...document.querySelectorAll('[data-workspace-panel]')].map(e=>({id:e.dataset.workspacePanel,hidden:e.hidden})),
+      summary:document.getElementById('workspaceSummary')?.textContent||''
+    }`);
+    assert(workspaceInitial.toggles.length === 4 && workspaceInitial.toggles.every((item) => item.checked && item.label), `${browser}: Arbeitsflächen-Schalter sind nicht vollständig zugänglich.`);
+    assert(workspaceInitial.panels.length === 4 && workspaceInitial.panels.every((item) => item.hidden === false), `${browser}: Standardansicht zeigt nicht alle Bereiche.`);
+    assert(workspaceInitial.summary.includes('Standardansicht'), `${browser}: Standardstatus der Arbeitsfläche fehlt.`);
+
+    const hiddenStorage = await execute(driver, `
+      document.querySelector('[data-workspace-toggle="storage"]').click();
+      return {
+        hidden:document.querySelector('[data-workspace-panel="storage"]').hidden,
+        checked:document.querySelector('[data-workspace-toggle="storage"]').checked,
+        summary:document.getElementById('workspaceSummary').textContent,
+        live:document.getElementById('live').textContent
+      };
+    `);
+    assert(hiddenStorage.hidden === true && hiddenStorage.checked === false, `${browser}: Speicherbereich lässt sich nicht ausblenden.`);
+    assert(hiddenStorage.summary.includes('3 von 4'), `${browser}: Sichtbarkeitsstatus wird nicht verständlich aktualisiert.`);
+    assert(hiddenStorage.live.includes('Speicherübersicht') && hiddenStorage.live.includes('ausgeblendet'), `${browser}: Screenreader-Rückmeldung beim Ausblenden fehlt.`);
+
+    const resetWorkspace = await execute(driver, `
+      document.querySelector('[data-workspace-toggle="tools"]').click();
+      document.getElementById('workspaceResetBtn').click();
+      return {
+        allVisible:[...document.querySelectorAll('[data-workspace-panel]')].every(e=>e.hidden===false),
+        allChecked:[...document.querySelectorAll('[data-workspace-toggle]')].every(e=>e.checked===true),
+        summary:document.getElementById('workspaceSummary').textContent,
+        live:document.getElementById('live').textContent
+      };
+    `);
+    assert(resetWorkspace.allVisible && resetWorkspace.allChecked, `${browser}: Ansicht zurücksetzen stellt die Standardansicht nicht wieder her.`);
+    assert(resetWorkspace.summary.includes('Standardansicht'), `${browser}: Reset-Status fehlt.`);
+    assert(resetWorkspace.live.includes('Standardansicht'), `${browser}: Screenreader-Rückmeldung beim Reset fehlt.`);
+
+    await execute(driver, `document.querySelector('[data-workspace-toggle="system-status"]').click(); return true;`);
+    await wd(driver.base, 'POST', `/session/${driver.sessionId}/url`, { url });
+    await waitFor(async () => (await execute(driver, `return document.getElementById('overall')?.textContent || ''`)).includes('Programmkern nicht erreichbar'), { label:`${browser} Sitzungslokalität` });
+    const afterReload = await execute(driver, `return {
+      systemVisible:document.querySelector('[data-workspace-panel="system-status"]').hidden===false,
+      toggleChecked:document.querySelector('[data-workspace-toggle="system-status"]').checked===true,
+      summary:document.getElementById('workspaceSummary').textContent
+    }`);
+    assert(afterReload.systemVisible && afterReload.toggleChecked && afterReload.summary.includes('Standardansicht'), `${browser}: Sichtbarkeit wurde unerlaubt dauerhaft gespeichert.`);
+
     const contrast = await execute(driver, `
       function rgb(v){const m=v.match(/rgba?\\((\\d+),\\s*(\\d+),\\s*(\\d+)/);return m?[+m[1],+m[2],+m[3]]:null}
       function lum(c){return c.map(v=>{v/=255;return v<=.04045?v/12.92:Math.pow((v+.055)/1.055,2.4)}).reduce((a,v,i)=>a+v*[.2126,.7152,.0722][i],0)}
@@ -138,7 +184,7 @@ async function runBrowser(browser, url) {
     ];
     for (const [width,height,zoom] of matrix) {
       await wd(driver.base, 'POST', `/session/${driver.sessionId}/window/rect`, { width, height });
-      const metrics = await execute(driver, `const ids=['overall','checkpointBtn','refreshBtn','shutdownBtn']; return {w:innerWidth,sw:document.documentElement.scrollWidth,els:ids.map(id=>{const e=document.getElementById(id),r=e.getBoundingClientRect();return{id,left:r.left,right:r.right,width:r.width,height:r.height,display:getComputedStyle(e).display}})}`);
+      const metrics = await execute(driver, `const ids=['overall','workspaceResetBtn','checkpointBtn','refreshBtn','shutdownBtn']; return {w:innerWidth,sw:document.documentElement.scrollWidth,els:ids.map(id=>{const e=document.getElementById(id),r=e.getBoundingClientRect();return{id,left:r.left,right:r.right,width:r.width,height:r.height,display:getComputedStyle(e).display}})}`);
       assert(metrics.sw <= metrics.w + 2, `${browser}@${zoom}%: horizontales Ueberlaufen.`);
       for (const item of metrics.els) {
         assert(item.width > 0 && item.height > 0 && item.left >= -1 && item.right <= metrics.w + 1 && item.display !== 'none', `${browser}@${zoom}%: ${item.id} nicht voll sichtbar.`);
@@ -147,7 +193,7 @@ async function runBrowser(browser, url) {
       await screenshot(driver, `${browser}-${zoom}.png`);
     }
 
-    return { browser, version:driver.capabilities.browserVersion ?? 'unknown', safeWithoutNativeCore:'PASS', contrast:'PASS', reducedMotion:'PASS', layoutLevels:matrix.length, driverTail:driver.output().slice(-300) };
+    return { browser, version:driver.capabilities.browserVersion ?? 'unknown', safeWithoutNativeCore:'PASS', workspaceVisibility:'PASS', workspaceSessionOnly:'PASS', contrast:'PASS', reducedMotion:'PASS', layoutLevels:matrix.length, driverTail:driver.output().slice(-300) };
   } finally {
     await stopDriver(driver);
   }
@@ -160,7 +206,7 @@ const results = [];
 try {
   for (const browser of browsers) results.push(await runBrowser(browser, staticServer.url));
   await writeFile(resolve(EVIDENCE, 'evidence.json'), JSON.stringify({ status:'PASS', method:'static browser visual acceptance; native behavior is tested separately in Tauri E2E', results }, null, 2));
-  console.log('🟢 Browser-Ansicht: Firefox + Chrome PASS · 100–200 % · Kontrast · Reduced Motion · sicherer Zustand ohne nativen Kern');
+  console.log('🟢 Browser-Ansicht: Firefox + Chrome PASS · flexible Sitzungssicht · 100–200 % · Kontrast · Reduced Motion · sicherer Zustand ohne nativen Kern');
 } finally {
   await new Promise((resolveClose) => staticServer.server.close(resolveClose));
 }

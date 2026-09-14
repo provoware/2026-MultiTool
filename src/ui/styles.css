@@ -14,6 +14,7 @@
 
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.55 system-ui, sans-serif; }
+[hidden] { display: none !important; }
 .shell { max-width: 1120px; margin: auto; padding: 24px; }
 .top { display: flex; gap: 16px; align-items: center; justify-content: space-between; margin-bottom: 20px; }
 .brand h1 { margin: 0; font-size: clamp(1.5rem, 3vw, 2.2rem); }
@@ -40,10 +41,16 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--focus); outline
 .meta div { padding: 10px 0; border-bottom: 1px solid var(--line); }
 .meta strong { display: block; }
 .small { color: var(--muted); font-size: .93rem; }
-.tools-card { grid-column: 1 / -1; }
+.tools-card, .workspace-card { grid-column: 1 / -1; }
 .section-heading { display: flex; gap: 16px; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; }
 .section-heading h2 { margin-bottom: .25rem; }
 .section-heading p { margin: 0; color: var(--muted); max-width: 68ch; }
+.workspace-options { border: 0; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+.workspace-option { min-height: 44px; display: flex; gap: .65rem; align-items: center; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; cursor: pointer; }
+.workspace-option:hover { background: #f8fafc; }
+.workspace-option:focus-within { outline: 3px solid var(--focus); outline-offset: 2px; }
+.workspace-option input { width: 22px; height: 22px; margin: 0; flex: 0 0 auto; accent-color: var(--blue); }
+.workspace-actions { margin-top: 14px; }
 .tool-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
 .tool-item { border: 1px solid var(--line); border-radius: 12px; padding: 14px; min-width: 0; }
 .tool-item p { margin: .55rem 0 0; }
@@ -61,7 +68,7 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--focus); outline
   .grid { grid-template-columns: 1fr; }
   .top, .section-heading { align-items: flex-start; flex-direction: column; }
   .shell { padding: 14px; }
-  .tool-list { grid-template-columns: 1fr; }
+  .tool-list, .workspace-options { grid-template-columns: 1fr; }
 }
 
 @media (prefers-reduced-motion: no-preference) {
