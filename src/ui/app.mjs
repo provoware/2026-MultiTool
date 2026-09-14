@@ -38,6 +38,22 @@ function toolIcon(state) {
   return statusIcon(state);
 }
 
+function formatStorageSize(bytes) {
+  const value = Number(bytes);
+  if (!Number.isFinite(value) || value < 0) return 'Nicht verfügbar';
+
+  const units = ['Byte', 'Kilobyte', 'Megabyte', 'Gigabyte', 'Terabyte', 'Petabyte'];
+  let amount = value;
+  let unit = 0;
+  while (amount >= 1024 && unit < units.length - 1) {
+    amount /= 1024;
+    unit += 1;
+  }
+
+  const maximumFractionDigits = amount >= 100 ? 0 : amount >= 10 ? 1 : 2;
+  return `${new Intl.NumberFormat('de-DE', { maximumFractionDigits }).format(amount)} ${units[unit]}`;
+}
+
 function renderSystemStatus(status) {
   $('osText').textContent = status.operating_system || 'Nicht verfügbar';
   $('versionText').textContent = status.program_version || 'Nicht verfügbar';
@@ -49,6 +65,43 @@ function renderSystemStatus(status) {
     ? 'Bestanden: Der Programmkern arbeitet nur auf diesem Gerät.'
     : 'Hinweis: Der Programmkern meldet eine unerwartete Verbindung.';
   $('overall').textContent = `${statusIcon(status.status)} ${status.overall_text}`;
+}
+
+function renderStorageVolumes(volumes) {
+  const list = $('storageList');
+  list.replaceChildren();
+
+  if (volumes.length === 0) {
+    const message = document.createElement('p');
+    message.className = 'small';
+    message.textContent = 'Keine passenden eingehängten lokalen Datenträger gefunden.';
+    list.append(message);
+    $('storageSummary').textContent = '🔵 Keine lokalen Datenträger erkannt';
+    return;
+  }
+
+  for (const volume of volumes) {
+    const item = document.createElement('article');
+    item.className = 'tool-item storage-item';
+    item.dataset.mountPoint = volume.mount_point;
+    item.dataset.totalBytes = String(volume.total_bytes);
+    item.dataset.freeBytes = String(volume.free_bytes);
+
+    const title = document.createElement('strong');
+    title.textContent = volume.name;
+
+    const mount = document.createElement('p');
+    mount.className = 'small';
+    mount.textContent = `Einhängeort: ${volume.mount_point}`;
+
+    const sizes = document.createElement('p');
+    sizes.textContent = `Gesamt: ${formatStorageSize(volume.total_bytes)} · Frei: ${formatStorageSize(volume.free_bytes)}`;
+
+    item.append(title, mount, sizes);
+    list.append(item);
+  }
+
+  $('storageSummary').textContent = `🔵 ${volumes.length} Datenträger angezeigt`;
 }
 
 function renderTools(tools) {
@@ -98,6 +151,8 @@ function markCoreUnavailable(error) {
   $('sessionText').textContent = 'Nicht verfügbar';
   $('systemCoreText').textContent = '🔴 Programmkern nicht erreichbar';
   $('databaseText').textContent = '🔵 Nicht geprüft · Programmkern nicht erreichbar';
+  $('storageSummary').textContent = '🔴 Speicherübersicht nicht erreichbar';
+  $('storageList').textContent = 'Es wurden keine Datenträger verändert.';
   $('toolsSummary').textContent = '🔴 Werkzeugliste nicht erreichbar';
   $('toolsList').textContent = 'Es wurden keine Werkzeuge gestartet oder verändert.';
   $('overall').textContent = '🔴 Programmkern nicht erreichbar';
@@ -124,6 +179,15 @@ async function refresh() {
       $('toolsList').textContent = 'Die Werkzeugliste konnte nicht gelesen werden. Es wurde nichts verändert.';
     }
 
+    let storageReady = true;
+    try {
+      renderStorageVolumes(await runtimeInvoke()('list_storage_volumes'));
+    } catch {
+      storageReady = false;
+      $('storageSummary').textContent = '🟡 Speicherangaben brauchen Aufmerksamkeit';
+      $('storageList').textContent = 'Die Datenträger konnten nicht gelesen werden. Es wurde nichts verändert.';
+    }
+
     let projectReady = true;
     try {
       await loadProjectState();
@@ -133,7 +197,7 @@ async function refresh() {
       $('databaseText').textContent = '🟡 Aufmerksamkeit nötig · lokale Datenbank nicht bereit';
     }
 
-    const ready = status.status === 'ready' && projectReady && toolsReady;
+    const ready = status.status === 'ready' && projectReady && toolsReady && storageReady;
     $('overall').textContent = ready ? '🟢 Alles bereit' : '🟡 Aufmerksamkeit nötig';
     setStorageActionsEnabled(status.status === 'ready' && projectReady);
     live($('overall').textContent);
