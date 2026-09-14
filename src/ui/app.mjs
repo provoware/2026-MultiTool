@@ -90,7 +90,8 @@ function setupWorkspaceControls() {
       toggle.disabled = true;
       try {
         const saved = await runtimeInvoke()('set_workspace_visibility', { panel: panel.id, visible });
-        workspaceVisibility = workspaceVisibilityFromBackend(saved);
+        const confirmed = workspaceVisibilityFromBackend(saved);
+        workspaceVisibility = setWorkspacePanelVisibility(workspaceVisibility, panel.id, confirmed[panel.id]);
         renderWorkspaceVisibility();
         $('workspaceHelp').textContent = 'Deine Auswahl wird lokal auf diesem Gerät gemerkt.';
         live(`${panel.label} ist jetzt ${visible ? 'sichtbar' : 'ausgeblendet'} und wurde lokal gemerkt.`);
@@ -276,7 +277,7 @@ function markCoreUnavailable(error) {
   $('storageList').textContent = 'Es wurden keine Datenträger verändert.';
   $('toolsSummary').textContent = '🔴 Werkzeugliste nicht erreichbar';
   $('toolsList').textContent = 'Es wurden keine Werkzeuge gestartet oder verändert.';
-  $('workspaceSummary').textContent = '🟢 Standardansicht';
+  renderWorkspaceVisibility();
   $('workspaceHelp').textContent = 'Du kannst Bereiche in dieser Sitzung ausblenden. Dauerhaft speichern ist ohne Programmkern nicht möglich.';
   $('overall').textContent = '🔴 Programmkern nicht erreichbar';
   setStorageActionsEnabled(false);
