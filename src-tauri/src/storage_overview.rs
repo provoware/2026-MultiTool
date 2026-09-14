@@ -172,8 +172,9 @@ fn filesystem_space(_mount_point: &str) -> Result<(u64, u64), String> {
 
 #[cfg(target_os = "linux")]
 pub fn list_storage_volumes() -> Result<Vec<StorageVolume>, String> {
-    let mountinfo = std::fs::read_to_string("/proc/self/mountinfo")
-        .map_err(|error| format!("Eingehängte Datenträger konnten nicht gelesen werden: {error}"))?;
+    let mountinfo = std::fs::read_to_string("/proc/self/mountinfo").map_err(|error| {
+        format!("Eingehängte Datenträger konnten nicht gelesen werden: {error}")
+    })?;
 
     let volumes: Vec<_> = selected_mounts(&mountinfo)
         .into_iter()
