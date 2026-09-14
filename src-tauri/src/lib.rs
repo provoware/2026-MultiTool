@@ -1,3 +1,4 @@
+mod module_registry;
 mod storage;
 
 use serde::Serialize;
@@ -39,6 +40,11 @@ fn get_status(state: State<'_, RuntimeState>) -> Result<RuntimeStatus, String> {
         local_only: true,
         storage: "sqlite",
     })
+}
+
+#[tauri::command]
+fn list_tools() -> Vec<module_registry::ToolInfo> {
+    module_registry::list_tools()
 }
 
 #[tauri::command]
@@ -93,6 +99,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             get_status,
+            list_tools,
             load_or_create_project_state,
             create_checkpoint,
             request_shutdown
