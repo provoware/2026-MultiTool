@@ -108,9 +108,11 @@ function markCoreUnavailable(error) {
 async function refresh() {
   setStorageActionsEnabled(false);
   $('refreshBtn').disabled = true;
+  let coreAvailable = false;
 
   try {
     const status = await runtimeInvoke()('get_status');
+    coreAvailable = true;
     renderSystemStatus(status);
 
     let toolsReady = true;
@@ -138,7 +140,7 @@ async function refresh() {
   } catch (error) {
     markCoreUnavailable(error);
   } finally {
-    $('refreshBtn').disabled = false;
+    $('refreshBtn').disabled = !coreAvailable;
   }
 }
 
