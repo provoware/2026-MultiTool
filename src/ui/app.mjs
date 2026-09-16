@@ -13,6 +13,7 @@ const $ = (id) => document.getElementById(id);
 const live = (text) => { $('live').textContent = text; };
 let workspaceVisibility = defaultWorkspaceVisibility();
 let workspaceVisibilityInitialized = false;
+let workspaceVisibilityLoadPending = false;
 let workspaceSessionOverrides = {};
 const workspaceMutationGuard = createWorkspaceMutationGuard();
 
@@ -58,6 +59,15 @@ function beginWorkspaceMutation() {
 function endWorkspaceMutation() {
   workspaceMutationGuard.end();
   setWorkspaceControlsEnabled(true);
+  if (workspaceVisibilityInitialized) {
+    workspaceVisibilityLoadPending = false;
+    return;
+  }
+  if (!workspaceVisibilityLoadPending) return;
+  workspaceVisibilityLoadPending = false;
+  queueMicrotask(() => {
+    if (!workspaceVisibilityInitialized) void loadWorkspaceVisibility();
+  });
 }
 
 function restoreWorkspaceControlFocus(control, hadFocus) {
@@ -120,11 +130,16 @@ function renderWorkspaceVisibility(summaryOverride = null) {
 
 async function loadWorkspaceVisibility() {
   const focusedControl = focusedWorkspaceControl();
-  if (!beginWorkspaceMutation()) return false;
+  if (!beginWorkspaceMutation()) {
+    workspaceVisibilityLoadPending = true;
+    return false;
+  }
   try {
     const saved = await runtimeInvoke()('load_workspace_visibility');
     const persisted = workspaceVisibilityFromBackend(saved);
     workspaceVisibility = applyWorkspaceSessionOverrides(persisted);
+    workspaceVisibilityInitialized = true;
+    workspaceVisibilityLoadPending = false;
     renderWorkspaceVisibility();
     updateWorkspacePersistenceHelp();
     return true;
@@ -359,7 +374,7 @@ async function refresh() {
     coreAvailable = true;
     renderSystemStatus(status);
     if (!workspaceVisibilityInitialized) {
-      workspaceVisibilityInitialized = await loadWorkspaceVisibility();
+      await loadWorkspaceVisibility();
     }
 
     let toolsReady = true;
