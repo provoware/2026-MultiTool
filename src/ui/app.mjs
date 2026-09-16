@@ -1,4 +1,5 @@
 import { storageStatePresentation } from './storage-display.mjs';
+import { createWorkspaceMutationGuard } from './workspace-mutation-guard.mjs';
 import {
   WORKSPACE_PANELS,
   defaultWorkspaceVisibility,
@@ -13,6 +14,7 @@ const live = (text) => { $('live').textContent = text; };
 let workspaceVisibility = defaultWorkspaceVisibility();
 let workspaceVisibilityInitialized = false;
 let workspaceSessionOverrides = {};
+const workspaceMutationGuard = createWorkspaceMutationGuard();
 
 function runtimeInvoke() {
   const invoke = globalThis.__TAURI__?.core?.invoke;
@@ -34,6 +36,28 @@ function workspacePanelElement(panelId) {
 
 function workspaceToggleElement(panelId) {
   return document.querySelector(`[data-workspace-toggle="${panelId}"]`);
+}
+
+function setWorkspaceControlsEnabled(enabled) {
+  for (const panel of WORKSPACE_PANELS) {
+    const toggle = workspaceToggleElement(panel.id);
+    if (toggle) toggle.disabled = !enabled;
+  }
+  $('workspaceResetBtn').disabled = !enabled;
+}
+
+function beginWorkspaceMutation() {
+  if (!workspaceMutationGuard.tryBegin()) {
+    renderWorkspaceVisibility();
+    return false;
+  }
+  setWorkspaceControlsEnabled(false);
+  return true;
+}
+
+function endWorkspaceMutation() {
+  workspaceMutationGuard.end();
+  setWorkspaceControlsEnabled(true);
 }
 
 function restoreWorkspaceControlFocus(control, hadFocus) {
@@ -110,9 +134,9 @@ function setupWorkspaceControls() {
     toggle.addEventListener('change', async () => {
       const visible = toggle.checked;
       const hadFocus = document.activeElement === toggle;
+      if (!beginWorkspaceMutation()) return;
       workspaceVisibility = setWorkspacePanelVisibility(workspaceVisibility, panel.id, visible);
       renderWorkspaceVisibility();
-      toggle.disabled = true;
       try {
         const saved = await runtimeInvoke()('set_workspace_visibility', { panel: panel.id, visible });
         const confirmed = workspaceVisibilityFromBackend(saved);
@@ -127,7 +151,7 @@ function setupWorkspaceControls() {
         $('workspaceHelp').textContent = 'Die Änderung gilt für diese Sitzung, konnte aber nicht dauerhaft gespeichert werden.';
         live(`${panel.label} ist jetzt ${visible ? 'sichtbar' : 'ausgeblendet'}. Die Änderung gilt nur für diese Sitzung.`);
       } finally {
-        toggle.disabled = false;
+        endWorkspaceMutation();
         restoreWorkspaceControlFocus(toggle, hadFocus);
       }
     });
@@ -136,9 +160,9 @@ function setupWorkspaceControls() {
   $('workspaceResetBtn').addEventListener('click', async () => {
     const button = $('workspaceResetBtn');
     const hadFocus = document.activeElement === button;
+    if (!beginWorkspaceMutation()) return;
     workspaceVisibility = resetWorkspaceVisibility();
     renderWorkspaceVisibility();
-    button.disabled = true;
     try {
       const saved = await runtimeInvoke()('reset_workspace_visibility');
       workspaceSessionOverrides = {};
@@ -152,7 +176,7 @@ function setupWorkspaceControls() {
       $('workspaceHelp').textContent = 'Die Standardansicht gilt für diese Sitzung, konnte aber nicht dauerhaft gespeichert werden.';
       live('Standardansicht wurde nur für diese Sitzung wiederhergestellt.');
     } finally {
-      button.disabled = false;
+      endWorkspaceMutation();
       restoreWorkspaceControlFocus(button, hadFocus);
     }
   });
