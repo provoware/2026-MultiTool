@@ -97,22 +97,22 @@ const execute = (driver, script) => wd(driver.base, 'POST', `/session/${driver.s
 
 async function installNativeStub(driver, failLoads) {
   await execute(driver, `
-    globalThis.__workspaceFocusState = { failLoads:${failLoads}, loadCount:0 };
-    globalThis.__TAURI__ = { core:{ invoke:async (command) => {
-      const state = globalThis.__workspaceFocusState;
-      if (command === 'get_status') return { operating_system:'Testsystem', program_version:'Test', session:'Browser', core_status:'ready', core_text:'Programmkern bereit', database_status:'ready', database_text:'Lokale Datenbank bereit', local_only:true, status:'ready', overall_text:'Alles bereit' };
-      if (command === 'load_workspace_visibility') {
-        state.loadCount += 1;
-        await new Promise((resolveDelay) => setTimeout(resolveDelay, 120));
-        if (state.failLoads > 0) { state.failLoads -= 1; throw new Error('Simulierter Lesefehler'); }
-        return { today:true, 'system-status':true, storage:true, tools:true };
-      }
-      if (command === 'list_tools' || command === 'list_storage_volumes') return [];
-      if (command === 'load_or_create_project_state') return { project_id:'focus-test', revision:1 };
-      throw new Error('Unerwarteter Testbefehl: ' + command);
-    } } };
+    const script = document.createElement('script');
+    script.textContent = [
+      "globalThis.__workspaceFocusState = { failLoads:${failLoads}, loadCount:0 };",
+      "globalThis.__TAURI__ = { core:{ invoke:async (command) => {",
+      "const state = globalThis.__workspaceFocusState;",
+      "if (command === 'get_status') return { operating_system:'Testsystem', program_version:'Test', session:'Browser', core_status:'ready', core_text:'Programmkern bereit', database_status:'ready', database_text:'Lokale Datenbank bereit', local_only:true, status:'ready', overall_text:'Alles bereit' };",
+      "if (command === 'load_workspace_visibility') { state.loadCount += 1; await new Promise((resolveDelay) => setTimeout(resolveDelay, 120)); if (state.failLoads > 0) { state.failLoads -= 1; throw new Error('Simulierter Lesefehler'); } return { today:true, 'system-status':true, storage:true, tools:true }; }",
+      "if (command === 'list_tools' || command === 'list_storage_volumes') return [];",
+      "if (command === 'load_or_create_project_state') return { project_id:'focus-test', revision:1 };",
+      "throw new Error('Unerwarteter Testbefehl: ' + command);",
+      "} } };"
+    ].join('\\n');
+    document.documentElement.append(script);
+    script.remove();
     document.getElementById('refreshBtn').disabled = false;
-    return Boolean(globalThis.__workspaceFocusState);
+    return true;
   `);
 }
 
