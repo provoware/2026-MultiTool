@@ -1,338 +1,278 @@
-# P0.6 – Hilfe-Zentrale · Gate-A-Vertrag
+# P0.6 – Hilfe-Zentrale · Gate-A + Gate-B-Vertrag
 
 ## 🚦 Status
 
-- 🟢 Ausgangsbasis ist der eingefrorene und vollständig geprüfte Stand `f2dbc6887813c1ff87bbc41bf9e8932e99d80641`.
-- 🟦 Dieser Gate-A-Stand definiert ausschließlich den fachlichen Vertrag für P0.6.
-- 🔒 Noch keine Funktionsimplementierung, keine neue Navigation, keine neue Runtime-Abhängigkeit und keine Änderung an bestehenden Modulen.
+- 🟢 Ausgangsbasis ist der eingefrorene Stand `f2dbc6887813c1ff87bbc41bf9e8932e99d80641`.
+- 🟢 Gate-A definiert den fachlichen Rahmen für P0.6.
+- 🟦 Gate-B legt ausschließlich den kleinsten konkreten UI-Slice fest.
+- 🔒 Noch keine Funktionsimplementierung, keine neue Runtime-Abhängigkeit und keine Änderung an bestehenden P0.1–P0.5b-Fachfunktionen.
 
-## Ziel
+## Gate-A – verbindlicher Rahmen
 
-P0.6 ergänzt das MultiTool um eine **laienfreundliche, rein lesende Hilfe-Zentrale** für die bereits vorhandenen Hauptbereiche.
-
-Ein Nutzer soll ohne technisches Vorwissen verstehen können:
-
-1. **Was zeigt dieser Bereich?**
-2. **Was kann ich hier sicher tun?**
-3. **Was bedeutet eine Warnung oder ein Fehler?**
-4. **Was ist der sinnvollste nächste Schritt?**
-5. **Wo finde ich bei Bedarf technische Details?**
-
-Die Hilfe erklärt vorhandene Funktionen. Sie führt in P0.6 noch keine neue produktive Aktion aus.
-
-## Grundprinzip
-
-> Erst verständlich erklären, dann optional vertiefen – niemals technische Details zur Pflicht machen.
-
-Die Hilfe-Zentrale folgt der bereits verbindlichen Progressive-Disclosure-Struktur:
+P0.6 ergänzt eine laienfreundliche, rein lesende Hilfe für vorhandene Bereiche. Grundstruktur:
 
 `Kurz erklärt → Schritt für Schritt → Technische Details`
 
-Alle drei Ebenen beschreiben denselben fachlichen Zustand. Es entsteht keine zweite Wahrheit über System-, Speicher- oder Werkzeugzustände.
+Die Hilfe erklärt vorhandene Zustände und Funktionen, erzeugt aber keinen eigenen produktiven Systemzustand.
 
-## Erlaubter Minimalumfang
+### Harte Ausschlüsse
 
-P0.6 darf ausschließlich Hilfe für bereits vorhandene Bereiche enthalten:
+Keine Cloud, KI, Telemetrie, neue Persistenz, Datenbanktabelle, Reparaturautomatik, Shell-Befehle, Paketinstallation, Systemrechte, Hintergrunddienste, Diagnose-Engine, Suchmaschine, Drittanbieter-Runtime-Abhängigkeit oder Änderung der P0.1–P0.5b-Fachlogik.
 
-- **Heute**
-- **Werkzeug-Zentrale**
-- **Systemstatus**
-- **Speicherübersicht / Speicherampel**
-- **Flexible Arbeitsfläche / Ansicht merken**
+### Fehlergrenze
 
-Für jeden Bereich darf die Hilfe enthalten:
+Ein Hilfefehler darf keinen Produktbereich als defekt markieren oder eine bestehende Hauptaktion blockieren. Fehlende Hilfe fällt neutral zurück; unbekannte Zustände werden nicht erfunden.
 
-- einen kurzen Zweck in Alltagssprache
-- eine kompakte Erklärung der wichtigsten sichtbaren Informationen
-- eine Schritt-für-Schritt-Hilfe für den normalen Bedienweg
-- typische Warnungen oder Fehler in Klartext
-- eine sichere Empfehlung für den nächsten Schritt
-- optional aufklappbare technische Details
-- Hinweise auf bestehende sichere Bediengrenzen
+### Accessibility
 
-## Drei Hilfeebenen
+Tastatur, sichtbarer Fokus, logische Fokusreihenfolge, semantische Beschriftung, Screenreader-Beziehungen, Status nicht nur über Farbe, große Schrift, 100–200 % Zoom, kleine Fensterbreite und `prefers-reduced-motion` sind harte Gates.
 
-### 1. Kurz erklärt
+---
 
-Für absolute Laien.
+# Gate-B – kleinster konkreter UI-Slice
 
-Muss beantworten:
+## B1 Ziel
 
-- Wofür ist dieser Bereich da?
-- Was sehe ich gerade?
-- Muss ich etwas tun?
+Die erste P0.6-Implementierung darf genau **einen zentralen Hilfe-Einstieg** und genau **ein Hilfethema** bereitstellen.
 
-Regeln:
+Sie soll beweisen, dass das Hilfeprinzip technisch, semantisch und barrierefrei in die vorhandene Oberfläche passt, bevor weitere Themen hinzukommen.
 
-- kurze Sätze
-- möglichst keine Fachbegriffe
-- wenn Fachbegriff nötig: direkt in Klammern erklären
-- maximal eine klare Hauptempfehlung
-- keine Debugdaten
+## B2 Zentraler Einstieg
 
-### 2. Schritt für Schritt
+Es gibt genau einen neuen Hilfeauslöser mit der sichtbaren Bezeichnung:
 
-Für Nutzer, die eine konkrete vorhandene Funktion bedienen möchten.
+**`Hilfe`**
 
-Muss:
+Vertrag:
 
-- den normalen sicheren Hauptweg beschreiben
-- die sichtbaren Bedienelemente mit ihren echten Namen verwenden
-- keine versteckten Gesten voraussetzen
-- Tastaturbedienung mitdenken
-- bei optionalen Entscheidungen sichere Standards nennen
-- klar sagen, wenn keine Aktion nötig ist
+- nur einmal in der bestehenden Hauptnavigation bzw. deren bereits vorgesehenem globalen Bedienbereich
+- kein zweiter kontextueller Hilfe-Button im ersten Slice
+- kein Floating-Button
+- kein neues Menüsystem
+- keine neue Router-Architektur
+- bestehende Navigation bleibt strukturell erhalten
+- Auslöser ist als echtes fokussierbares Bedienelement semantisch erkennbar
+- Aktivierung per Maus sowie `Enter` und `Leertaste`
+- sichtbarer Fokus muss dem bestehenden Designsystem entsprechen
 
-### 3. Technische Details
+Die konkrete CSS-Position darf sich an der bestehenden Navigationsstruktur orientieren. Gate-B verlangt keine Layout-Neukonstruktion.
 
-Nur auf ausdrücklichen Wunsch bzw. nach Aufklappen sichtbar.
+## B3 Erstes Hilfethema
 
-Darf enthalten:
+Das einzige Hilfethema des ersten Slices ist:
 
-- Modul-/Bereichsname
-- lokale Datenquelle
-- relevante Statusbegriffe
-- vorhandene Fehler- oder Diagnoseinformationen
-- bestehende Sicherheitsgrenzen
-- Hinweis, ob ein Zustand nur angezeigt oder dauerhaft gespeichert wird
+**`Systemstatus verstehen`**
 
-Darf **nicht** als Voraussetzung für die normale Bedienung dienen.
+Begründung:
 
-## Harte Ausschlüsse
+- rein lesender vorhandener Bereich
+- hoher Erklärnutzen für Laien
+- keine produktive Mutation nötig
+- Zustände lassen sich erklären, ohne eine zweite Datenquelle einzuführen
+- Fehler- und Warnsprache kann früh gegen den Gate-A-Vertrag geprüft werden
 
-P0.6 enthält ausdrücklich **nicht**:
+Andere Themen bleiben in diesem Slice ausdrücklich unimplementiert.
 
-- keinen Chatbot oder generative KI-Funktion
-- keine Cloud-Abfrage
-- keine Internetrecherche
-- keine Telemetrie
-- keine neue Datenbanktabelle
-- keine neue Persistenz
-- keine automatische Reparatur
-- kein Self-Healing
-- keine Shell-Befehle
-- keine Paketinstallation
-- keine neuen Systemrechte
-- keine Änderung von Dateien oder Systemeinstellungen
-- kein Hintergrunddienst
-- kein Polling
-- keine eigenständige Diagnose-Engine
-- keine neue Suchmaschine
-- kein Volltextindex
-- keine frei editierbaren Hilfetexte durch Nutzer
-- keine zweite Navigations- oder Layout-Architektur
-- keine neue Drittanbieter-Abhängigkeit
-- keine Änderung an P0.1–P0.5b-Fachlogik
+## B4 Inhalt des ersten Hilfethemas
 
-## Daten- und Zustandsgrenze
+### Kurz erklärt
 
-Die Hilfe-Zentrale besitzt **keinen eigenen produktiven Systemzustand**.
+Muss knapp beantworten:
 
-Sie darf:
+- Wofür ist der Systemstatus da?
+- Was bedeutet ein normaler Zustand?
+- Was bedeutet eine Warnung grundsätzlich?
+- Muss der Nutzer unmittelbar handeln?
 
-- statische Hilfetexte anzeigen
-- bereits vorhandene, für die UI verfügbare Zustände erklären
-- bestehende Statusbegriffe in Alltagssprache übersetzen
+Keine Rohdiagnose und keine erfundenen Ursachen.
 
-Sie darf nicht:
+### Schritt für Schritt
 
-- Systemzustände neu ermitteln
-- bestehende Werte verändern
-- eigene persistente Kopien bestehender Zustände führen
-- aus Hilfetexten neue Fachzustände ableiten
+Maximal ein normaler Bedienweg:
 
-Prinzip:
+1. Systemstatus öffnen bzw. betrachten.
+2. sichtbaren Status lesen.
+3. bei Warnung den bereits vorhandenen Hinweis beachten.
+4. keine Änderung durchführen, die das Produkt selbst nicht bereits anbietet.
 
-`bestehender Zustand → Hilfe erklärt → keine Mutation`
+### Technische Details
 
-## Fehlerverhalten
+Standardmäßig geschlossen. Darf nur bereits vorhandene, sicher verfügbare Statusbegriffe und Datenquellen erklären. Keine neue Systemabfrage.
 
-Ein Fehler der Hilfe-Zentrale darf **niemals** einen bestehenden Produktbereich als defekt markieren.
+## B5 Darstellungsvertrag
 
-### Wenn ein Hilfetext fehlt
-
-- der betroffene Produktbereich bleibt normal nutzbar
-- die Hilfe zeigt einen neutralen Hinweis wie **„Für diesen Punkt ist noch keine Hilfe hinterlegt.“**
-- keine falsche oder erfundene Erklärung anzeigen
-
-### Wenn ein referenzierter UI-Zustand unbekannt ist
-
-- keine Vermutung als Tatsache darstellen
-- Hinweis **„Dieser Zustand kann derzeit nicht erklärt werden.“**
-- technische Details dürfen den unbekannten Rohzustand nur anzeigen, wenn dieser bereits sicher in der bestehenden UI verfügbar ist
-
-### Wenn die Hilfe-Zentrale selbst nicht geöffnet werden kann
-
-- bestehende Module bleiben vollständig bedienbar
-- keine bestehende Hauptaktion wird blockiert
-- kein automatischer Reload- oder Recovery-Loop
-
-## Accessibility-Vertrag
-
-P0.6 muss mindestens WCAG-2.2-AA-orientiert umgesetzt und praktisch geprüft werden.
+Der Hilfe-Einstieg öffnet eine **nicht-modale Hilfeansicht innerhalb der bestehenden App-Struktur**.
 
 Pflicht:
 
-- vollständig per Tastatur erreichbar und bedienbar
-- sichtbarer Fokus
-- logische Fokusreihenfolge
-- semantische Überschriftenstruktur
-- verständliche Beschriftung aller Auf-/Zuklapp-Elemente
-- programmatisch erkennbarer Offen/Geschlossen-Zustand
-- Screenreader-taugliche Beziehungen zwischen Hilfeauslöser und Hilfebereich
-- Status niemals nur über Farbe vermitteln
-- Kontrast mindestens auf bestehendem Projektziel
-- 100 / 125 / 150 / 175 / 200 % Zoom
-- große Systemschrift
-- kleine Fensterbreite ohne horizontale Pflichtnavigation
-- `prefers-reduced-motion` respektieren
-- kein Fokusverlust beim Öffnen oder Schließen von Hilfeabschnitten
-- kein Fokus-Fangen in der Hilfe
-- Rückkehr zum auslösenden Bedienelement muss möglich bleiben
+- Hauptoberfläche bleibt erreichbar
+- kein Dialogzwang
+- kein Fokus-Fangen
+- kein Overlay, das die Kernoberfläche unbenutzbar macht
+- Hilfebereich besitzt eine sichtbare Überschrift `Hilfe`
+- erstes Thema besitzt eine semantische Überschrift `Systemstatus verstehen`
+- `Kurz erklärt` ist unmittelbar sichtbar
+- `Schritt für Schritt` und `Technische Details` dürfen als aufklappbare Bereiche umgesetzt werden
+- lange Inhalte standardmäßig geschlossen
+- Schließen bzw. Verlassen der Hilfe darf bestehende Produktzustände nicht verändern
 
-## UX-Vertrag
+## B6 Fokusvertrag
 
-- Eine Hilfeansicht erklärt immer **einen** klaren Themenbereich.
-- Die erste sichtbare Ebene bleibt kurz und ruhig.
-- Lange Erklärungen sind standardmäßig eingeklappt.
-- Die Hilfe verwendet dieselben Begriffe wie die produktive Oberfläche.
-- Keine widersprüchlichen Synonyme für dieselbe Funktion.
-- Keine Warnflut.
-- Keine automatische Öffnung großer Hilfetexte ohne Nutzeraktion.
-- Keine modale Pflichtunterbrechung für normale Hilfe.
-- Die Hilfe darf die bestehende Hauptaktion nicht visuell verdrängen.
+### Öffnen
 
-## Fachliche Konsistenzregeln
+Nach Aktivierung von `Hilfe`:
 
-Jeder Hilfeeintrag muss vor Implementierung einer vorhandenen Funktion eindeutig zuordenbar sein.
+- Fokus wechselt deterministisch auf die Überschrift bzw. den definierten Einstieg der Hilfeansicht oder bleibt auf dem Auslöser, wenn die bestehende Navigationssemantik dies verlangt
+- die gewählte Variante muss in Browser- und Native-E2E identisch und testbar sein
+- kein Fokus darf auf `body`, ein verborgenes Element oder außerhalb der App fallen
 
-Pflichtfelder je Hilfethema:
+### Innerhalb der Hilfe
 
-- `Thema`
-- `Bereich`
-- `Kurz erklärt`
-- `Schritt für Schritt`
-- `Technische Details`
-- `Typische Hinweise/Fehler`
-- `Sicherer nächster Schritt`
+Tab-Reihenfolge:
 
-Nicht zulässig:
+`Hilfe-Einstieg → Hilfeinhalt → Schritt-für-Schritt-Auslöser → Technische-Details-Auslöser → regulär nächstes vorhandenes Bedienelement`
 
-- Hilfetext zu noch nicht existierenden Funktionen als bereits verfügbar formulieren
-- technische Möglichkeiten beschreiben, die der aktuelle Build nicht besitzt
-- Hilfe als Ersatz für echte Fehlerbehandlung verwenden
-- Warnungen verharmlosen oder produktive Risiken verschweigen
+Nur tatsächlich interaktive Elemente kommen in die Tab-Reihenfolge.
 
-## Relevante Expertisen für P0.6
+### Verlassen
 
-Pflichtprüfung mindestens durch:
+Beim Wechsel zurück in einen vorhandenen Hauptbereich:
 
-- **E01 Softwarearchitektur** – keine zweite Zustands- oder Navigationsarchitektur
-- **E02 Frontend Engineering** – semantische, robuste Darstellung
-- **E03 UI/UX & Human Factors** – geringe kognitive Last, klare Hauptaussage
-- **E04 Accessibility** – Tastatur, Fokus, Screenreader, Zoom
-- **E09 Observability & Diagnose** – Fehlertexte korrekt erklären, nicht erfinden
-- **E10 Test & Failure Engineering** – robuste Negativ- und Regressionstests
-- **E13 Laien-Onboarding** – kein technisches Vorwissen nötig
-- **E15 Documentation & Knowledge Transfer** – Hilfe und tatsächlicher Stand stimmen überein
-- **E16 Consistency & Design-System Engineering** – gleiche Begriffe und Interaktionsmuster
+- Fokus landet auf einem sichtbaren, semantisch sinnvollen Element
+- kein Fokusverlust
+- kein gespeicherter Produktzustand wird verändert
 
-## SCHNELL-Akzeptanzkriterien
+## B7 Semantikvertrag
 
-Gate-A bzw. später die kleinste Implementierung darf SCHNELL nur passieren, wenn:
+Auf-/Zuklapp-Elemente müssen programmatisch besitzen:
 
-- bestehende Lint-/Format-/Vertragsprüfungen grün bleiben
-- keine neue Runtime-Abhängigkeit hinzukommt
-- keine Rust-/SQLite-/Systemmutation für die Hilfe nötig wird
-- definierte Hilfethemen ausschließlich vorhandene Funktionen referenzieren
-- alle Pflichtfelder je Hilfethema vorhanden sind
-- keine doppelte kanonische Zustandsquelle entsteht
-- alle Hilfeauslöser semantisch beschriftbar sind
-- Offen/Geschlossen-Zustände deterministisch sind
-- Hilfe ohne JavaScript-Fehler fail-soft bleibt
-- bestehende Module ohne Hilfe weiterhin vollständig nutzbar bleiben
+- verständlichen zugänglichen Namen
+- `aria-expanded` oder semantisch gleichwertigen nativen Zustand
+- eindeutige Beziehung zum kontrollierten Inhalt
+- deterministischen Offen/Geschlossen-Zustand
 
-## TIEF-Akzeptanzkriterien
+Überschriften dürfen keine Ebene überspringen, sofern die bestehende Seitenhierarchie dies vermeidet.
 
-TIEF muss für die spätere Implementierung mindestens prüfen:
+Keine Information darf ausschließlich durch Symbol, Farbe oder Position vermittelt werden.
 
-- Firefox und Chrome
-- Hilfe öffnen → korrekter Themenbereich erscheint
-- Hilfe schließen → Hauptoberfläche bleibt unverändert
-- Tastaturweg vollständig
-- Fokus bleibt sichtbar und logisch
-- Öffnen/Schließen verliert den Fokus nicht
-- Screenreader-Semantik für Auslöser und aufklappbare Bereiche
-- 100 / 125 / 150 / 175 / 200 % Zoom
-- kleine Fensterbreite
-- große Schrift
-- reduced motion
-- kein horizontales Scrollen durch die Hilfe bei vorgesehenen Testgrößen
-- fehlender Hilfetext → verständlicher neutraler Fallback
-- unbekannter Zustand → keine erfundene Erklärung
-- Hilfeausfall → bestehende Module bleiben bedienbar
-- bestehende P0.1–P0.5b-Regressionen bleiben vollständig grün
-- Native Tauri-E2E bestätigt, dass Start, bestehende Kernfunktionen und Shutdown unverändert funktionieren
+## B8 Zoom- und Layoutvertrag
 
-## Failure-Injection-Pflichtfälle
+Pflichtprüfungen bei:
 
-Mindestens diese Fälle müssen für eine spätere Implementierung kontrolliert geprüft werden:
+- 100 %
+- 125 %
+- 150 %
+- 175 %
+- 200 %
 
-1. Hilfethema nicht vorhanden
-2. unbekannter referenzierter Zustand
-3. Hilfeelement wird während Fokusbedienung geöffnet und geschlossen
-4. mehrfach schnelles Öffnen/Schließen desselben Hilfeabschnitts
-5. mehrere Hilfebereiche nacheinander öffnen
-6. Hilfe-JavaScript fällt aus → Kernoberfläche bleibt benutzbar
+Dabei:
 
-## Abbruchbedingungen
+- kein Abschneiden des Hilfe-Hauptinhalts
+- kein horizontales Pflichtscrollen bei den bereits vorgesehenen Testfenstern
+- keine Überlagerung der Hauptnavigation
+- keine springende Breite beim Auf-/Zuklappen
+- lange technische Begriffe dürfen umbrechen
+- große Systemschrift bleibt nutzbar
 
-P0.6 wird gestoppt und der Scope neu bewertet, wenn für die Umsetzung eines dieser Dinge nötig erscheint:
+## B9 Fehlerfälle des ersten Slices
 
-- neue produktive Datenhaltung
-- neuer Hintergrundprozess
+### Hilfethema fehlt
+
+Neutraler Text:
+
+**`Für diesen Punkt ist noch keine Hilfe hinterlegt.`**
+
+Keine Exception bis in die Hauptoberfläche.
+
+### Status unbekannt
+
+Neutraler Text:
+
+**`Dieser Zustand kann derzeit nicht erklärt werden.`**
+
+Keine Ursachenvermutung.
+
+### Hilfeansicht kann nicht aufgebaut werden
+
+- vorhandene Navigation bleibt bedienbar
+- Systemstatus bleibt bedienbar
+- kein Reload-Loop
+- kein automatischer Reparaturversuch
+
+## B10 SCHNELL-Akzeptanzkriterien
+
+Vor jeder Gate-B-Implementierungsfreigabe müssen automatisierbar sein:
+
+- exakt ein globaler Hilfe-Einstieg
+- exakt ein implementiertes Hilfethema
+- keine neue Runtime-Abhängigkeit
+- keine neue Persistenz oder Systemberechtigung
+- keine Änderung an Systemstatus-Datenquelle oder Fachlogik
+- semantischer Name des Hilfeauslösers vorhanden
+- Auf-/Zuklappzustände deterministisch
+- fehlendes Thema besitzt neutralen Fallback
+- unbekannter Status besitzt neutralen Fallback
+- bestehende Unit-/Vertrags-/Lint-/Formatprüfungen bleiben grün
+
+## B11 TIEF-Akzeptanzkriterien
+
+Mindestens Firefox, Chrome und Native Tauri-E2E prüfen:
+
+1. App startet unverändert.
+2. `Hilfe` ist einmal vorhanden und per Tastatur erreichbar.
+3. Aktivierung öffnet die Hilfe ohne Produktmutation.
+4. `Systemstatus verstehen` wird angezeigt.
+5. `Kurz erklärt` ist direkt lesbar.
+6. Schritt-für-Schritt-Bereich lässt sich per Maus und Tastatur öffnen/schließen.
+7. Technische Details lassen sich per Maus und Tastatur öffnen/schließen.
+8. Offen/Geschlossen-Semantik ist für Assistenztechnik erkennbar.
+9. Fokus bleibt sichtbar und deterministisch.
+10. Schnelles mehrfaches Öffnen/Schließen erzeugt keinen Fehler.
+11. 100/125/150/175/200-%-Zoom bleibt stabil.
+12. Große Schrift und kleine Fensterbreite bleiben bedienbar.
+13. Unbekannter Status erzeugt keine erfundene Erklärung.
+14. Fehlendes Thema fällt neutral zurück.
+15. Wechsel aus der Hilfe verändert keinen vorhandenen Systemstatus.
+16. bestehende P0.1–P0.5b-Regressionen bleiben grün.
+17. Native Start-/Kernfunktions-/Shutdown-Strecke bleibt unverändert grün.
+
+## B12 Failure-Injection
+
+Pflichtfälle für die spätere Implementierung:
+
+- Hilfethema absichtlich nicht vorhanden
+- unbekannter Statuswert
+- Hilfe fünfmal schnell öffnen/verlassen
+- beide Disclosure-Bereiche mehrfach schnell umschalten
+- Fokusbedienung bei geöffnetem Disclosure
+- Hilfe-Rendering schlägt kontrolliert fehl; Kernoberfläche bleibt bedienbar
+
+## B13 Scope-Abbruch
+
+Implementierung sofort stoppen und Gate neu bewerten, wenn einer dieser Punkte nötig erscheint:
+
+- zweiter Hilfe-Einstieg
+- zweites Hilfethema
+- Router-Umbau
+- neue Datenquelle
 - neue native Berechtigung
-- neue Drittanbieter-Runtime-Abhängigkeit
-- komplexe Router- oder Navigationsarchitektur
-- eigenständige Diagnose-Engine
-- automatische Reparatur
-- generative KI oder Netzwerkzugriff
-- große Umstrukturierung bestehender Module
+- neue Runtime-Abhängigkeit
+- produktive Mutation
+- Diagnose- oder Reparaturlogik
+- Änderung der Systemstatus-Fachlogik
+- Layout-Neubau außerhalb des notwendigen Hilfeplatzes
 
-Keiner dieser Punkte darf still in P0.6 hineingezogen werden.
+## B14 Gate-B-Freigaberegel
 
-## Gate-A-Widerspruchsprüfung
+Gate-B ist erst bereit für Funktionscode, wenn:
 
-Gate-A gilt nur als fachlich widerspruchsfrei, wenn bestätigt ist:
+- dieser Vertrag widerspruchsfrei zum bestehenden UI und Gate-A ist
+- SCHNELL auf dem reinen Dokumentationsstand grün ist
+- TIEF einschließlich Native Tauri-E2E auf demselben Dokumentations-Head grün ist
+- der Diff weiterhin ausschließlich Dokumentation enthält
 
-- Hilfe bleibt rein lesend
-- Hilfe besitzt keine zweite fachliche Wahrheit
-- bestehende Module bleiben ohne Hilfe vollständig nutzbar
-- bestehende Fehlerbehandlung wird erklärt, nicht ersetzt
-- Progressive Disclosure ist mit dem Mastervertrag konsistent
-- Accessibility ist ein hartes Gate, kein Nachtrag
-- keine neue Dependency oder Berechtigung ist erforderlich
-- P0.5b-Freeze bleibt vollständig unberührt
+Bis dahin entsteht **kein P0.6-Funktionscode**.
 
-## Gate-Reihenfolge
+## Nächster Schritt nach grünem Gate-B
 
-`P0.6 Gate-A Vertrag → SCHNELL → TIEF → Gate-A einfrieren → kleinste Implementierung separat spezifizieren → erst danach Funktionscode`
-
-Bis Gate-A vollständig geprüft und grün ist, darf **kein P0.6-Funktionscode** entstehen.
-
-## Bekannte Grenzen dieses Gate-A-Stands
-
-- Die konkrete visuelle Platzierung der Hilfeauslöser ist noch nicht festgelegt.
-- Es ist noch nicht festgelegt, ob die erste Implementierung eine zentrale Hilfeseite, kontextuelle Hilfekarten oder eine Kombination aus beidem verwendet.
-- Eine Suchfunktion ist ausdrücklich nicht Teil des ersten P0.6-Slices.
-- Umfang und Wortlaut der einzelnen Hilfetexte werden erst nach Gate-A-Abnahme festgelegt.
-
-Diese Punkte blockieren Gate-A nicht, solange keine Implementierungsentscheidung vorweggenommen wird.
-
-## Nächster Schritt nach Gate-A
-
-Erst nach vollständig grünem Gate-A:
-
-**P0.6 Gate-B – den kleinsten konkreten UI-Slice festlegen, mit maximal einem zentralen Einstieg und einem klar begrenzten ersten Hilfethema.**
-
-Noch keine breite Hilfeabdeckung und keine Zusatzfunktionen.
+**Gate-B-Dokumentationsstand einfrieren und danach in einem neuen, eng begrenzten Implementierungscommit ausschließlich den einen Hilfe-Einstieg plus `Systemstatus verstehen` umsetzen.**
