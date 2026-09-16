@@ -117,7 +117,7 @@ async function installNativeStub(driver, failLoads) {
 }
 
 async function assertLoadFocus(driver, browser, url, { retry, targetSelector, label }) {
-  const caseUrl = `${url}?focusCase=${encodeURIComponent(`${label}-${retry ? 'retry' : 'initial'}-${Date.now()}`)}`;
+  const caseUrl = `${url}index.html?focusCase=${encodeURIComponent(`${label}-${retry ? 'retry' : 'initial'}-${Date.now()}`)}`;
   await wd(driver.base, 'POST', `/session/${driver.sessionId}/url`, { url:caseUrl });
   await waitFor(async () => (await execute(driver, `return document.readyState`)) === 'complete', { label:`${browser} ${label} Dokument bereit` });
   await waitFor(async () => (await execute(driver, `return document.getElementById('overall')?.textContent || ''`)).includes('Programmkern nicht erreichbar'), { label:`${browser} ${label} Browser-Fallback` });
