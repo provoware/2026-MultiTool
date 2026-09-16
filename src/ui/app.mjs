@@ -307,7 +307,7 @@ function renderTools(tools) {
     title.textContent = tool.name;
 
     const state = document.createElement('span');
-    state.className = `tool-state ${presentation.className}`;
+    state.className = 'tool-state';
     state.textContent = `${toolIcon(tool.state)} ${tool.state_text}`;
 
     head.append(title, state);
