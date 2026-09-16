@@ -112,15 +112,19 @@ async function installNativeStub(driver, failLoads) {
       throw new Error('Unerwarteter Testbefehl: ' + command);
     } } };
     document.getElementById('refreshBtn').disabled = false;
-    return true;
+    return Boolean(globalThis.__workspaceFocusState);
   `);
 }
 
 async function assertLoadFocus(driver, browser, url, { retry, targetSelector, label }) {
-  await wd(driver.base, 'POST', `/session/${driver.sessionId}/url`, { url });
-  await waitFor(async () => (await execute(driver, `return document.getElementById('overall')?.textContent || ''`)).includes('Programmkern nicht erreichbar'), { label:`${browser} Browser-Fallback` });
+  const caseUrl = `${url}?focusCase=${encodeURIComponent(`${label}-${retry ? 'retry' : 'initial'}-${Date.now()}`)}`;
+  await wd(driver.base, 'POST', `/session/${driver.sessionId}/url`, { url:caseUrl });
+  await waitFor(async () => (await execute(driver, `return document.readyState`)) === 'complete', { label:`${browser} ${label} Dokument bereit` });
+  await waitFor(async () => (await execute(driver, `return document.getElementById('overall')?.textContent || ''`)).includes('Programmkern nicht erreichbar'), { label:`${browser} ${label} Browser-Fallback` });
 
   await installNativeStub(driver, retry ? 1 : 0);
+  assert(await execute(driver, `return Boolean(globalThis.__workspaceFocusState)`), `${browser}: Stub für ${label} wurde nicht im aktuellen Dokument installiert.`);
+
   if (retry) {
     await execute(driver, `document.getElementById('refreshBtn').click(); return true;`);
     await waitFor(async () => (await execute(driver, `return document.getElementById('workspaceHelp')?.textContent || ''`)).includes('konnte nicht geladen werden'), { label:`${browser} ${label} erster Load-Fehler` });
@@ -136,14 +140,16 @@ async function assertLoadFocus(driver, browser, url, { retry, targetSelector, la
   const result = await waitFor(async () => {
     const state = await execute(driver, `
       const target = document.querySelector(${JSON.stringify(targetSelector)});
+      const focusState = globalThis.__workspaceFocusState;
       return {
         focused:document.activeElement === target,
         disabled:target.disabled,
-        loadCount:globalThis.__workspaceFocusState.loadCount,
+        loadCount:focusState?.loadCount ?? -1,
+        stubReady:Boolean(focusState),
         overall:document.getElementById('overall')?.textContent || ''
       };
     `);
-    return !state.disabled && state.overall.includes('Alles bereit') ? state : false;
+    return state.stubReady && !state.disabled && state.overall.includes('Alles bereit') ? state : false;
   }, { label:`${browser} ${label} Fokus-Wiederherstellung` });
 
   assert(result.focused, `${browser}: Fokus nach ${label} nicht wiederhergestellt.`);
