@@ -12,6 +12,7 @@ const $ = (id) => document.getElementById(id);
 const live = (text) => { $('live').textContent = text; };
 let workspaceVisibility = defaultWorkspaceVisibility();
 let workspaceVisibilityInitialized = false;
+let workspaceSessionOverrides = {};
 
 function runtimeInvoke() {
   const invoke = globalThis.__TAURI__?.core?.invoke;
@@ -41,6 +42,30 @@ function restoreWorkspaceControlFocus(control, hadFocus) {
   if (active === document.body || active === null) control.focus({ preventScroll:true });
 }
 
+function rememberWorkspaceSessionOverride(panelId, visible) {
+  workspaceSessionOverrides = { ...workspaceSessionOverrides, [panelId]: visible };
+}
+
+function clearWorkspaceSessionOverride(panelId) {
+  const remaining = { ...workspaceSessionOverrides };
+  delete remaining[panelId];
+  workspaceSessionOverrides = remaining;
+}
+
+function applyWorkspaceSessionOverrides(visibility) {
+  let merged = visibility;
+  for (const [panelId, visible] of Object.entries(workspaceSessionOverrides)) {
+    merged = setWorkspacePanelVisibility(merged, panelId, visible);
+  }
+  return merged;
+}
+
+function updateWorkspacePersistenceHelp() {
+  $('workspaceHelp').textContent = Object.keys(workspaceSessionOverrides).length > 0
+    ? 'Einige Änderungen gelten nur für diese Sitzung, weil sie nicht dauerhaft gespeichert werden konnten.'
+    : 'Deine Auswahl wird lokal auf diesem Gerät gemerkt.';
+}
+
 function renderWorkspaceVisibility(summaryOverride = null) {
   for (const panel of WORKSPACE_PANELS) {
     const target = workspacePanelElement(panel.id);
@@ -65,15 +90,15 @@ function renderWorkspaceVisibility(summaryOverride = null) {
 async function loadWorkspaceVisibility() {
   try {
     const saved = await runtimeInvoke()('load_workspace_visibility');
-    workspaceVisibility = workspaceVisibilityFromBackend(saved);
+    const persisted = workspaceVisibilityFromBackend(saved);
+    workspaceVisibility = applyWorkspaceSessionOverrides(persisted);
     renderWorkspaceVisibility();
-    $('workspaceHelp').textContent = 'Deine Auswahl wird lokal auf diesem Gerät gemerkt.';
+    updateWorkspacePersistenceHelp();
     return true;
   } catch {
-    workspaceVisibility = defaultWorkspaceVisibility();
     renderWorkspaceVisibility('🟡 Ansicht konnte nicht geladen werden');
-    $('workspaceHelp').textContent = 'Die Standardansicht wird gezeigt. Deine gespeicherte Ansicht konnte nicht geladen werden.';
-    live('Ansicht konnte nicht geladen werden. Standardansicht wird gezeigt.');
+    $('workspaceHelp').textContent = 'Die aktuelle Sitzungssicht bleibt erhalten. Deine gespeicherte Ansicht konnte nicht geladen werden.';
+    live('Ansicht konnte nicht geladen werden. Die aktuelle Sitzungssicht bleibt erhalten.');
     return false;
   }
 }
@@ -91,11 +116,13 @@ function setupWorkspaceControls() {
       try {
         const saved = await runtimeInvoke()('set_workspace_visibility', { panel: panel.id, visible });
         const confirmed = workspaceVisibilityFromBackend(saved);
+        clearWorkspaceSessionOverride(panel.id);
         workspaceVisibility = setWorkspacePanelVisibility(workspaceVisibility, panel.id, confirmed[panel.id]);
         renderWorkspaceVisibility();
-        $('workspaceHelp').textContent = 'Deine Auswahl wird lokal auf diesem Gerät gemerkt.';
+        updateWorkspacePersistenceHelp();
         live(`${panel.label} ist jetzt ${visible ? 'sichtbar' : 'ausgeblendet'} und wurde lokal gemerkt.`);
       } catch {
+        rememberWorkspaceSessionOverride(panel.id, visible);
         renderWorkspaceVisibility();
         $('workspaceHelp').textContent = 'Die Änderung gilt für diese Sitzung, konnte aber nicht dauerhaft gespeichert werden.';
         live(`${panel.label} ist jetzt ${visible ? 'sichtbar' : 'ausgeblendet'}. Die Änderung gilt nur für diese Sitzung.`);
@@ -114,11 +141,13 @@ function setupWorkspaceControls() {
     button.disabled = true;
     try {
       const saved = await runtimeInvoke()('reset_workspace_visibility');
+      workspaceSessionOverrides = {};
       workspaceVisibility = workspaceVisibilityFromBackend(saved);
       renderWorkspaceVisibility();
-      $('workspaceHelp').textContent = 'Deine Auswahl wird lokal auf diesem Gerät gemerkt.';
+      updateWorkspacePersistenceHelp();
       live('Standardansicht wurde wiederhergestellt und lokal gemerkt.');
     } catch {
+      workspaceSessionOverrides = resetWorkspaceVisibility();
       renderWorkspaceVisibility();
       $('workspaceHelp').textContent = 'Die Standardansicht gilt für diese Sitzung, konnte aber nicht dauerhaft gespeichert werden.';
       live('Standardansicht wurde nur für diese Sitzung wiederhergestellt.');
@@ -294,8 +323,7 @@ async function refresh() {
     coreAvailable = true;
     renderSystemStatus(status);
     if (!workspaceVisibilityInitialized) {
-      workspaceVisibilityInitialized = true;
-      await loadWorkspaceVisibility();
+      workspaceVisibilityInitialized = await loadWorkspaceVisibility();
     }
 
     let toolsReady = true;

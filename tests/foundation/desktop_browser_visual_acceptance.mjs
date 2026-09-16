@@ -172,11 +172,11 @@ async function runBrowser(browser, url) {
     await execute(driver, `
       const script = document.createElement('script');
       script.textContent = [
-        "globalThis.__workspaceReviewState = { loadCount:0, failWrites:true, failStatus:false, persisted:{ today:true, 'system-status':true, storage:true, tools:true } };",
+        "globalThis.__workspaceReviewState = { loadCount:0, failLoads:1, failWrites:true, failStatus:false, persisted:{ today:true, 'system-status':true, storage:true, tools:true } };",
         "globalThis.__TAURI__ = { core:{ invoke:async (command, args={}) => {",
         "const state = globalThis.__workspaceReviewState;",
         "if (command === 'get_status') { if (state.failStatus) throw new Error('Simulierter Core-Ausfall'); return { operating_system:'Testsystem', program_version:'Test', session:'Browser', core_status:'ready', core_text:'Programmkern bereit', database_status:'ready', database_text:'Lokale Datenbank bereit', local_only:true, status:'ready', overall_text:'Alles bereit' }; }",
-        "if (command === 'load_workspace_visibility') { state.loadCount += 1; return { ...state.persisted }; }",
+        "if (command === 'load_workspace_visibility') { state.loadCount += 1; if (state.failLoads > 0) { state.failLoads -= 1; throw new Error('Simulierter Lesefehler'); } return { ...state.persisted }; }",
         "if (command === 'set_workspace_visibility') { if (state.failWrites) throw new Error('Simulierter Schreibfehler'); state.persisted[args.panel] = args.visible; return { ...state.persisted }; }",
         "if (command === 'reset_workspace_visibility') { if (state.failWrites) throw new Error('Simulierter Schreibfehler'); state.persisted = { today:true, 'system-status':true, storage:true, tools:true }; return { ...state.persisted }; }",
         "if (command === 'list_tools' || command === 'list_storage_volumes') return [];",
@@ -191,6 +191,12 @@ async function runBrowser(browser, url) {
       return true;
     `);
     await waitFor(async () => (await execute(driver, `return document.getElementById('overall')?.textContent || ''`)).includes('Alles bereit'), { label:`${browser} simulierte native Ansicht` });
+    const failedInitialLoad = await execute(driver, `return {
+      help:document.getElementById('workspaceHelp').textContent,
+      loadCount:globalThis.__workspaceReviewState.loadCount
+    }`);
+    assert(failedInitialLoad.loadCount === 1, `${browser}: Erster Sichtbarkeits-Load wurde nicht genau einmal versucht.`);
+    assert(failedInitialLoad.help.includes('konnte nicht geladen werden'), `${browser}: Fehlgeschlagener Erst-Load wird nicht verständlich gemeldet.`);
 
     await execute(driver, `
       const toggle = document.querySelector('[data-workspace-toggle="storage"]');
@@ -209,17 +215,28 @@ async function runBrowser(browser, url) {
       return !state.disabled && state.hidden && state.help.includes('diese Sitzung') ? state : false;
     }, { label:`${browser} fehlgeschlagenes Speichern bleibt sitzungslokal` });
     assert(failedSave.focused, `${browser}: Fokus ging nach fehlgeschlagenem Speichern verloren.`);
-    assert(failedSave.loadCount === 1, `${browser}: Gespeicherte Ansicht wurde unerwartet mehrfach geladen.`);
+    assert(failedSave.loadCount === 1, `${browser}: Nutzeränderung löst keinen unerwarteten Sichtbarkeits-Load aus.`);
 
     await execute(driver, `document.getElementById('refreshBtn').click(); return true;`);
-    await waitFor(async () => (await execute(driver, `return document.getElementById('overall')?.textContent || ''`)).includes('Alles bereit'), { label:`${browser} Status-Neupruefung nach Speicherfehler` });
+    await waitFor(async () => (await execute(driver, `return document.getElementById('overall')?.textContent || ''`)).includes('Alles bereit'), { label:`${browser} Retry nach initialem Lesefehler` });
     const afterFailedSaveRefresh = await execute(driver, `return {
       hidden:document.querySelector('[data-workspace-panel="storage"]').hidden,
       checked:document.querySelector('[data-workspace-toggle="storage"]').checked,
+      help:document.getElementById('workspaceHelp').textContent,
       loadCount:globalThis.__workspaceReviewState.loadCount
     }`);
-    assert(afterFailedSaveRefresh.hidden && !afterFailedSaveRefresh.checked, `${browser}: Status-Neupruefung verwirft den sitzungslokalen Zustand.`);
-    assert(afterFailedSaveRefresh.loadCount === 1, `${browser}: Status-Neupruefung lädt die Persistenz unerwartet erneut.`);
+    assert(afterFailedSaveRefresh.hidden && !afterFailedSaveRefresh.checked, `${browser}: Erfolgreicher Load-Retry verwirft den sitzungslokalen Zustand.`);
+    assert(afterFailedSaveRefresh.help.includes('diese Sitzung'), `${browser}: Load-Retry verschweigt den weiter sitzungslokalen Override.`);
+    assert(afterFailedSaveRefresh.loadCount === 2, `${browser}: Fehlgeschlagener Erst-Load wurde nicht genau einmal wiederholt.`);
+
+    await execute(driver, `document.getElementById('refreshBtn').click(); return true;`);
+    await waitFor(async () => (await execute(driver, `return document.getElementById('overall')?.textContent || ''`)).includes('Alles bereit'), { label:`${browser} Status-Neupruefung nach erfolgreichem Load-Retry` });
+    const afterSuccessfulRetryRefresh = await execute(driver, `return {
+      hidden:document.querySelector('[data-workspace-panel="storage"]').hidden,
+      loadCount:globalThis.__workspaceReviewState.loadCount
+    }`);
+    assert(afterSuccessfulRetryRefresh.hidden, `${browser}: Status-Neupruefung nach erfolgreichem Retry verwirft den Sitzungs-Override.`);
+    assert(afterSuccessfulRetryRefresh.loadCount === 2, `${browser}: Nach erfolgreichem Retry wird die Persistenz unnötig erneut geladen.`);
 
     await execute(driver, `
       globalThis.__workspaceReviewState.failWrites = false;
@@ -236,10 +253,10 @@ async function runBrowser(browser, url) {
         help:document.getElementById('workspaceHelp').textContent,
         loadCount:globalThis.__workspaceReviewState.loadCount
       }`);
-      return !state.toolsDisabled && state.toolsHidden && state.help.includes('lokal') ? state : false;
+      return !state.toolsDisabled && state.toolsHidden && state.help.includes('diese Sitzung') ? state : false;
     }, { label:`${browser} erfolgreicher Folgespeicher erhält Sitzungs-Override` });
     assert(mixedPersistence.storageHidden && mixedPersistence.toolsHidden, `${browser}: Erfolgreicher Folgespeicher verwirft einen früheren Sitzungs-Override.`);
-    assert(mixedPersistence.loadCount === 1, `${browser}: Folgespeicher lädt die Persistenz unerwartet erneut.`);
+    assert(mixedPersistence.loadCount === 2, `${browser}: Folgespeicher lädt die Persistenz unerwartet erneut.`);
 
     await execute(driver, `
       globalThis.__workspaceReviewState.failStatus = true;
@@ -271,7 +288,7 @@ async function runBrowser(browser, url) {
       loadCount:globalThis.__workspaceReviewState.loadCount
     }`);
     assert(recoveredSession.storageHidden && recoveredSession.toolsHidden, `${browser}: Erholung nach Core-Ausfall verwirft die Sitzungssicht.`);
-    assert(recoveredSession.loadCount === 1, `${browser}: Erholung nach Core-Ausfall lädt die Persistenz unerwartet erneut.`);
+    assert(recoveredSession.loadCount === 2, `${browser}: Erholung nach Core-Ausfall lädt die Persistenz unerwartet erneut.`);
 
     await execute(driver, `
       const button = document.getElementById('workspaceResetBtn');
@@ -298,7 +315,7 @@ async function runBrowser(browser, url) {
       loadCount:globalThis.__workspaceReviewState.loadCount
     }`);
     assert(afterFailedResetRefresh.allVisible && afterFailedResetRefresh.allChecked, `${browser}: Status-Neupruefung verwirft den sitzungslokalen Reset.`);
-    assert(afterFailedResetRefresh.loadCount === 1, `${browser}: Persistenz wurde nach Resetfehler unerwartet erneut geladen.`);
+    assert(afterFailedResetRefresh.loadCount === 2, `${browser}: Persistenz wurde nach Resetfehler unerwartet erneut geladen.`);
 
     const contrast = await execute(driver, `
       function rgb(v){const m=v.match(/rgba?\\((\\d+),\\s*(\\d+),\\s*(\\d+)/);return m?[+m[1],+m[2],+m[3]]:null}
