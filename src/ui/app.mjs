@@ -1,15 +1,21 @@
 import { storageStatePresentation } from './storage-display.mjs';
+import { createWorkspaceMutationGuard } from './workspace-mutation-guard.mjs';
 import {
   WORKSPACE_PANELS,
   defaultWorkspaceVisibility,
   resetWorkspaceVisibility,
   setWorkspacePanelVisibility,
   visibleWorkspaceCount,
+  workspaceVisibilityFromBackend,
 } from './workspace-visibility.mjs';
 
 const $ = (id) => document.getElementById(id);
 const live = (text) => { $('live').textContent = text; };
 let workspaceVisibility = defaultWorkspaceVisibility();
+let workspaceVisibilityInitialized = false;
+let workspaceVisibilityLoadPending = false;
+let workspaceSessionOverrides = {};
+const workspaceMutationGuard = createWorkspaceMutationGuard();
 
 function runtimeInvoke() {
   const invoke = globalThis.__TAURI__?.core?.invoke;
@@ -33,7 +39,75 @@ function workspaceToggleElement(panelId) {
   return document.querySelector(`[data-workspace-toggle="${panelId}"]`);
 }
 
-function renderWorkspaceVisibility() {
+function setWorkspaceControlsEnabled(enabled) {
+  for (const panel of WORKSPACE_PANELS) {
+    const toggle = workspaceToggleElement(panel.id);
+    if (toggle) toggle.disabled = !enabled;
+  }
+  $('workspaceResetBtn').disabled = !enabled;
+}
+
+function beginWorkspaceMutation() {
+  if (!workspaceMutationGuard.tryBegin()) {
+    renderWorkspaceVisibility();
+    return false;
+  }
+  setWorkspaceControlsEnabled(false);
+  return true;
+}
+
+function endWorkspaceMutation() {
+  workspaceMutationGuard.end();
+  setWorkspaceControlsEnabled(true);
+  if (workspaceVisibilityInitialized) {
+    workspaceVisibilityLoadPending = false;
+    return;
+  }
+  if (!workspaceVisibilityLoadPending) return;
+  workspaceVisibilityLoadPending = false;
+  queueMicrotask(() => {
+    if (!workspaceVisibilityInitialized) void loadWorkspaceVisibility();
+  });
+}
+
+function restoreWorkspaceControlFocus(control, hadFocus) {
+  if (!hadFocus) return;
+  const active = document.activeElement;
+  if (active === document.body || active === null) control.focus({ preventScroll:true });
+}
+
+function focusedWorkspaceControl() {
+  const active = document.activeElement;
+  if (active?.id === 'workspaceResetBtn') return active;
+  if (active?.matches?.('[data-workspace-toggle]')) return active;
+  return null;
+}
+
+function rememberWorkspaceSessionOverride(panelId, visible) {
+  workspaceSessionOverrides = { ...workspaceSessionOverrides, [panelId]: visible };
+}
+
+function clearWorkspaceSessionOverride(panelId) {
+  const remaining = { ...workspaceSessionOverrides };
+  delete remaining[panelId];
+  workspaceSessionOverrides = remaining;
+}
+
+function applyWorkspaceSessionOverrides(visibility) {
+  let merged = visibility;
+  for (const [panelId, visible] of Object.entries(workspaceSessionOverrides)) {
+    merged = setWorkspacePanelVisibility(merged, panelId, visible);
+  }
+  return merged;
+}
+
+function updateWorkspacePersistenceHelp() {
+  $('workspaceHelp').textContent = Object.keys(workspaceSessionOverrides).length > 0
+    ? 'Einige Änderungen gelten nur für diese Sitzung, weil sie nicht dauerhaft gespeichert werden konnten.'
+    : 'Deine Auswahl wird lokal auf diesem Gerät gemerkt.';
+}
+
+function renderWorkspaceVisibility(summaryOverride = null) {
   for (const panel of WORKSPACE_PANELS) {
     const target = workspacePanelElement(panel.id);
     const toggle = workspaceToggleElement(panel.id);
@@ -43,27 +117,95 @@ function renderWorkspaceVisibility() {
     toggle.checked = visible;
   }
 
+  if (summaryOverride) {
+    $('workspaceSummary').textContent = summaryOverride;
+    return;
+  }
+
   const visibleCount = visibleWorkspaceCount(workspaceVisibility);
   $('workspaceSummary').textContent = visibleCount === WORKSPACE_PANELS.length
     ? '🟢 Standardansicht'
     : `🔵 ${visibleCount} von ${WORKSPACE_PANELS.length} Bereichen sichtbar`;
 }
 
+async function loadWorkspaceVisibility() {
+  const focusedControl = focusedWorkspaceControl();
+  if (!beginWorkspaceMutation()) {
+    workspaceVisibilityLoadPending = true;
+    return false;
+  }
+  try {
+    const saved = await runtimeInvoke()('load_workspace_visibility');
+    const persisted = workspaceVisibilityFromBackend(saved);
+    workspaceVisibility = applyWorkspaceSessionOverrides(persisted);
+    workspaceVisibilityInitialized = true;
+    workspaceVisibilityLoadPending = false;
+    renderWorkspaceVisibility();
+    updateWorkspacePersistenceHelp();
+    return true;
+  } catch {
+    renderWorkspaceVisibility('🟡 Ansicht konnte nicht geladen werden');
+    $('workspaceHelp').textContent = 'Die aktuelle Sitzungssicht bleibt erhalten. Deine gespeicherte Ansicht konnte nicht geladen werden.';
+    live('Ansicht konnte nicht geladen werden. Die aktuelle Sitzungssicht bleibt erhalten.');
+    return false;
+  } finally {
+    endWorkspaceMutation();
+    restoreWorkspaceControlFocus(focusedControl, focusedControl !== null);
+  }
+}
+
 function setupWorkspaceControls() {
   for (const panel of WORKSPACE_PANELS) {
     const toggle = workspaceToggleElement(panel.id);
     if (!toggle) throw new Error(`Sichtbarkeitsschalter fehlt: ${panel.id}`);
-    toggle.addEventListener('change', () => {
-      workspaceVisibility = setWorkspacePanelVisibility(workspaceVisibility, panel.id, toggle.checked);
+    toggle.addEventListener('change', async () => {
+      const visible = toggle.checked;
+      const hadFocus = document.activeElement === toggle;
+      if (!beginWorkspaceMutation()) return;
+      workspaceVisibility = setWorkspacePanelVisibility(workspaceVisibility, panel.id, visible);
       renderWorkspaceVisibility();
-      live(`${panel.label} ist jetzt ${toggle.checked ? 'sichtbar' : 'ausgeblendet'}.`);
+      try {
+        const saved = await runtimeInvoke()('set_workspace_visibility', { panel: panel.id, visible });
+        const confirmed = workspaceVisibilityFromBackend(saved);
+        clearWorkspaceSessionOverride(panel.id);
+        workspaceVisibility = setWorkspacePanelVisibility(workspaceVisibility, panel.id, confirmed[panel.id]);
+        renderWorkspaceVisibility();
+        updateWorkspacePersistenceHelp();
+        live(`${panel.label} ist jetzt ${visible ? 'sichtbar' : 'ausgeblendet'} und wurde lokal gemerkt.`);
+      } catch {
+        rememberWorkspaceSessionOverride(panel.id, visible);
+        renderWorkspaceVisibility();
+        $('workspaceHelp').textContent = 'Die Änderung gilt für diese Sitzung, konnte aber nicht dauerhaft gespeichert werden.';
+        live(`${panel.label} ist jetzt ${visible ? 'sichtbar' : 'ausgeblendet'}. Die Änderung gilt nur für diese Sitzung.`);
+      } finally {
+        endWorkspaceMutation();
+        restoreWorkspaceControlFocus(toggle, hadFocus);
+      }
     });
   }
 
-  $('workspaceResetBtn').addEventListener('click', () => {
+  $('workspaceResetBtn').addEventListener('click', async () => {
+    const button = $('workspaceResetBtn');
+    const hadFocus = document.activeElement === button;
+    if (!beginWorkspaceMutation()) return;
     workspaceVisibility = resetWorkspaceVisibility();
     renderWorkspaceVisibility();
-    live('Standardansicht wurde wiederhergestellt.');
+    try {
+      const saved = await runtimeInvoke()('reset_workspace_visibility');
+      workspaceSessionOverrides = {};
+      workspaceVisibility = workspaceVisibilityFromBackend(saved);
+      renderWorkspaceVisibility();
+      updateWorkspacePersistenceHelp();
+      live('Standardansicht wurde wiederhergestellt und lokal gemerkt.');
+    } catch {
+      workspaceSessionOverrides = resetWorkspaceVisibility();
+      renderWorkspaceVisibility();
+      $('workspaceHelp').textContent = 'Die Standardansicht gilt für diese Sitzung, konnte aber nicht dauerhaft gespeichert werden.';
+      live('Standardansicht wurde nur für diese Sitzung wiederhergestellt.');
+    } finally {
+      endWorkspaceMutation();
+      restoreWorkspaceControlFocus(button, hadFocus);
+    }
   });
 
   renderWorkspaceVisibility();
@@ -215,6 +357,8 @@ function markCoreUnavailable(error) {
   $('storageList').textContent = 'Es wurden keine Datenträger verändert.';
   $('toolsSummary').textContent = '🔴 Werkzeugliste nicht erreichbar';
   $('toolsList').textContent = 'Es wurden keine Werkzeuge gestartet oder verändert.';
+  renderWorkspaceVisibility();
+  $('workspaceHelp').textContent = 'Du kannst Bereiche in dieser Sitzung ausblenden. Dauerhaft speichern ist ohne Programmkern nicht möglich.';
   $('overall').textContent = '🔴 Programmkern nicht erreichbar';
   setStorageActionsEnabled(false);
   live('Programmkern nicht erreichbar');
@@ -229,6 +373,9 @@ async function refresh() {
     const status = await runtimeInvoke()('get_status');
     coreAvailable = true;
     renderSystemStatus(status);
+    if (!workspaceVisibilityInitialized) {
+      await loadWorkspaceVisibility();
+    }
 
     let toolsReady = true;
     try {

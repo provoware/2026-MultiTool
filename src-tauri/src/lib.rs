@@ -88,6 +88,29 @@ fn list_storage_volumes() -> Result<Vec<storage_overview::StorageVolume>, String
 }
 
 #[tauri::command]
+fn load_workspace_visibility(
+    state: State<'_, RuntimeState>,
+) -> Result<storage::WorkspaceVisibility, String> {
+    storage::load_workspace_visibility(&state.database_path)
+}
+
+#[tauri::command]
+fn set_workspace_visibility(
+    state: State<'_, RuntimeState>,
+    panel: String,
+    visible: bool,
+) -> Result<storage::WorkspaceVisibility, String> {
+    storage::set_workspace_visibility(&state.database_path, &panel, visible)
+}
+
+#[tauri::command]
+fn reset_workspace_visibility(
+    state: State<'_, RuntimeState>,
+) -> Result<storage::WorkspaceVisibility, String> {
+    storage::reset_workspace_visibility(&state.database_path)
+}
+
+#[tauri::command]
 fn load_or_create_project_state(
     state: State<'_, RuntimeState>,
 ) -> Result<storage::ProjectState, String> {
@@ -141,6 +164,9 @@ pub fn run() {
             get_status,
             list_tools,
             list_storage_volumes,
+            load_workspace_visibility,
+            set_workspace_visibility,
+            reset_workspace_visibility,
             load_or_create_project_state,
             create_checkpoint,
             request_shutdown

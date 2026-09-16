@@ -10,12 +10,14 @@
     "test:foundation:knowledge": "node tests/foundation/knowledge_registry_integrity.mjs",
     "test:foundation:storage-display": "node tests/foundation/storage_display_contract.mjs",
     "test:foundation:workspace": "node tests/foundation/workspace_visibility_contract.mjs",
+    "test:foundation:workspace-mutation": "node tests/foundation/workspace_mutation_guard_contract.mjs",
     "test:foundation:browser": "node tests/foundation/desktop_browser_visual_acceptance.mjs",
-    "check": "npm run lint && npm run test:foundation:knowledge && npm run test:foundation:storage-display && npm run test:foundation:workspace",
+    "test:foundation:workspace-load-focus": "node tests/foundation/workspace_load_focus_acceptance.mjs",
+    "check": "npm run lint && npm run test:foundation:knowledge && npm run test:foundation:storage-display && npm run test:foundation:workspace && npm run test:foundation:workspace-mutation",
     "ci:governance": "node scripts/ci/check-governance.mjs",
     "ci:schnell": "npm run ci:governance && npm run check",
     "ci:freigabe-schutztest": "node scripts/ci/release-preflight.mjs --self-test-blocked",
-    "ci:tief": "npm run ci:governance && npm run check && npm run test:foundation:browser && npm run ci:freigabe-schutztest",
+    "ci:tief": "npm run ci:governance && npm run check && npm run test:foundation:browser && npm run test:foundation:workspace-load-focus && npm run ci:freigabe-schutztest",
     "ci:freigabe-vorpruefung": "npm run ci:tief && node scripts/ci/release-preflight.mjs"
   },
   "devDependencies": {
