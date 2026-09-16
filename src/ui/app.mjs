@@ -66,6 +66,13 @@ function restoreWorkspaceControlFocus(control, hadFocus) {
   if (active === document.body || active === null) control.focus({ preventScroll:true });
 }
 
+function focusedWorkspaceControl() {
+  const active = document.activeElement;
+  if (active?.id === 'workspaceResetBtn') return active;
+  if (active?.matches?.('[data-workspace-toggle]')) return active;
+  return null;
+}
+
 function rememberWorkspaceSessionOverride(panelId, visible) {
   workspaceSessionOverrides = { ...workspaceSessionOverrides, [panelId]: visible };
 }
@@ -112,6 +119,7 @@ function renderWorkspaceVisibility(summaryOverride = null) {
 }
 
 async function loadWorkspaceVisibility() {
+  const focusedControl = focusedWorkspaceControl();
   if (!beginWorkspaceMutation()) return false;
   try {
     const saved = await runtimeInvoke()('load_workspace_visibility');
@@ -127,6 +135,7 @@ async function loadWorkspaceVisibility() {
     return false;
   } finally {
     endWorkspaceMutation();
+    restoreWorkspaceControlFocus(focusedControl, focusedControl !== null);
   }
 }
 
@@ -298,7 +307,7 @@ function renderTools(tools) {
     title.textContent = tool.name;
 
     const state = document.createElement('span');
-    state.className = 'tool-state';
+    state.className = `tool-state ${presentation.className}`;
     state.textContent = `${toolIcon(tool.state)} ${tool.state_text}`;
 
     head.append(title, state);
