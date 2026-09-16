@@ -7,7 +7,7 @@ function deferred() {
   return { promise, resolve };
 }
 
-async function runMutation(guard, name, gate) {
+async function runOperation(guard, name, gate) {
   if (!guard.tryBegin()) return `${name}:blocked`;
   try {
     await gate.promise;
@@ -17,32 +17,25 @@ async function runMutation(guard, name, gate) {
   }
 }
 
-{
+async function assertExclusive(firstName, secondName, message) {
   const guard = createWorkspaceMutationGuard();
-  const toggleGate = deferred();
-  const toggle = runMutation(guard, 'toggle', toggleGate);
-  assert.equal(guard.isActive(), true, 'Toggle-Mutation muss den Workspace exklusiv sperren.');
+  const firstGate = deferred();
+  const first = runOperation(guard, firstName, firstGate);
+  assert.equal(guard.isActive(), true, `${firstName} muss den Workspace exklusiv sperren.`);
 
-  const resetGate = deferred();
-  assert.equal(await runMutation(guard, 'reset', resetGate), 'reset:blocked', 'Reset darf einen laufenden Toggle-Save nicht überholen.');
+  const secondGate = deferred();
+  assert.equal(await runOperation(guard, secondName, secondGate), `${secondName}:blocked`, message);
 
-  toggleGate.resolve();
-  assert.equal(await toggle, 'toggle:done');
-  assert.equal(guard.isActive(), false, 'Workspace muss nach Toggle-Abschluss wieder freigegeben werden.');
+  firstGate.resolve();
+  assert.equal(await first, `${firstName}:done`);
+  assert.equal(guard.isActive(), false, `Workspace muss nach ${firstName}-Abschluss wieder freigegeben werden.`);
 }
 
-{
-  const guard = createWorkspaceMutationGuard();
-  const resetGate = deferred();
-  const reset = runMutation(guard, 'reset', resetGate);
-  assert.equal(guard.isActive(), true, 'Reset-Mutation muss den Workspace exklusiv sperren.');
+await assertExclusive('toggle', 'reset', 'Reset darf einen laufenden Toggle-Save nicht überholen.');
+await assertExclusive('reset', 'toggle', 'Toggle darf einen laufenden Reset nicht überholen.');
+await assertExclusive('load', 'toggle', 'Toggle darf einen laufenden Sichtbarkeits-Load nicht überholen.');
+await assertExclusive('toggle', 'load', 'Sichtbarkeits-Load darf einen laufenden Toggle-Save nicht überholen.');
+await assertExclusive('load', 'reset', 'Reset darf einen laufenden Sichtbarkeits-Load nicht überholen.');
+await assertExclusive('reset', 'load', 'Sichtbarkeits-Load darf einen laufenden Reset nicht überholen.');
 
-  const toggleGate = deferred();
-  assert.equal(await runMutation(guard, 'toggle', toggleGate), 'toggle:blocked', 'Toggle darf einen laufenden Reset nicht überholen.');
-
-  resetGate.resolve();
-  assert.equal(await reset, 'reset:done');
-  assert.equal(guard.isActive(), false, 'Workspace muss nach Reset-Abschluss wieder freigegeben werden.');
-}
-
-console.log('🟢 Workspace-Mutationen: Toggle ↔ Reset sind in beiden Race-Reihenfolgen exklusiv serialisiert.');
+console.log('🟢 Workspace-Zustand: Load, Toggle und Reset sind in allen geforderten Race-Reihenfolgen exklusiv serialisiert.');
