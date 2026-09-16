@@ -80,7 +80,10 @@ async function startDriver(browser) {
   const port = browser === 'firefox' ? 4444 : 9515;
   const child = spawn(executable, args, { stdio:['ignore','pipe','pipe'] });
   const base = `http://127.0.0.1:${port}`;
-  await waitFor(async () => (await fetch(`${base}/status`, { signal:AbortSignal.timeout(500) })).ok, { label:`${browser} WebDriver` });
+  await waitFor(async () => {
+    try { return (await fetch(`${base}/status`, { signal:AbortSignal.timeout(500) })).ok; }
+    catch { return false; }
+  }, { label:`${browser} WebDriver` });
   const alwaysMatch = browser === 'firefox'
     ? { browserName:'firefox', 'moz:firefoxOptions':{ args:['-headless'] } }
     : { browserName:'chrome', 'goog:chromeOptions':{ args:['--headless=new','--no-sandbox','--disable-dev-shm-usage'] } };
