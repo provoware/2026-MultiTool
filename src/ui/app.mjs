@@ -112,6 +112,7 @@ function renderWorkspaceVisibility(summaryOverride = null) {
 }
 
 async function loadWorkspaceVisibility() {
+  if (!beginWorkspaceMutation()) return false;
   try {
     const saved = await runtimeInvoke()('load_workspace_visibility');
     const persisted = workspaceVisibilityFromBackend(saved);
@@ -124,6 +125,8 @@ async function loadWorkspaceVisibility() {
     $('workspaceHelp').textContent = 'Die aktuelle Sitzungssicht bleibt erhalten. Deine gespeicherte Ansicht konnte nicht geladen werden.';
     live('Ansicht konnte nicht geladen werden. Die aktuelle Sitzungssicht bleibt erhalten.');
     return false;
+  } finally {
+    endWorkspaceMutation();
   }
 }
 
