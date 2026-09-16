@@ -119,6 +119,29 @@ async function installNativeStub(driver, failLoads) {
   `);
 }
 
+async function installPreLoadRaceStub(driver, failLoads) {
+  await execute(driver, `
+    const script = document.createElement('script');
+    script.textContent = [
+      "globalThis.__workspacePreLoadState = { failLoads:${failLoads}, loadCount:0, saveCount:0, statusStarted:false, persisted:{ today:true, 'system-status':true, storage:true, tools:false } };",
+      "globalThis.__TAURI__ = { core:{ invoke:async (command, args={}) => {",
+      "const state = globalThis.__workspacePreLoadState;",
+      "if (command === 'get_status') { state.statusStarted = true; await new Promise((resolveDelay) => setTimeout(resolveDelay, 90)); return { operating_system:'Testsystem', program_version:'Test', session:'Browser', core_status:'ready', core_text:'Programmkern bereit', database_status:'ready', database_text:'Lokale Datenbank bereit', local_only:true, status:'ready', overall_text:'Alles bereit' }; }",
+      "if (command === 'load_workspace_visibility') { state.loadCount += 1; if (state.failLoads > 0) { state.failLoads -= 1; throw new Error('Simulierter Lesefehler'); } return { ...state.persisted }; }",
+      "if (command === 'set_workspace_visibility') { state.saveCount += 1; await new Promise((resolveDelay) => setTimeout(resolveDelay, 220)); state.persisted[args.panel] = args.visible; return { ...state.persisted }; }",
+      "if (command === 'reset_workspace_visibility') return { ...state.persisted };",
+      "if (command === 'list_tools' || command === 'list_storage_volumes') return [];",
+      "if (command === 'load_or_create_project_state') return { project_id:'preload-race-test', revision:1 };",
+      "throw new Error('Unerwarteter Testbefehl: ' + command);",
+      "} } };"
+    ].join('\\n');
+    document.documentElement.append(script);
+    script.remove();
+    document.getElementById('refreshBtn').disabled = false;
+    return true;
+  `);
+}
+
 async function assertLoadFocus(driver, browser, url, { retry, targetSelector, label }) {
   const caseUrl = `${url}index.html?focusCase=${encodeURIComponent(`${label}-${retry ? 'retry' : 'initial'}-${Date.now()}`)}`;
   await wd(driver.base, 'POST', `/session/${driver.sessionId}/url`, { url:caseUrl });
@@ -159,6 +182,58 @@ async function assertLoadFocus(driver, browser, url, { retry, targetSelector, la
   assert(result.loadCount === (retry ? 2 : 1), `${browser}: Unerwartete Load-Anzahl bei ${label}.`);
 }
 
+async function assertPreLoadRaceRetry(driver, browser, url, { failFirstLoad }) {
+  const label = failFirstLoad ? 'Pre-Load-Race mit Lesefehler' : 'Pre-Load-Race';
+  const caseUrl = `${url}index.html?preLoadCase=${encodeURIComponent(`${label}-${Date.now()}`)}`;
+  await wd(driver.base, 'POST', `/session/${driver.sessionId}/url`, { url:caseUrl });
+  await waitFor(async () => (await execute(driver, `return document.readyState`)) === 'complete', { label:`${browser} ${label} Dokument bereit` });
+  await waitFor(async () => (await execute(driver, `return document.getElementById('overall')?.textContent || ''`)).includes('Programmkern nicht erreichbar'), { label:`${browser} ${label} Browser-Fallback` });
+
+  await installPreLoadRaceStub(driver, failFirstLoad ? 1 : 0);
+  await execute(driver, `document.getElementById('refreshBtn').click(); return true;`);
+  await waitFor(async () => await execute(driver, `return globalThis.__workspacePreLoadState?.statusStarted === true`), { label:`${browser} ${label} get_status gestartet` });
+  await execute(driver, `
+    const toggle = document.querySelector('[data-workspace-toggle="storage"]');
+    toggle.focus();
+    toggle.click();
+    return true;
+  `);
+
+  const firstResult = await waitFor(async () => {
+    const state = await execute(driver, `
+      const testState = globalThis.__workspacePreLoadState;
+      return {
+        loadCount:testState?.loadCount ?? -1,
+        saveCount:testState?.saveCount ?? -1,
+        storageHidden:document.querySelector('[data-workspace-panel="storage"]')?.hidden === true,
+        toolsHidden:document.querySelector('[data-workspace-panel="tools"]')?.hidden === true,
+        help:document.getElementById('workspaceHelp')?.textContent || ''
+      };
+    `);
+    if (failFirstLoad) return state.saveCount === 1 && state.loadCount === 1 && state.help.includes('konnte nicht geladen werden') ? state : false;
+    return state.saveCount === 1 && state.loadCount === 1 && state.storageHidden && state.toolsHidden ? state : false;
+  }, { label:`${browser} ${label} automatischer Nachhol-Load` });
+
+  assert(firstResult.storageHidden, `${browser}: Nutzeränderung ging beim ${label} verloren.`);
+  if (!failFirstLoad) {
+    assert(firstResult.toolsHidden, `${browser}: Persistierte Sichtbarkeit der übrigen Panels wurde nicht automatisch nachgeladen.`);
+    return;
+  }
+
+  assert(!firstResult.toolsHidden, `${browser}: Fehlgeschlagener Nachhol-Load darf alte Persistenz nicht vortäuschen.`);
+  await execute(driver, `document.getElementById('refreshBtn').click(); return true;`);
+  const retryResult = await waitFor(async () => {
+    const state = await execute(driver, `return {
+      loadCount:globalThis.__workspacePreLoadState?.loadCount ?? -1,
+      storageHidden:document.querySelector('[data-workspace-panel="storage"]')?.hidden === true,
+      toolsHidden:document.querySelector('[data-workspace-panel="tools"]')?.hidden === true,
+      help:document.getElementById('workspaceHelp')?.textContent || ''
+    }`);
+    return state.loadCount === 2 && state.storageHidden && state.toolsHidden ? state : false;
+  }, { label:`${browser} ${label} manueller Retry` });
+  assert(retryResult.loadCount === 2, `${browser}: Nach fehlgeschlagenem Nachhol-Load wurde nicht genau einmal retryt.`);
+}
+
 const server = await startStaticServer();
 try {
   for (const browser of browsers) {
@@ -168,7 +243,9 @@ try {
       await assertLoadFocus(driver, browser, server.url, { retry:false, targetSelector:'#workspaceResetBtn', label:'Initial-Load mit Reset' });
       await assertLoadFocus(driver, browser, server.url, { retry:true, targetSelector:'[data-workspace-toggle="storage"]', label:'Retry-Load mit Toggle' });
       await assertLoadFocus(driver, browser, server.url, { retry:true, targetSelector:'#workspaceResetBtn', label:'Retry-Load mit Reset' });
-      console.log(`🟢 ${browser}: Initial-/Retry-Load stellt Fokus für Toggle und Reset wieder her.`);
+      await assertPreLoadRaceRetry(driver, browser, server.url, { failFirstLoad:false });
+      await assertPreLoadRaceRetry(driver, browser, server.url, { failFirstLoad:true });
+      console.log(`🟢 ${browser}: Load-Fokus und Pre-Load-Retry sind deterministisch abgesichert.`);
     } finally {
       await stopDriver(driver);
     }
@@ -177,4 +254,4 @@ try {
   await new Promise((resolveClose) => server.server.close(resolveClose));
 }
 
-console.log('🟢 Workspace-Load-Fokus: Firefox + Chrome PASS.');
+console.log('🟢 Workspace-Load-Hardening: Firefox + Chrome PASS.');
