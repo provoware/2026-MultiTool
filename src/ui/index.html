@@ -13,10 +13,35 @@
         <h1>PROVOWARE 2026-MultiTool</h1>
         <p>Native Grundlage · sicher und nur auf diesem Gerät</p>
       </div>
-      <div id="overall" class="badge">🔵 Programm wird geprüft …</div>
+      <div class="actions">
+        <button class="secondary" id="helpBtn" type="button" aria-controls="panelHelp" aria-expanded="false">Hilfe</button>
+        <div id="overall" class="badge">🔵 Programm wird geprüft …</div>
+      </div>
     </header>
 
     <main class="grid">
+      <section id="panelHelp" class="card tools-card" aria-labelledby="helpTitle" hidden>
+        <h2 id="helpTitle" tabindex="-1">Hilfe</h2>
+        <article aria-labelledby="systemStatusHelpTitle">
+          <h3 id="systemStatusHelpTitle">Systemstatus verstehen</h3>
+          <h4>Kurz erklärt</h4>
+          <p>Der Systemstatus zeigt sichere Basisinformationen zu diesem Gerät und zum Programmkern. Ein normaler Zustand bedeutet, dass die geprüfte Grundlage bereit ist. Eine Warnung bedeutet, dass ein angezeigter Punkt Aufmerksamkeit braucht. Sie müssen nicht allein wegen einer Warnung sofort etwas verändern.</p>
+          <details>
+            <summary>Schritt für Schritt</summary>
+            <ol>
+              <li>Öffnen oder betrachten Sie den Bereich Systemstatus.</li>
+              <li>Lesen Sie den sichtbaren Status.</li>
+              <li>Beachten Sie bei einer Warnung den bereits vorhandenen Hinweis.</li>
+              <li>Führen Sie keine Änderung durch, die das Programm selbst nicht bereits anbietet.</li>
+            </ol>
+          </details>
+          <details>
+            <summary>Technische Details</summary>
+            <p>Der Bereich zeigt bereits vorhandene Angaben zu Betriebssystem, Programmversion, Sitzung, Programmkern und lokaler Datenbank. Die Hilfe führt keine zusätzliche Systemabfrage aus und verändert keinen Zustand.</p>
+          </details>
+        </article>
+      </section>
+
       <section class="card workspace-card" aria-labelledby="workspaceTitle">
         <div class="section-heading">
           <div>
@@ -25,65 +50,28 @@
           </div>
           <div id="workspaceSummary" class="badge">🟢 Standardansicht</div>
         </div>
-
         <fieldset class="workspace-options" aria-describedby="workspaceHelp">
           <legend class="visually-hidden">Sichtbare Bereiche</legend>
-          <label class="workspace-option" for="workspaceToggleToday">
-            <input id="workspaceToggleToday" type="checkbox" data-workspace-toggle="today" checked>
-            <span>Heute</span>
-          </label>
-          <label class="workspace-option" for="workspaceToggleSystemStatus">
-            <input id="workspaceToggleSystemStatus" type="checkbox" data-workspace-toggle="system-status" checked>
-            <span>Systemstatus</span>
-          </label>
-          <label class="workspace-option" for="workspaceToggleStorage">
-            <input id="workspaceToggleStorage" type="checkbox" data-workspace-toggle="storage" checked>
-            <span>Speicherübersicht</span>
-          </label>
-          <label class="workspace-option" for="workspaceToggleTools">
-            <input id="workspaceToggleTools" type="checkbox" data-workspace-toggle="tools" checked>
-            <span>Werkzeug-Zentrale</span>
-          </label>
+          <label class="workspace-option" for="workspaceToggleToday"><input id="workspaceToggleToday" type="checkbox" data-workspace-toggle="today" checked><span>Heute</span></label>
+          <label class="workspace-option" for="workspaceToggleSystemStatus"><input id="workspaceToggleSystemStatus" type="checkbox" data-workspace-toggle="system-status" checked><span>Systemstatus</span></label>
+          <label class="workspace-option" for="workspaceToggleStorage"><input id="workspaceToggleStorage" type="checkbox" data-workspace-toggle="storage" checked><span>Speicherübersicht</span></label>
+          <label class="workspace-option" for="workspaceToggleTools"><input id="workspaceToggleTools" type="checkbox" data-workspace-toggle="tools" checked><span>Werkzeug-Zentrale</span></label>
         </fieldset>
-
-        <div class="actions workspace-actions">
-          <button class="secondary" id="workspaceResetBtn" type="button">Ansicht zurücksetzen</button>
-        </div>
+        <div class="actions workspace-actions"><button class="secondary" id="workspaceResetBtn" type="button">Ansicht zurücksetzen</button></div>
         <p id="workspaceHelp" class="small">Wenn der Programmkern erreichbar ist, wird deine Auswahl lokal auf diesem Gerät gemerkt.</p>
       </section>
 
       <section id="panelToday" class="card" data-workspace-panel="today" aria-labelledby="today">
         <h2 id="today">Heute</h2>
         <p>Diese Ansicht zeigt nur die wichtigsten Grundlagen. Zusätzliche Werkzeuge werden schrittweise und geprüft ergänzt.</p>
-
         <div class="steps" id="steps">
-          <div class="step">
-            <div class="icon">🔵</div>
-            <div><strong>Programmkern</strong><div id="coreText" class="small">Verbindung wird geprüft …</div></div>
-          </div>
-          <div class="step">
-            <div class="icon">🟢</div>
-            <div><strong>Nur auf diesem Gerät</strong><div id="localText" class="small">Keine Netzwerkverbindung für den Programmkern nötig.</div></div>
-          </div>
-          <div class="step">
-            <div class="icon">🔵</div>
-            <div><strong>Projektzustand</strong><div id="projectStateText" class="small">Lokaler Projektspeicher wird geprüft …</div></div>
-          </div>
-          <div class="step">
-            <div class="icon">🔵</div>
-            <div><strong>Zwischenstand</strong><div id="checkpointText" class="small">Noch nicht geprüft.</div></div>
-          </div>
-          <div class="step">
-            <div class="icon">🟢</div>
-            <div><strong>Sicher beenden</strong><div id="shutdownText" class="small">Vor dem Beenden wird ein Zwischenstand gesichert.</div></div>
-          </div>
+          <div class="step"><div class="icon">🔵</div><div><strong>Programmkern</strong><div id="coreText" class="small">Verbindung wird geprüft …</div></div></div>
+          <div class="step"><div class="icon">🟢</div><div><strong>Nur auf diesem Gerät</strong><div id="localText" class="small">Keine Netzwerkverbindung für den Programmkern nötig.</div></div></div>
+          <div class="step"><div class="icon">🔵</div><div><strong>Projektzustand</strong><div id="projectStateText" class="small">Lokaler Projektspeicher wird geprüft …</div></div></div>
+          <div class="step"><div class="icon">🔵</div><div><strong>Zwischenstand</strong><div id="checkpointText" class="small">Noch nicht geprüft.</div></div></div>
+          <div class="step"><div class="icon">🟢</div><div><strong>Sicher beenden</strong><div id="shutdownText" class="small">Vor dem Beenden wird ein Zwischenstand gesichert.</div></div></div>
         </div>
-
-        <div class="actions">
-          <button class="primary" id="checkpointBtn">Zwischenstand sichern</button>
-          <button class="secondary" id="refreshBtn">Status neu prüfen</button>
-          <button class="danger" id="shutdownBtn">Sicher beenden</button>
-        </div>
+        <div class="actions"><button class="primary" id="checkpointBtn">Zwischenstand sichern</button><button class="secondary" id="refreshBtn">Status neu prüfen</button><button class="danger" id="shutdownBtn">Sicher beenden</button></div>
       </section>
 
       <aside id="panelSystemStatus" class="card" data-workspace-panel="system-status" aria-labelledby="systemStatusTitle">
@@ -99,34 +87,18 @@
       </aside>
 
       <section id="panelStorage" class="card tools-card" data-workspace-panel="storage" aria-labelledby="storageTitle">
-        <div class="section-heading">
-          <div>
-            <h2 id="storageTitle">Speicherübersicht</h2>
-            <p>Zeigt nur eingehängte lokale Datenträger. Es wird nichts bereinigt, verschoben oder verändert.</p>
-          </div>
-          <div id="storageSummary" class="badge">🔵 Datenträger werden gelesen …</div>
-        </div>
-        <div id="storageList" class="tool-list" aria-live="polite">
-          <p class="small">Speicherangaben werden geladen …</p>
-        </div>
+        <div class="section-heading"><div><h2 id="storageTitle">Speicherübersicht</h2><p>Zeigt nur eingehängte lokale Datenträger. Es wird nichts bereinigt, verschoben oder verändert.</p></div><div id="storageSummary" class="badge">🔵 Datenträger werden gelesen …</div></div>
+        <div id="storageList" class="tool-list" aria-live="polite"><p class="small">Speicherangaben werden geladen …</p></div>
       </section>
 
       <section id="panelTools" class="card tools-card" data-workspace-panel="tools" aria-labelledby="toolsTitle">
-        <div class="section-heading">
-          <div>
-            <h2 id="toolsTitle">Werkzeug-Zentrale</h2>
-            <p>Hier siehst du, welche Werkzeuge wirklich eingebaut und bereit sind. In diesem ersten Schritt kannst du sie nur ansehen.</p>
-          </div>
-          <div id="toolsSummary" class="badge">🔵 Werkzeuge werden geprüft …</div>
-        </div>
-        <div id="toolsList" class="tool-list" aria-live="polite">
-          <p class="small">Werkzeugliste wird geladen …</p>
-        </div>
+        <div class="section-heading"><div><h2 id="toolsTitle">Werkzeug-Zentrale</h2><p>Hier siehst du, welche Werkzeuge wirklich eingebaut und bereit sind. In diesem ersten Schritt kannst du sie nur ansehen.</p></div><div id="toolsSummary" class="badge">🔵 Werkzeuge werden geprüft …</div></div>
+        <div id="toolsList" class="tool-list" aria-live="polite"><p class="small">Werkzeugliste wird geladen …</p></div>
       </section>
     </main>
-
     <div id="live" class="visually-hidden" aria-live="polite"></div>
   </div>
+  <script type="module" src="./help.mjs"></script>
   <script type="module" src="./app.mjs"></script>
 </body>
 </html>
