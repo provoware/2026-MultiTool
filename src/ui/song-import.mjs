@@ -18,7 +18,8 @@ export function validateSong(song) {
   const { file_name: name, title, alternate_title: alternate, lyrics } = song;
   if (typeof name !== 'string' || !name.trim() || name.trim().length > 120
     || name.trim().startsWith('.') || name.trim().endsWith('.')
-    || /[<>:"\/\\|?*\x00-\x1f\x7f]/.test(name)) {
+    || /[<>:"\\|?*]/.test(name) || name.includes('/')
+    || [...name].some((c) => c.charCodeAt(0) < 32 || c.charCodeAt(0) === 127)) {
     throw new Error('Ungültiger Dateiname. Bitte Dateinamen ohne Pfadangaben verwenden.');
   }
   if (typeof title !== 'string' || !title.trim() || [...title.trim()].length > 200) {
@@ -92,7 +93,13 @@ export function createSongBackup(songs, now = new Date()) {
     format: SONG_BACKUP_FORMAT,
     schema_version: 1,
     exported_at: now.toISOString(),
-    songs: songs.map(validateSong).map(({ id: _id, ...data }) => data),
+    songs: songs.map(validateSong).map((song) => ({
+      file_name: song.file_name,
+      title: song.title,
+      alternate_title_enabled: song.alternate_title_enabled,
+      alternate_title: song.alternate_title,
+      lyrics: song.lyrics,
+    })),
   }, null, 2) + '\n';
   if (encoder.encode(content).byteLength > MAX_IMPORT_BYTES) {
     throw new Error('Die Sicherung überschreitet 32 MB. Kleinere Archive sind erforderlich.');
@@ -131,7 +138,7 @@ export async function prepareSongImport(files, existingSongs = []) {
       if (bytes.byteLength > MAX_IMPORT_BYTES) throw new Error('Datei zu groß.');
       text = decode.decode(bytes);
     } catch (error) {
-      throw new Error('Datei nicht als UTF-8 lesbar: ' + file.name + ' (' + error.message + ')');
+      throw new Error('Datei nicht als UTF-8 lesbar: ' + file.name + ' (' + error.message + ')', { cause: error });
     }
     candidates.push(...(isBackupFile(file.name)
       ? parseSongBackup(text)
