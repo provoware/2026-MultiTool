@@ -19,6 +19,21 @@ function collectFailures(base) {
   if (!fs.existsSync(cargoLock)) failures.push('Gesperrte Rust-Abhaengigkeiten fehlen: src-tauri/Cargo.lock ist nicht vorhanden.');
   if (!tauriConfigCandidates.some((candidate) => fs.existsSync(candidate))) failures.push('Tauri-Konfiguration fehlt.');
   if (!fs.existsSync(nativeE2e)) failures.push('Nativer Tauri-Ende-zu-Ende-Test fehlt.');
+  // Ein vorhandener Tauri-Quellbaum ist noch kein installierbares Produkt.
+  const tauriJson = path.join(base, 'src-tauri', 'tauri.conf.json');
+  if (fs.existsSync(tauriJson)) {
+    try {
+      const settings = JSON.parse(fs.readFileSync(tauriJson, 'utf8'));
+      if (settings.bundle?.active !== true) {
+        failures.push('Installationspakete sind deaktiviert (bundle.active ist nicht true).');
+      }
+    } catch {
+      failures.push('Die Tauri-Konfiguration konnte nicht gültig gelesen werden.');
+    }
+  }
+  const archive = path.join(base, 'tests', 'foundation', 'song_import_contract.mjs');
+  if (!fs.existsSync(archive)) failures.push('Prüfung für Songtext-Import und Wiederherstellung fehlt.');
+
   return failures;
 }
 
