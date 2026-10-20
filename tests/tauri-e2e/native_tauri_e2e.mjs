@@ -132,6 +132,7 @@ const evidence = {
   systemStatus:false,
   storageOverview:false,
   safeShutdown:false,
+  songtextEditor:false,
 };
 let firstSession = null;
 let secondSession = null;
@@ -143,6 +144,10 @@ try {
 
   firstSession = await createSession();
   await waitReady(firstSession);
+  // Der erste WebDriver-Frame kann vor den projekteigenen DOM-Daten eintreffen.
+  await waitFor(async () => (await projectMarker(firstSession)).id.length >= 8, {
+    label:'Projektkennung im ersten Programmstart',
+  });
   const before = await projectMarker(firstSession);
   assert(before.id.length >= 8, 'Projektkennung fehlt im ersten Start.');
   assert(before.revision === '1', 'Unerwartete Projekt-Revision beim ersten Start.');
@@ -154,6 +159,46 @@ try {
   assert(tools.text.includes('Speicherübersicht'), 'Speicherübersicht fehlt in der Werkzeugliste.');
   assert(tools.summary.includes('Werkzeugen bereit'), 'Werkzeug-Zentrale zeigt keinen verständlichen Gesamtzustand.');
   evidence.toolCenter = true;
+
+  // Native SQLite-Probe: Erstellen, alternativen Titel ein-/ausschalten,
+  // Daten erhalten und nach erneutem Öffnen kontrollieren.
+  await click(firstSession, '#songEditorOpenBtn');
+  await waitFor(async () => await execute(firstSession, "return document.getElementById('songEditorDialog')?.open === true"), {
+    label:'Songtext-Dialog geöffnet',
+  });
+  const preSave = await execute(firstSession, "const d=document;\nconst set=(id,value)=>{const e=d.getElementById(id);e.value=value;e.dispatchEvent(new Event('input',{bubbles:true}));};\nset('songFileName','album_demo_07');\nset('songTitle','Interner Titel');\nset('songAltTitle','Öffentlicher Provoware Titel');\nset('songLyrics','[INTRO] Songtexttest');\nd.getElementById('songAltEnabled').click();\nreturn {visible:!d.getElementById('songAltContainer').hidden,preview:d.getElementById('songPublishedPreview').textContent,blocked:d.getElementById('songExportBtn').disabled};");
+  assert(preSave.visible && preSave.preview === 'Öffentlicher Provoware Titel',
+    'Alternativtitel im Formular nicht korrekt dargestellt.');
+  assert(preSave.blocked, 'Ungespeicherte Daten dürfen nicht exportiert werden.');
+  await click(firstSession, '#songSaveBtn');
+  await waitFor(async () => (await execute(firstSession, "return document.getElementById('songStatus')?.textContent || ''")).includes('Lokal gespeichert'), {
+    label:'Song lokal gespeichert',
+  });
+  const stored = await execute(firstSession, "return {file:document.getElementById('songFileName').value,title:document.getElementById('songTitle').value,alt:document.getElementById('songAltTitle').value,enabled:document.getElementById('songAltEnabled').checked,options:document.getElementById('songList').options.length,canExport:!document.getElementById('songExportBtn').disabled};");
+  assert(stored.file === 'album_demo_07' && stored.title === 'Interner Titel', 'Dateiname oder Arbeitstitel verändert.');
+  assert(stored.alt === 'Öffentlicher Provoware Titel' && stored.enabled && stored.options >= 2 && stored.canExport,
+    'Alternativtitel nicht gespeichert oder Export weiterhin gesperrt.');
+  await execute(firstSession, "document.getElementById('songAltEnabled').click();return true;");
+  await click(firstSession, '#songSaveBtn');
+  await waitFor(async () => (await execute(firstSession, "return document.getElementById('songStatus')?.textContent || ''")).includes('Lokal gespeichert'), {
+    label:'Deaktivierung gespeichert',
+  });
+  const disabled = await execute(firstSession, "return {file:document.getElementById('songFileName').value,preview:document.getElementById('songPublishedPreview').textContent,alt:document.getElementById('songAltTitle').value,enabled:document.getElementById('songAltEnabled').checked};");
+  assert(!disabled.enabled && disabled.preview === 'Interner Titel',
+    'Deaktivierung hat den normalen Veröffentlichungstitel nicht hergestellt.');
+  assert(disabled.file === 'album_demo_07' && disabled.alt === 'Öffentlicher Provoware Titel',
+    'Deaktivierung hat Dateiname oder gespeicherten Titel verändert.');
+  await click(firstSession, '#songCloseBtn');
+  await click(firstSession, '#songEditorOpenBtn');
+  await waitFor(async () => (await execute(firstSession, "return document.getElementById('songFileName').value")) === 'album_demo_07', {
+    label:'Gespeicherter Song nach erneuter Öffnung geladen',
+  });
+  const reopened = await execute(firstSession, "return {file:document.getElementById('songFileName').value,title:document.getElementById('songTitle').value,alt:document.getElementById('songAltTitle').value,enabled:document.getElementById('songAltEnabled').checked,options:document.getElementById('songList').options.length,canExport:!document.getElementById('songExportBtn').disabled};");
+  assert(reopened.file === 'album_demo_07' && reopened.title === 'Interner Titel'
+    && reopened.alt === 'Öffentlicher Provoware Titel' && !reopened.enabled,
+  'Gespeicherter Song nach erneutem Öffnen verändert.');
+  await click(firstSession, '#songCloseBtn');
+  evidence.songtextEditor = true;
 
   const system = await systemStatusMarker(firstSession);
   assert(system.os.trim().length > 0 && !system.os.includes('Wird geprüft'), 'Betriebssystem fehlt im Systemstatus.');
@@ -192,6 +237,9 @@ try {
 
   secondSession = await createSession();
   await waitReady(secondSession);
+  await waitFor(async () => (await projectMarker(secondSession)).id.length >= 8, {
+    label:'Projektkennung beim erneuten Programmstart',
+  });
   const after = await projectMarker(secondSession);
   assert(after.id === before.id, 'Projektkennung hat sich nach Neustart veraendert.');
   assert(after.revision === before.revision, 'Projektzustand wurde beim Neustart unnoetig veraendert.');
@@ -206,7 +254,7 @@ try {
 
   evidence.status = 'PASS';
   await writeFile(resolve(EVIDENCE_DIR, 'tauri-e2e.json'), JSON.stringify(evidence, null, 2));
-  console.log('🟢 Native Tauri-E2E: Start · Systemstatus · Speicherzustand · Werkzeug-Zentrale · SQLite-Persistenz · Zwischenstand · Neustart · sicheres Beenden PASS');
+  console.log('🟢 Native Tauri-E2E: Start · Systemstatus · Speicherzustand · Werkzeug-Zentrale · Songtext-Editor · SQLite-Persistenz · Zwischenstand · Neustart · sicheres Beenden PASS');
 } catch (error) {
   evidence.status = 'FAIL';
   evidence.message = error.message;
