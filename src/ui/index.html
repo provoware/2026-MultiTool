@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>PROVOWARE 2026-MultiTool</title>
   <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./song-editor.css">
 </head>
 <body>
   <div class="shell">
@@ -135,12 +136,24 @@
         </div>
         <button id="songCloseBtn" type="button" class="secondary">Schließen</button>
       </div>
+      <section class="song-operation-panel" aria-label="Dateien und Datensicherung">
+        <div class="song-operation-copy">
+          <strong>📁 Dateien &amp; Sicherung</strong>
+          <span>TXT, Markdown oder eine PROVOWARE-JSON-Sicherung übernehmen. Vorhandene Songtexte bleiben geschützt.</span>
+        </div>
+        <div class="song-operation-actions">
+          <button id="songImportBtn" type="button" class="secondary">Dateien importieren</button>
+          <button id="songBackupBtn" type="button" class="secondary">Alle Songtexte sichern</button>
+          <input id="songImportFiles" type="file" accept=".txt,.md,.json,text/plain,text/markdown,application/json" multiple hidden aria-label="Songtextdateien auswählen">
+        </div>
+      </section>
       <div class="song-select-row">
         <label for="songList">Vorhandenen Song auswählen</label>
         <select id="songList"><option value="">Neuen Song erstellen</option></select>
         <button id="songNewBtn" type="button" class="secondary">Neuer Song</button>
       </div>
       <form id="songForm">
+        <h3 class="song-subheading">Titel und Dateiname</h3>
         <div class="song-fields">
           <label for="songFileName">Dateiname (ohne .txt)
             <input id="songFileName" type="text" required maxlength="124" placeholder="z. B. arbeitsversion_03" autocomplete="off">
@@ -160,9 +173,11 @@
           <p class="small">Nur bei eingeschalteter Option wirksam. Der Dateiname bleibt unverändert.</p>
         </div>
         <p class="song-preview">Wirksamer Titel: <strong id="songPublishedPreview">Noch kein Titel</strong></p>
+        <h3 class="song-subheading">Songtext bearbeiten</h3>
         <label for="songLyrics">Songtext</label>
         <textarea id="songLyrics" rows="11" spellcheck="true" placeholder="[INTRO]&#10;&#10;[VERSE]&#10;..."></textarea>
         <p id="songLyricsCount" class="small">0 Zeichen</p>
+        <p class="small song-save-note">Speichern legt eine lokale Kopie in der Datenbank ab. Der TXT-Export übernimmt den wirksamen Titel, der Dateiname bleibt unabhängig.</p>
         <div class="actions">
           <button id="songSaveBtn" type="submit" class="primary">Song speichern</button>
           <button id="songExportBtn" type="button" class="secondary" disabled>TXT exportieren</button>
