@@ -148,4 +148,4 @@ Der maschinenlesbare kanonische Stand liegt in [PROJECT_STATUS.json](PROJECT_STA
 
 ## Songtext-Editor (neuer Baustein)
 
-Lokal gespeicherte Songtexte haben einen getrennten **Dateinamen**, **Songtitel** und optionalen **Veröffentlichungstitel**. Start in der Werkzeug-Zentrale. Siehe [Songtext-Dokumentation](docs/SONGTEXT_EDITOR.md).
+Lokal gespeicherte Songtexte haben einen getrennten **Dateinamen**, **Songtitel** und optionalen **Veröffentlichungstitel**. Neu sind der bestätigungspflichtige TXT-/Markdown-Import, das nicht überschreibende Einlesen von Sicherungen und der JSON-Sicherungsexport. Start in der Werkzeug-Zentrale. Siehe [Songtext-Dokumentation](docs/SONGTEXT_EDITOR.md).
