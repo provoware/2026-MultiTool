@@ -177,6 +177,57 @@ pub fn save(path: &Path, input: SongInput) -> Result<Song, String> {
         .map_err(database_error)
 }
 
+/// Übernimmt eine Dateiauswahl als eine einzige Datenbanktransaktion:
+/// Ein Fehler oder Namenskonflikt macht die gesamte Auswahl rückgängig.
+pub fn import_many(path: &Path, songs: Vec<SongInput>) -> Result<Vec<Song>, String> {
+    if songs.is_empty() || songs.len() > 50 {
+        return Err("Bitte 1 bis 50 Songtexte pro Import auswählen.".to_string());
+    }
+    let validated = songs
+        .iter()
+        .map(|song| {
+            if song.id.is_some() {
+                return Err("Importdateien dürfen keine bestehende Songkennung überschreiben.".to_string());
+            }
+            validate(song)
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+
+    let mut connection = open(path)?;
+    let transaction = connection.transaction().map_err(database_error)?;
+    let mut imported_ids = Vec::with_capacity(songs.len());
+    for (song, (name, title, alternative)) in songs.iter().zip(validated.iter()) {
+        transaction
+            .execute(
+                "INSERT INTO songtexts
+                 (file_name, title, alternate_title_enabled, alternate_title, lyrics, updated_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))",
+                params![
+                    name,
+                    title,
+                    song.alternate_title_enabled,
+                    alternative,
+                    song.lyrics
+                ],
+            )
+            .map_err(write_error)?;
+        imported_ids.push(transaction.last_insert_rowid());
+    }
+    transaction.commit().map_err(database_error)?;
+    let connection = open(path)?;
+    imported_ids
+        .into_iter()
+        .map(|id| {
+            connection.query_row(
+                "SELECT id, file_name, title, alternate_title_enabled, alternate_title, lyrics, updated_at
+                 FROM songtexts WHERE id = ?1",
+                params![id],
+                decode,
+            ).map_err(database_error)
+        })
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -231,6 +282,31 @@ mod tests {
         let mut bad = draft();
         bad.file_name = "../heimlich".into();
         assert!(save(&path, bad).is_err());
+        let _ = fs::remove_file(path);
+    }
+
+    #[test]
+    fn import_is_atomic_and_never_overwrites_existing_song() {
+        let path = temp_db();
+        init(&path).expect("Schema");
+        let original = save(&path, draft()).expect("Ersten Song anlegen");
+
+        let mut fresh = draft();
+        fresh.file_name = "neue_datei".into();
+        fresh.id = None;
+        let failed = import_many(&path, vec![fresh.clone(), draft()]);
+        assert!(failed.is_err(), "Doppelte Datei muss den ganzen Import stoppen");
+        let after_failure = list(&path).expect("Prüfen");
+        assert_eq!(after_failure.len(), 1, "Kein halber Import");
+        assert_eq!(after_failure[0].lyrics, original.lyrics);
+
+        let imported = import_many(&path, vec![fresh]).expect("Einzelimport");
+        assert_eq!(imported.len(), 1);
+        assert_eq!(list(&path).expect("Lesen").len(), 2);
+
+        let mut malicious = draft();
+        malicious.id = Some(original.id);
+        assert!(import_many(&path, vec![malicious]).is_err(), "IDs nicht übernehmbar");
         let _ = fs::remove_file(path);
     }
 
