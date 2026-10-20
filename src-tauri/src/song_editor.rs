@@ -30,7 +30,8 @@ fn database_error(error: rusqlite::Error) -> String {
 fn write_error(error: rusqlite::Error) -> String {
     if let rusqlite::Error::SqliteFailure(details, _) = &error {
         if details.code == ErrorCode::ConstraintViolation {
-            return "Dieser Dateiname ist bereits vergeben. Bitte einen anderen wählen.".to_string();
+            return "Dieser Dateiname ist bereits vergeben. Bitte einen anderen wählen."
+                .to_string();
         }
     }
     database_error(error)
@@ -71,7 +72,9 @@ fn validate(input: &SongInput) -> Result<(String, String, String), String> {
         || name.starts_with('.')
         || name.ends_with('.')
         || name.chars().count() > 120
-        || name.chars().any(|c| c.is_control() || "/\\<>:\"|?*".contains(c))
+        || name
+            .chars()
+            .any(|c| c.is_control() || "/\\<>:\"|?*".contains(c))
     {
         return Err("Dateiname ungültig: 1–120 Zeichen ohne Pfad- oder Sonderzeichen.".to_string());
     }
@@ -84,7 +87,9 @@ fn validate(input: &SongInput) -> Result<(String, String, String), String> {
         return Err("Der alternative Titel darf höchstens 200 Zeichen enthalten.".to_string());
     }
     if input.alternate_title_enabled && alternative.is_empty() {
-        return Err("Bitte den Veröffentlichungstitel eingeben oder die Option ausschalten.".to_string());
+        return Err(
+            "Bitte den Veröffentlichungstitel eingeben oder die Option ausschalten.".to_string(),
+        );
     }
     if input.lyrics.len() > 2_000_000 {
         return Err("Der Songtext ist zu groß (maximal 2 MB).".to_string());
@@ -131,7 +136,14 @@ pub fn save(path: &Path, input: SongInput) -> Result<Song, String> {
                      alternate_title = ?4, lyrics = ?5,
                      updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
                  WHERE id = ?6",
-                params![name, title, input.alternate_title_enabled, alternative, input.lyrics, id],
+                params![
+                    name,
+                    title,
+                    input.alternate_title_enabled,
+                    alternative,
+                    input.lyrics,
+                    id
+                ],
             )
             .map_err(write_error)?;
         if changed == 0 {
@@ -144,7 +156,13 @@ pub fn save(path: &Path, input: SongInput) -> Result<Song, String> {
                 "INSERT INTO songtexts
                  (file_name, title, alternate_title_enabled, alternate_title, lyrics, updated_at)
                  VALUES (?1, ?2, ?3, ?4, ?5, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))",
-                params![name, title, input.alternate_title_enabled, alternative, input.lyrics],
+                params![
+                    name,
+                    title,
+                    input.alternate_title_enabled,
+                    alternative,
+                    input.lyrics
+                ],
             )
             .map_err(write_error)?;
         connection.last_insert_rowid()
@@ -207,7 +225,9 @@ mod tests {
         let path = temp_db();
         init(&path).expect("Schema");
         save(&path, draft()).expect("Anlegen");
-        assert!(save(&path, draft()).unwrap_err().contains("bereits vergeben"));
+        assert!(save(&path, draft())
+            .unwrap_err()
+            .contains("bereits vergeben"));
         let mut bad = draft();
         bad.file_name = "../heimlich".into();
         assert!(save(&path, bad).is_err());
