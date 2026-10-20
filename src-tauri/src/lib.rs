@@ -1,4 +1,5 @@
 mod module_registry;
+mod song_editor;
 mod storage;
 mod storage_overview;
 
@@ -95,6 +96,19 @@ fn load_or_create_project_state(
 }
 
 #[tauri::command]
+fn list_songtexts(state: State<'_, RuntimeState>) -> Result<Vec<song_editor::Song>, String> {
+    song_editor::list(&state.database_path)
+}
+
+#[tauri::command]
+fn save_songtext(
+    state: State<'_, RuntimeState>,
+    song: song_editor::SongInput,
+) -> Result<song_editor::Song, String> {
+    song_editor::save(&state.database_path, song)
+}
+
+#[tauri::command]
 fn create_checkpoint(
     state: State<'_, RuntimeState>,
     reason: Option<String>,
@@ -128,6 +142,7 @@ pub fn run() {
             std::fs::create_dir_all(&data_dir)?;
             let database_path = data_dir.join("multitool.sqlite3");
             storage::init(&database_path).map_err(std::io::Error::other)?;
+            song_editor::init(&database_path).map_err(std::io::Error::other)?;
 
             let stamp = now_millis();
             app.manage(RuntimeState {
@@ -142,6 +157,8 @@ pub fn run() {
             list_tools,
             list_storage_volumes,
             load_or_create_project_state,
+            list_songtexts,
+            save_songtext,
             create_checkpoint,
             request_shutdown
         ])

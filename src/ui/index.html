@@ -115,15 +115,62 @@
         <div class="section-heading">
           <div>
             <h2 id="toolsTitle">Werkzeug-Zentrale</h2>
-            <p>Hier siehst du, welche Werkzeuge wirklich eingebaut und bereit sind. In diesem ersten Schritt kannst du sie nur ansehen.</p>
+            <p>Hier siehst du die eingebauten Werkzeuge. Den Songtext-Editor kannst du öffnen; die übrigen Werkzeuge zeigen ihren Zustand.</p>
           </div>
           <div id="toolsSummary" class="badge">🔵 Werkzeuge werden geprüft …</div>
         </div>
         <div id="toolsList" class="tool-list" aria-live="polite">
           <p class="small">Werkzeugliste wird geladen …</p>
         </div>
+        <div class="actions">
+          <button id="songEditorOpenBtn" type="button" class="primary">🎵 Songtext-Editor öffnen</button>
+        </div>
       </section>
     </main>
+
+    <dialog id="songEditorDialog" class="song-dialog" aria-labelledby="songEditorHeading" aria-describedby="songEditorHelp">
+      <div class="song-dialog-head">
+        <div><h2 id="songEditorHeading">🎵 Songtext-Editor</h2>
+          <p id="songEditorHelp" class="small">Dateiname, Arbeitstitel und Veröffentlichungstitel sind getrennte Angaben.</p>
+        </div>
+        <button id="songCloseBtn" type="button" class="secondary">Schließen</button>
+      </div>
+      <div class="song-select-row">
+        <label for="songList">Vorhandenen Song auswählen</label>
+        <select id="songList"><option value="">Neuen Song erstellen</option></select>
+        <button id="songNewBtn" type="button" class="secondary">Neuer Song</button>
+      </div>
+      <form id="songForm">
+        <div class="song-fields">
+          <label for="songFileName">Dateiname (ohne .txt)
+            <input id="songFileName" type="text" required maxlength="124" placeholder="z. B. arbeitsversion_03" autocomplete="off">
+          </label>
+          <label for="songTitle">Songtitel (Arbeitstitel)
+            <input id="songTitle" type="text" required maxlength="200" placeholder="Mein Song" autocomplete="off">
+          </label>
+        </div>
+        <label class="song-check" for="songAltEnabled">
+          <input id="songAltEnabled" type="checkbox">
+          Anderen Veröffentlichungstitel verwenden (optional)
+        </label>
+        <div id="songAltContainer" hidden>
+          <label for="songAltTitle">Veröffentlichungstitel
+            <input id="songAltTitle" type="text" maxlength="200" placeholder="Öffentlicher Titel für YouTube und Suno">
+          </label>
+          <p class="small">Nur bei eingeschalteter Option wirksam. Der Dateiname bleibt unverändert.</p>
+        </div>
+        <p class="song-preview">Wirksamer Titel: <strong id="songPublishedPreview">Noch kein Titel</strong></p>
+        <label for="songLyrics">Songtext</label>
+        <textarea id="songLyrics" rows="11" spellcheck="true" placeholder="[INTRO]&#10;&#10;[VERSE]&#10;..."></textarea>
+        <p id="songLyricsCount" class="small">0 Zeichen</p>
+        <div class="actions">
+          <button id="songSaveBtn" type="submit" class="primary">Song speichern</button>
+          <button id="songExportBtn" type="button" class="secondary" disabled>TXT exportieren</button>
+          <button id="songCopyBtn" type="button" class="secondary" disabled>Titel kopieren</button>
+        </div>
+        <p id="songStatus" role="status" aria-live="polite" class="small">Nur lokale Speicherung.</p>
+      </form>
+    </dialog>
 
     <div id="live" class="visually-hidden" aria-live="polite"></div>
   </div>

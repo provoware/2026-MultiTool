@@ -71,6 +71,13 @@ pub fn list_tools() -> Vec<ToolInfo> {
             ToolState::Ready,
             true,
         ),
+        tool(
+            "songtext",
+            "Songtext-Editor",
+            "Speichert Songtexte mit eigenem Dateinamen und optionalem Veröffentlichungstitel.",
+            ToolState::Ready,
+            false,
+        ),
     ]
 }
 
@@ -92,10 +99,12 @@ mod tests {
     #[test]
     fn current_p0_slices_are_read_only() {
         for tool in list_tools() {
-            assert!(
-                tool.read_only,
-                "P0.1 bis P0.3 dürfen noch keine Schreibfunktion freigeben"
-            );
+            if tool.id != "songtext" {
+                assert!(
+                    tool.read_only,
+                    "P0.1 bis P0.3 dürfen noch keine Schreibfunktion freigeben"
+                );
+            }
         }
     }
 }

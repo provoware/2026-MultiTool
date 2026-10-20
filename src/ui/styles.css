@@ -75,3 +75,26 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--focus); outline
   .card { transition: transform .15s ease; }
   .card:hover { transform: translateY(-1px); }
 }
+
+
+.song-dialog { width: min(880px, calc(100vw - 20px)); max-height: calc(100dvh - 20px); overflow: auto; border: 1px solid var(--line); border-radius: 16px; padding: clamp(12px, 3vw, 24px); color: var(--text); background: var(--panel); }
+.song-dialog::backdrop { background: rgba(18, 24, 39, .66); }
+.song-dialog-head { display: flex; gap: 12px; justify-content: space-between; align-items: flex-start; }
+.song-dialog-head h2 { margin: 0; }
+.song-dialog-head p { margin: 4px 0 14px; }
+.song-select-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 12px; align-items: end; margin-bottom: 14px; }
+.song-select-row label { grid-column: 1 / -1; }
+.song-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.song-dialog label:not(.song-check) { display: block; font-weight: 700; }
+.song-dialog input[type="text"], .song-dialog select, .song-dialog textarea { width: 100%; min-width: 0; min-height: 44px; padding: 8px 12px; color: var(--text); background: var(--panel); border: 1px solid #8994a6; border-radius: 8px; font: inherit; }
+.song-dialog textarea { min-height: 170px; resize: vertical; }
+.song-dialog input:focus-visible, .song-dialog select:focus-visible, .song-dialog textarea:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.song-check { display: flex; min-height: 44px; gap: 10px; align-items: center; margin: 14px 0; cursor: pointer; }
+.song-check input { width: 22px; height: 22px; accent-color: var(--blue); }
+.song-preview { padding: 8px 12px; border-left: 4px solid var(--blue); background: #eef2ff; overflow-wrap: anywhere; }
+.song-dialog #songAltContainer { margin-bottom: 12px; }
+@media (max-width: 540px) {
+  .song-dialog-head { flex-wrap: wrap; }
+  .song-fields, .song-select-row { grid-template-columns: minmax(0, 1fr); }
+  .song-select-row label { grid-column: auto; }
+}
