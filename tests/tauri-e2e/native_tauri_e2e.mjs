@@ -162,6 +162,8 @@ try {
 
   // Native SQLite-Probe: Erstellen, alternativen Titel ein-/ausschalten,
   // Daten erhalten und nach erneutem Öffnen kontrollieren.
+  const archiveControls = await execute(firstSession, "return Boolean(document.getElementById('songImportBtn') && document.getElementById('songBackupBtn') && document.getElementById('songImportFiles'))");
+  assert(archiveControls, 'Archiv-/Import-Bedienelemente fehlen.');
   await click(firstSession, '#songEditorOpenBtn');
   await waitFor(async () => await execute(firstSession, "return document.getElementById('songEditorDialog')?.open === true"), {
     label:'Songtext-Dialog geöffnet',
