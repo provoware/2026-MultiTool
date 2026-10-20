@@ -145,3 +145,7 @@ Der maschinenlesbare kanonische Stand liegt in [PROJECT_STATUS.json](PROJECT_STA
 ## Leitregel
 
 > **klein → nachvollziehbar → reversibel → testbar → grün → nächster Schritt**
+
+## Songtext-Editor (neuer Baustein)
+
+Lokal gespeicherte Songtexte haben einen getrennten **Dateinamen**, **Songtitel** und optionalen **Veröffentlichungstitel**. Start in der Werkzeug-Zentrale. Siehe [Songtext-Dokumentation](docs/SONGTEXT_EDITOR.md).

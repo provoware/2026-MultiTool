@@ -107,6 +107,60 @@ async function screenshot(driver, filename) {
   await writeFile(resolve(EVIDENCE, filename), Buffer.from(base64, 'base64'));
 }
 
+async function verifySongEditorSmallViewport(driver, url) {
+  const matrix = [
+    { width:800, height:600, zoom:100 },
+    { width:457, height:343, zoom:175 },
+    { width:400, height:300, zoom:200 },
+  ];
+  // iframe benutzt echte CSS-Viewports mit den äquivalenten Größen
+  // eines 800×600-Ausgangsfensters bei 175 % bzw. 200 %.
+  await wd(driver.base, 'POST', `/session/${driver.sessionId}/window/rect`, { width:1000, height:800 });
+  const results = [];
+  for (const item of matrix) {
+    const frameScript = [
+      "document.getElementById('songTestFrame')?.remove();",
+      "const frame=document.createElement('iframe');",
+      "frame.id='songTestFrame';",
+      "frame.title='Songtext-Editor Layouttest';",
+      "frame.src=" + JSON.stringify(url) + ";",
+      "frame.style.cssText=" + JSON.stringify('position:fixed;top:0;left:0;z-index:2147483647;background:white;border:0;width:' + item.width + 'px;height:' + item.height + 'px;') + ";",
+      "document.body.append(frame);",
+      "return true;",
+    ].join('\n');
+    await execute(driver, frameScript);
+    await waitFor(async () => await execute(driver,
+      "const frame=document.getElementById('songTestFrame');return Boolean(frame?.contentDocument?.getElementById('songEditorDialog') && frame.contentDocument.readyState==='complete');"),
+    { label:`${driver.browser}: Songdialog bei ${item.zoom}% geladen` });
+    const metrics = await execute(driver, "const frame=document.getElementById('songTestFrame');\nconst d=frame.contentDocument;\nconst win=frame.contentWindow;\nconst dialog=d.getElementById('songEditorDialog');\ndialog.showModal();\nconst change=(id,value)=>{const el=d.getElementById(id);el.value=value;el.dispatchEvent(new Event('input',{bubbles:true}));};\nchange('songFileName','arbeitsdatei_09');\nchange('songTitle','Interner Titel');\nchange('songAltTitle','Der öffentliche Titel');\nd.getElementById('songAltEnabled').click();\nconst alternativeIsVisible=!d.getElementById('songAltContainer').hidden;\nconst published=d.getElementById('songPublishedPreview').textContent;\nconst ids=['songFileName','songTitle','songAltTitle','songLyrics','songList','songNewBtn','songCloseBtn','songSaveBtn','songExportBtn','songCopyBtn'];\nconst elements=ids.map(id=>{const el=d.getElementById(id),r=el.getBoundingClientRect();return {id,left:r.left,right:r.right,width:r.width,height:r.height};});\nconst check=d.querySelector('.song-check').getBoundingClientRect();\nconst rect=dialog.getBoundingClientRect();\nconst viewport={width:win.innerWidth,height:win.innerHeight};\ndialog.scrollTop=dialog.scrollHeight;\nconst atBottom=d.getElementById('songCopyBtn').getBoundingClientRect();\nreturn {viewport,screenOverflow:d.documentElement.scrollWidth,dialogScrollWidth:dialog.scrollWidth,dialogClientWidth:dialog.clientWidth,dialogScrollHeight:dialog.scrollHeight,dialogClientHeight:dialog.clientHeight,rect:{left:rect.left,right:rect.right,top:rect.top,bottom:rect.bottom},elements,checkHeight:check.height,alternativeIsVisible,published,exportDisabled:d.getElementById('songExportBtn').disabled,buttonBottom:atBottom.bottom,buttonTop:atBottom.top};");
+    assert(metrics.viewport.width === item.width && metrics.viewport.height === item.height,
+      `${driver.browser}@${item.zoom}%: Testfenster hat falsche effektive Größe.`);
+    assert(metrics.screenOverflow <= item.width + 2,
+      `${driver.browser}@${item.zoom}%: Hauptansicht hat horizontales Überlaufen.`);
+    assert(metrics.rect.left >= -1 && metrics.rect.right <= item.width + 1,
+      `${driver.browser}@${item.zoom}%: Dialog horizontal abgeschnitten.`);
+    assert(metrics.rect.top >= -1 && metrics.rect.bottom <= item.height + 1,
+      `${driver.browser}@${item.zoom}%: Dialog vertikal nicht im Testfenster.`);
+    assert(metrics.dialogScrollWidth <= metrics.dialogClientWidth + 2,
+      `${driver.browser}@${item.zoom}%: Dialog benötigt horizontales Scrollen.`);
+    assert(metrics.elements.every(el=>el.width >= 1 && el.height >= 44 && el.left >= -1 && el.right <= item.width + 1),
+      `${driver.browser}@${item.zoom}%: Formularfeld oder Schaltfläche abgeschnitten/zu klein.`);
+    assert(metrics.checkHeight >= 44, `${driver.browser}@${item.zoom}%: Umschalter zu klein.`);
+    assert(metrics.alternativeIsVisible && metrics.published === 'Der öffentliche Titel' && metrics.exportDisabled,
+      `${driver.browser}@${item.zoom}%: Titelschalter oder ungespeicherter Exportzustand fehlerhaft.`);
+    assert(metrics.buttonTop >= -1 && metrics.buttonBottom <= item.height + 1,
+      `${driver.browser}@${item.zoom}%: Schaltfläche am Dialogende nicht durch vertikales Scrollen erreichbar.`);
+    if (item.zoom > 100) {
+      assert(metrics.dialogScrollHeight > metrics.dialogClientHeight,
+        `${driver.browser}@${item.zoom}%: Ein kleiner Dialog muss vertikal scrollbar bleiben.`);
+    }
+    await screenshot(driver, `${driver.browser}-song-editor-${item.zoom}.png`);
+    results.push({ zoom:item.zoom, viewport:metrics.viewport, verticalScroll:metrics.dialogScrollHeight > metrics.dialogClientHeight });
+  }
+  await execute(driver, "document.getElementById('songTestFrame')?.remove();return true;");
+  return results;
+}
+
 async function runBrowser(browser, url) {
   const driver = await startDriver(browser);
   try {
@@ -193,7 +247,8 @@ async function runBrowser(browser, url) {
       await screenshot(driver, `${browser}-${zoom}.png`);
     }
 
-    return { browser, version:driver.capabilities.browserVersion ?? 'unknown', safeWithoutNativeCore:'PASS', workspaceVisibility:'PASS', workspaceSessionOnly:'PASS', contrast:'PASS', reducedMotion:'PASS', layoutLevels:matrix.length, driverTail:driver.output().slice(-300) };
+    const songEditorViewports = await verifySongEditorSmallViewport(driver, url);
+    return { browser, version:driver.capabilities.browserVersion ?? 'unknown', safeWithoutNativeCore:'PASS', workspaceVisibility:'PASS', workspaceSessionOnly:'PASS', contrast:'PASS', reducedMotion:'PASS', layoutLevels:matrix.length, songEditorViewports, driverTail:driver.output().slice(-300) };
   } finally {
     await stopDriver(driver);
   }
@@ -206,7 +261,7 @@ const results = [];
 try {
   for (const browser of browsers) results.push(await runBrowser(browser, staticServer.url));
   await writeFile(resolve(EVIDENCE, 'evidence.json'), JSON.stringify({ status:'PASS', method:'static browser visual acceptance; native behavior is tested separately in Tauri E2E', results }, null, 2));
-  console.log('🟢 Browser-Ansicht: Firefox + Chrome PASS · flexible Sitzungssicht · 100–200 % · Kontrast · Reduced Motion · sicherer Zustand ohne nativen Kern');
+  console.log('🟢 Browser-Ansicht: Firefox + Chrome PASS · flexible Sitzungssicht · 100–200 % · Songtext-Editor bei 800×600/175–200 % · Kontrast · Reduced Motion · sicherer Zustand ohne nativen Kern');
 } finally {
   await new Promise((resolveClose) => staticServer.server.close(resolveClose));
 }

@@ -1,3 +1,4 @@
+import { setupSongEditor } from './song-editor.mjs';
 import { storageStatePresentation } from './storage-display.mjs';
 import {
   WORKSPACE_PANELS,
@@ -302,5 +303,6 @@ $('shutdownBtn').addEventListener('click', async () => {
 });
 
 setupWorkspaceControls();
+setupSongEditor(runtimeInvoke);
 setStorageActionsEnabled(false);
 await refresh();
