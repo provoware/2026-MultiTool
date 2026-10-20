@@ -109,6 +109,14 @@ fn save_songtext(
 }
 
 #[tauri::command]
+fn import_songtexts(
+    state: State<'_, RuntimeState>,
+    songs: Vec<song_editor::SongInput>,
+) -> Result<Vec<song_editor::Song>, String> {
+    song_editor::import_many(&state.database_path, songs)
+}
+
+#[tauri::command]
 fn create_checkpoint(
     state: State<'_, RuntimeState>,
     reason: Option<String>,
@@ -159,6 +167,7 @@ pub fn run() {
             load_or_create_project_state,
             list_songtexts,
             save_songtext,
+            import_songtexts,
             create_checkpoint,
             request_shutdown
         ])
