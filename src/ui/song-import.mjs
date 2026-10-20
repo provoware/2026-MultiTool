@@ -18,7 +18,7 @@ export function validateSong(song) {
   const { file_name: name, title, alternate_title: alternate, lyrics } = song;
   if (typeof name !== 'string' || !name.trim() || name.trim().length > 120
     || name.trim().startsWith('.') || name.trim().endsWith('.')
-    || /[<>:"/\\|?*\x00-\x1f\x7f]/.test(name)) {
+    || /[<>:"\/\\|?*\x00-\x1f\x7f]/.test(name)) {
     throw new Error('Ungültiger Dateiname. Bitte Dateinamen ohne Pfadangaben verwenden.');
   }
   if (typeof title !== 'string' || !title.trim() || [...title.trim()].length > 200) {
