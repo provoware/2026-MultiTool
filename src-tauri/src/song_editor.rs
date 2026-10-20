@@ -180,8 +180,8 @@ pub fn save(path: &Path, input: SongInput) -> Result<Song, String> {
 /// Übernimmt eine Dateiauswahl als eine einzige Datenbanktransaktion:
 /// Ein Fehler oder Namenskonflikt macht die gesamte Auswahl rückgängig.
 pub fn import_many(path: &Path, songs: Vec<SongInput>) -> Result<Vec<Song>, String> {
-    if songs.is_empty() || songs.len() > 50 {
-        return Err("Bitte 1 bis 50 Songtexte pro Import auswählen.".to_string());
+    if songs.is_empty() || songs.len() > 1000 {
+        return Err("Bitte 1 bis 1000 Songtexte pro Import auswählen.".to_string());
     }
     let validated = songs
         .iter()
