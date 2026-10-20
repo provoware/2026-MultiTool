@@ -1,3 +1,5 @@
+import { createSongBackup, downloadSongFile, prepareSongImport } from './song-import.mjs';
+
 export function publishedTitle(song) {
   const other = (song.alternate_title ?? '').trim();
   return song.alternate_title_enabled && other ? other : (song.title ?? '').trim();
@@ -152,15 +154,80 @@ export function setupSongEditor(invokeRuntime) {
   $('songExportBtn').addEventListener('click', () => {
     if (dirty || activeId === null) return;
     const song = current();
-    const url = URL.createObjectURL(new Blob([songtextExport(song)], { type: 'text/plain;charset=utf-8' }));
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = songtextFileName(song);
-    document.body.append(link);
-    link.click();
-    link.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    downloadSongFile(songtextFileName(song), songtextExport(song));
     status('TXT mit unverändertem Dateinamen und gewähltem Veröffentlichungstitel erstellt.');
+  });
+
+  // Bedienung und Dateilogik bleiben getrennt: Nur explizites Bestätigen
+  // löst den atomaren Import im nativen Programmkern aus.
+  $('songImportBtn').addEventListener('click', () => {
+    if (!busy) $('songImportFiles').click();
+  });
+
+  $('songImportFiles').addEventListener('change', async (event) => {
+    const selected = Array.from(event.target.files ?? []);
+    event.target.value = '';
+    if (selected.length === 0 || busy) return;
+    if (!canDiscard()) {
+      status('Import abgebrochen. Ungespeicherte Änderungen bleiben erhalten.');
+      return;
+    }
+    busy = true;
+    $('songImportBtn').disabled = true;
+    $('songBackupBtn').disabled = true;
+    refreshPreview();
+    try {
+      const existing = await invokeRuntime()('list_songtexts');
+      const preview = await prepareSongImport(selected, existing);
+      if (preview.songs.length === 0) {
+        status('Keine neue Datei importiert: ' + preview.skipped.length + ' bereits vorhanden.');
+        return;
+      }
+      const summary = preview.songs.length + ' neue Songtexte importieren?'
+        + (preview.skipped.length ? '\n' + preview.skipped.length + ' vorhandene oder doppelte Namen werden übersprungen.' : '')
+        + '\nOriginaldateien bleiben unverändert. Bei einem Datenbankfehler wird die gesamte Auswahl zurückgesetzt.';
+      if (!window.confirm(summary)) {
+        status('Import abgebrochen. Es wurde nichts verändert.');
+        return;
+      }
+      const added = await invokeRuntime()('import_songtexts', { songs: preview.songs });
+      await load(added[0]?.id ?? null);
+      status('🟢 ' + added.length + ' Songtexte importiert.'
+        + (preview.skipped.length ? ' ' + preview.skipped.length + ' vorhandene übersprungen.' : '')
+        + ' Originaldateien unverändert.');
+    } catch (error) {
+      status('🔴 Import abgebrochen: ' + (error?.message ?? error)
+        + '. Die Originaldateien wurden nicht verändert.', true);
+    } finally {
+      busy = false;
+      $('songImportBtn').disabled = false;
+      $('songBackupBtn').disabled = false;
+      refreshPreview();
+    }
+  });
+
+  $('songBackupBtn').addEventListener('click', async () => {
+    if (busy) return;
+    if (dirty) {
+      status('Bitte zuerst Änderungen speichern; die Sicherung enthält nur gespeicherte Daten.', true);
+      return;
+    }
+    busy = true;
+    $('songBackupBtn').disabled = true;
+    try {
+      const records = await invokeRuntime()('list_songtexts');
+      const now = new Date();
+      const content = createSongBackup(records, now);
+      const filename = 'provoware-songtexte-' + now.toISOString().slice(0, 10) + '.json';
+      downloadSongFile(filename, content, 'application/json;charset=utf-8');
+      status('🟢 Sicherung mit ' + records.length + ' Songtexten erstellt. Datei an sicherem Ort aufbewahren.');
+    } catch (error) {
+      status('🔴 Sicherung fehlgeschlagen: ' + (error?.message ?? error), true);
+    } finally {
+      busy = false;
+      $('songBackupBtn').disabled = false;
+      refreshPreview();
+    }
   });
 
   $('songCopyBtn').addEventListener('click', async () => {
