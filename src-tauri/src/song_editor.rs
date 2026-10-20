@@ -187,7 +187,9 @@ pub fn import_many(path: &Path, songs: Vec<SongInput>) -> Result<Vec<Song>, Stri
         .iter()
         .map(|song| {
             if song.id.is_some() {
-                return Err("Importdateien dürfen keine bestehende Songkennung überschreiben.".to_string());
+                return Err(
+                    "Importdateien dürfen keine bestehende Songkennung überschreiben.".to_string(),
+                );
             }
             validate(song)
         })
@@ -295,7 +297,10 @@ mod tests {
         fresh.file_name = "neue_datei".into();
         fresh.id = None;
         let failed = import_many(&path, vec![fresh.clone(), draft()]);
-        assert!(failed.is_err(), "Doppelte Datei muss den ganzen Import stoppen");
+        assert!(
+            failed.is_err(),
+            "Doppelte Datei muss den ganzen Import stoppen"
+        );
         let after_failure = list(&path).expect("Prüfen");
         assert_eq!(after_failure.len(), 1, "Kein halber Import");
         assert_eq!(after_failure[0].lyrics, original.lyrics);
@@ -306,7 +311,10 @@ mod tests {
 
         let mut malicious = draft();
         malicious.id = Some(original.id);
-        assert!(import_many(&path, vec![malicious]).is_err(), "IDs nicht übernehmbar");
+        assert!(
+            import_many(&path, vec![malicious]).is_err(),
+            "IDs nicht übernehmbar"
+        );
         let _ = fs::remove_file(path);
     }
 
