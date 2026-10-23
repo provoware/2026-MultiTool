@@ -12,7 +12,7 @@
     "test:foundation:workspace": "node tests/foundation/workspace_visibility_contract.mjs",
     "test:foundation:browser": "node tests/foundation/desktop_browser_visual_acceptance.mjs",
     "check": "npm run lint && npm run test:foundation:knowledge && npm run test:foundation:storage-display && npm run test:foundation:workspace && npm run test:foundation:songtext && npm run test:foundation:song-import",
-    "ci:governance": "node scripts/ci/check-governance.mjs",
+    "ci:governance": "node scripts/ci/check-governance.mjs && node scripts/ci/check-action-pinning.mjs && node --test tests/ci/action_pin_contract.test.mjs",
     "ci:schnell": "npm run ci:governance && npm run check",
     "ci:freigabe-schutztest": "node scripts/ci/release-preflight.mjs --self-test-blocked",
     "ci:tief": "npm run ci:governance && npm run check && npm run test:foundation:browser && npm run ci:freigabe-schutztest",

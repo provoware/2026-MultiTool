@@ -19,7 +19,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Entwicklungsbranch laden
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7 · official tag verified 2026-10-23
         with:
           ref: ${{ github.ref_name }}
           fetch-depth: 0
