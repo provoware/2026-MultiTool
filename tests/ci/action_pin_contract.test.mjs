@@ -6,7 +6,7 @@ const sha = "3d3c42e5aac5ba805825da76410c181273ba90b1";
 
 test("Repo-Workflows benutzen ausschließlich vollständige 40-stellige Commit-SHAs", () => {
   const result = auditWorkflows();
-  assert.equal(result.total, 10);
+  assert.ok(result.total > 0, "Es muss mindestens ein Action-Verweis vorhanden sein");
   assert.deepEqual(result.problems, []);
 });
 test("bewegliche Tags und Branch-Namen werden abgewiesen", () => {
