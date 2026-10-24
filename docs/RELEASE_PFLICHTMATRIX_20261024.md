@@ -31,3 +31,20 @@
 - **Blocker:** FREIGABE und persönliche Kubuntu-/Sicht-Endabnahme bleiben bis zur vollständigen Projekt-Reife gesperrt.
 - **Nächster Schritt:** PR #41 anhand der vollständigen Gates für kontrollierte Integration bewerten; anschließend weitere offene Fach- und Recovery-Pflichten priorisieren.
 - **Dokumentations-Commit:** Nachtrag der Prüfnachweise verändert keine Produktdatei; die GitHub-Gates für den neuen Dokumentations-HEAD müssen gesondert bewertet werden.
+
+## 24.10.2026 · CI-Diagnose bei sporadischem WebDriver-Timeout (Issue #42)
+
+**Ausgangszweig/HEAD:** `feature/p05b-workspace-persistence-20261024` / `823ea033e7247b8fed6c57d03b3347784c1eb76a` · **PR:** #41 · **letzter Implementierungs-HEAD vor Dokumentationsnachtrag:** `2e05fc219b598366a176f68f3ca118549d03b6c0`.
+
+| Teilpflicht | Umsetzung / überprüfbares Kriterium | Stand |
+| --- | --- | --- |
+| Fehlerdiagnose | Bei nicht abgefangenem Browserfehler Browser, Version (soweit verfügbar), Phase, effektive Fenstergröße, Operation und Zeitlimit ausgeben; keine HTTP-Nutzdaten, Sitzungskennungen oder URL-Parameter | IMPLEMENTIERT; neuer GitHub-HEAD noch zu prüfen |
+| Schutz vor Treiberleichen | Wenn WebDriver-Start oder Sitzungserstellung fehlschlägt, gestarteten eigenen Treiber beenden | IMPLEMENTIERT; Integration noch zu prüfen |
+| Regression | Separate Node-Prüfung für Timeout, Transportfehler, Fehlerklasse, Kontext und Schwärzung; über `npm run check` auch in SCHNELL/TIEF | LOKAL PASS (Node 22, gezielter Test); GitHub-CI noch zu prüfen |
+| Reproduzierbarkeit unter Last | Sporadischen 47-Sekunden-Timeout in wiederholten CI-Läufen gezielt erfassen | OFFEN; bisher nur einmal beobachtet |
+| Begrenzte Wiederholung | Nur nach reproduzierbarem Transportfehler und nachweislich ohne Testabschwächung | NICHT IMPLEMENTIERT; kein blindes Wiederholen von Assertions |
+| Release-Reife | Alle Fachfunktionen, frischer Pakettest, Schutzregeln und vollständige Endabnahme | BLOCKED; keine Veröffentlichung |
+
+**Bewertung:** Ein erfolgreiches erneutes CI-Gate bestätigt die technische Integration der Diagnose, nicht die Beseitigung der vermuteten sporadischen Ursache. Vorherige grüne Läufe von PR #41 beziehen sich auf den alten HEAD und werden nicht auf diesen Patch übertragen.
+
+**Nächster zulässiger Schritt:** Neue SCHNELL-/TIEF-Gates am finalen HEAD auswerten; danach wiederholte Firefox-/Chromium-Läufe mit technischen Phasenbelegen prüfen und Issue #42 erst nach belastbarem Nachweis schließen.
