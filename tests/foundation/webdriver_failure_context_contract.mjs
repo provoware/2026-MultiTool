@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { formatWebDriverDiagnostic } from './webdriver_failure_context.mjs';
+import { formatWebDriverDiagnostic, sessionStartupTimeoutMs } from './webdriver_failure_context.mjs';
 
 const base = {
   browser:'firefox', version:'153.0', phase:'responsive-layout',
@@ -27,4 +27,7 @@ const invalid = formatWebDriverDiagnostic({
 });
 assert.doesNotMatch(invalid, /\n|PASSWORD|secret|password=/);
 assert.match(invalid, /viewport=0x-1@0%/);
+assert.equal(sessionStartupTimeoutMs('firefox'), 90000);
+assert.equal(sessionStartupTimeoutMs('chrome'), 15000);
+assert.equal(sessionStartupTimeoutMs('unknown'), 15000);
 console.log('🟢 WebDriver-Diagnose: Kontext, Zeitüberschreitung, Transport und Datenschutz PASS');
