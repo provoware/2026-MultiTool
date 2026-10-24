@@ -1,5 +1,5 @@
 // Ausschließlich technische Testkontexte ausgeben; niemals HTTP-Inhalte oder Session-IDs.
-const token = (value, max = 40) => String(value ?? 'unbekannt').replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, max);
+const token = (value, max = 40) => String(value ?? 'unbekannt').split(/[^a-zA-Z0-9._-]/)[0].slice(0, max) || 'unbekannt';
 
 export function formatWebDriverDiagnostic({ browser, version, phase, viewport, request, error }) {
   const kind = ['TimeoutError', 'AbortError'].includes(error?.name) ? 'TIMEOUT'
