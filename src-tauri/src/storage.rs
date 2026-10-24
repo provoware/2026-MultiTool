@@ -1,8 +1,9 @@
 use rusqlite::{params, Connection, OptionalExtension};
 use serde::Serialize;
-use std::{path::Path, time::Duration};
+use std::{collections::BTreeMap, path::Path, time::Duration};
 
 const SCHEMA_VERSION: i64 = 1;
+const WORKSPACE_SECTION_IDS: [&str; 4] = ["today", "system-status", "storage", "tools"];
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 pub struct ProjectState {
@@ -21,6 +22,8 @@ pub struct Checkpoint {
     pub at: String,
     pub reason: String,
 }
+
+pub type WorkspaceVisibility = BTreeMap<String, bool>;
 
 fn db_error(error: rusqlite::Error) -> String {
     format!("Datenbankfehler: {error}")
@@ -60,6 +63,11 @@ pub fn init(path: &Path) -> Result<(), String> {
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 at TEXT NOT NULL,
                 reason TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS workspace_visibility (
+                section_id TEXT PRIMARY KEY CHECK (section_id IN ('today','system-status','storage','tools')),
+                visible INTEGER NOT NULL CHECK (visible IN (0,1))
             );
             ",
         )
@@ -138,6 +146,76 @@ pub fn create_checkpoint(path: &Path, reason: &str) -> Result<Checkpoint, String
         .map_err(db_error)
 }
 
+fn default_workspace_visibility() -> WorkspaceVisibility {
+    WORKSPACE_SECTION_IDS
+        .into_iter()
+        .map(|section_id| (section_id.to_string(), true))
+        .collect()
+}
+
+fn validate_workspace_section(section_id: &str) -> Result<(), String> {
+    if WORKSPACE_SECTION_IDS.contains(&section_id) {
+        Ok(())
+    } else {
+        Err("Unbekannter Arbeitsbereich. Die Ansicht wurde nicht gespeichert.".to_string())
+    }
+}
+
+pub fn load_workspace_visibility(path: &Path) -> Result<WorkspaceVisibility, String> {
+    let connection = open(path)?;
+    let mut visibility = default_workspace_visibility();
+    let mut statement = connection
+        .prepare("SELECT section_id, visible FROM workspace_visibility")
+        .map_err(db_error)?;
+    let rows = statement
+        .query_map([], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, bool>(1)?))
+        })
+        .map_err(db_error)?;
+
+    for row in rows {
+        let (section_id, visible) = row.map_err(db_error)?;
+        validate_workspace_section(&section_id)?;
+        visibility.insert(section_id, visible);
+    }
+    Ok(visibility)
+}
+
+pub fn set_workspace_visibility(
+    path: &Path,
+    section_id: &str,
+    visible: bool,
+) -> Result<WorkspaceVisibility, String> {
+    validate_workspace_section(section_id)?;
+    let mut connection = open(path)?;
+    let transaction = connection.transaction().map_err(db_error)?;
+    transaction
+        .execute(
+            "INSERT INTO workspace_visibility (section_id, visible) VALUES (?1, ?2)
+             ON CONFLICT(section_id) DO UPDATE SET visible = excluded.visible",
+            params![section_id, visible],
+        )
+        .map_err(db_error)?;
+    transaction.commit().map_err(db_error)?;
+    load_workspace_visibility(path)
+}
+
+pub fn reset_workspace_visibility(path: &Path) -> Result<WorkspaceVisibility, String> {
+    let mut connection = open(path)?;
+    let transaction = connection.transaction().map_err(db_error)?;
+    for section_id in WORKSPACE_SECTION_IDS {
+        transaction
+            .execute(
+                "INSERT INTO workspace_visibility (section_id, visible) VALUES (?1, 1)
+                 ON CONFLICT(section_id) DO UPDATE SET visible = 1",
+                params![section_id],
+            )
+            .map_err(db_error)?;
+    }
+    transaction.commit().map_err(db_error)?;
+    Ok(default_workspace_visibility())
+}
+
 pub fn health(path: &Path) -> Result<(), String> {
     let connection = open(path)?;
     let value: i64 = connection
@@ -199,6 +277,53 @@ mod tests {
         assert!(second.id > first.id);
         assert_eq!(first.reason, "TEST_EINS");
         assert_eq!(second.reason, "TEST_ZWEI");
+        cleanup(&path);
+    }
+
+    #[test]
+    fn workspace_visibility_defaults_persist_and_stay_idempotent() {
+        let path = test_path("workspace-visibility");
+        init(&path).expect("Schema anlegen");
+        let project_before =
+            load_or_create_project_state(&path, "projekt-workspace").expect("Projektzustand");
+
+        let defaults = load_workspace_visibility(&path).expect("Standardansicht lesen");
+        assert!(WORKSPACE_SECTION_IDS
+            .iter()
+            .all(|section_id| defaults.get(*section_id) == Some(&true)));
+
+        let hidden = set_workspace_visibility(&path, "storage", false).expect("Speichern");
+        assert_eq!(hidden.get("storage"), Some(&false));
+        let again =
+            set_workspace_visibility(&path, "storage", false).expect("Idempotent speichern");
+        assert_eq!(again, hidden);
+        let reopened = load_workspace_visibility(&path).expect("Erneut lesen");
+        assert_eq!(reopened.get("storage"), Some(&false));
+
+        let project_after =
+            load_or_create_project_state(&path, "anderer-wert").expect("Projekt erneut lesen");
+        assert_eq!(project_before, project_after);
+        cleanup(&path);
+    }
+
+    #[test]
+    fn workspace_visibility_rejects_unknown_and_reset_restores_defaults() {
+        let path = test_path("workspace-reset");
+        init(&path).expect("Schema anlegen");
+        set_workspace_visibility(&path, "tools", false).expect("Werkzeug-Zentrale ausblenden");
+
+        let error = set_workspace_visibility(&path, "nicht-bekannt", false)
+            .expect_err("Unbekannter Bereich muss abgelehnt werden");
+        assert!(error.contains("Unbekannter Arbeitsbereich"));
+
+        let reset = reset_workspace_visibility(&path).expect("Ansicht zurücksetzen");
+        assert!(WORKSPACE_SECTION_IDS
+            .iter()
+            .all(|section_id| reset.get(*section_id) == Some(&true)));
+        assert_eq!(
+            load_workspace_visibility(&path).expect("Reset erneut lesen"),
+            reset
+        );
         cleanup(&path);
     }
 }

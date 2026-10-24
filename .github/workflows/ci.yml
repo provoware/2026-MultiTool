@@ -96,13 +96,14 @@ jobs:
           cargo clippy --locked --all-targets --all-features -- -D warnings
           echo "🟢 Rust-Qualitätsgate vollständig bestanden."
 
-      - name: Schnelle Speicher-Unit-Tests ausfuehren
+      - name: Schnelle Kern-Unit-Tests ausfuehren
         if: steps.tauri.outputs.present == 'true'
         working-directory: src-tauri
         run: |
-          echo "🟡 P0.4-Kernlogik wird mit gezielten Unit-Tests geprüft."
+          echo "🟡 P0.4-Speicherlogik und P0.5b-Ansichtspersistenz werden gezielt geprüft."
           cargo test --locked --lib storage_overview::tests
-          echo "🟢 Speicher-Unit-Tests vollständig bestanden."
+          cargo test --locked --lib workspace_visibility_
+          echo "🟢 Gezielte Kern-Unit-Tests vollständig bestanden."
 
       - name: Diagnose nur bei Fehler sichern
         if: failure()

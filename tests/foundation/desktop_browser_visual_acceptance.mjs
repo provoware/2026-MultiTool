@@ -186,42 +186,38 @@ async function runBrowser(browser, url) {
     assert(workspaceInitial.panels.length === 4 && workspaceInitial.panels.every((item) => item.hidden === false), `${browser}: Standardansicht zeigt nicht alle Bereiche.`);
     assert(workspaceInitial.summary.includes('Standardansicht'), `${browser}: Standardstatus der Arbeitsfläche fehlt.`);
 
-    const hiddenStorage = await execute(driver, `
-      document.querySelector('[data-workspace-toggle="storage"]').click();
-      return {
-        hidden:document.querySelector('[data-workspace-panel="storage"]').hidden,
-        checked:document.querySelector('[data-workspace-toggle="storage"]').checked,
-        summary:document.getElementById('workspaceSummary').textContent,
-        live:document.getElementById('live').textContent
-      };
-    `);
-    assert(hiddenStorage.hidden === true && hiddenStorage.checked === false, `${browser}: Speicherbereich lässt sich nicht ausblenden.`);
-    assert(hiddenStorage.summary.includes('3 von 4'), `${browser}: Sichtbarkeitsstatus wird nicht verständlich aktualisiert.`);
-    assert(hiddenStorage.live.includes('Speicherübersicht') && hiddenStorage.live.includes('ausgeblendet'), `${browser}: Screenreader-Rückmeldung beim Ausblenden fehlt.`);
+    await execute(driver, `document.querySelector('[data-workspace-toggle="storage"]').click(); return true;`);
+    await waitFor(async () => (await execute(driver, `return document.getElementById('live').textContent`)).includes('ausgeblendet'), { label:`${browser}: Speicherbereich ausgeblendet` });
+    const hiddenStorage = await execute(driver, `return {
+      hidden:document.querySelector('[data-workspace-panel="storage"]').hidden,
+      checked:document.querySelector('[data-workspace-toggle="storage"]').checked,
+      summary:document.getElementById('workspaceSummary').textContent,
+      help:document.getElementById('workspaceHelp').textContent
+    }`);
+    assert(hiddenStorage.hidden && !hiddenStorage.checked && hiddenStorage.summary.includes('3 von 4'), `${browser}: Speicherbereich nicht korrekt ausgeblendet.`);
+    assert(hiddenStorage.help.includes('Sitzung'), `${browser}: Browser-Fallback ohne nativen Kern nicht erklärt.`);
 
-    const resetWorkspace = await execute(driver, `
-      document.querySelector('[data-workspace-toggle="tools"]').click();
-      document.getElementById('workspaceResetBtn').click();
-      return {
-        allVisible:[...document.querySelectorAll('[data-workspace-panel]')].every(e=>e.hidden===false),
-        allChecked:[...document.querySelectorAll('[data-workspace-toggle]')].every(e=>e.checked===true),
-        summary:document.getElementById('workspaceSummary').textContent,
-        live:document.getElementById('live').textContent
-      };
-    `);
-    assert(resetWorkspace.allVisible && resetWorkspace.allChecked, `${browser}: Ansicht zurücksetzen stellt die Standardansicht nicht wieder her.`);
-    assert(resetWorkspace.summary.includes('Standardansicht'), `${browser}: Reset-Status fehlt.`);
-    assert(resetWorkspace.live.includes('Standardansicht'), `${browser}: Screenreader-Rückmeldung beim Reset fehlt.`);
+    await execute(driver, `document.querySelector('[data-workspace-toggle="tools"]').click();return true;`);
+    await waitFor(async () => (await execute(driver, `return document.getElementById('live').textContent`)).includes('Werkzeug-Zentrale'), { label:`${browser}: Werkzeug-Zentrale ausgeblendet` });
+    await execute(driver, `document.getElementById('workspaceResetBtn').click();return true;`);
+    await waitFor(async () => (await execute(driver, `return document.getElementById('live').textContent`)).includes('Standardansicht'), { label:`${browser}: Ansicht zurückgesetzt` });
+    const resetWorkspace = await execute(driver, `return {
+      allVisible:[...document.querySelectorAll('[data-workspace-panel]')].every(e=>e.hidden===false),
+      allChecked:[...document.querySelectorAll('[data-workspace-toggle]')].every(e=>e.checked===true),
+      summary:document.getElementById('workspaceSummary').textContent
+    }`);
+    assert(resetWorkspace.allVisible && resetWorkspace.allChecked && resetWorkspace.summary.includes('Standardansicht'), `${browser}: Reset unvollständig.`);
 
     await execute(driver, `document.querySelector('[data-workspace-toggle="system-status"]').click(); return true;`);
+    await waitFor(async () => (await execute(driver, `return document.getElementById('live').textContent`)).includes('Systemstatus'), { label:`${browser}: Systemstatus ausgeblendet` });
     await wd(driver.base, 'POST', `/session/${driver.sessionId}/url`, { url });
-    await waitFor(async () => (await execute(driver, `return document.getElementById('overall')?.textContent || ''`)).includes('Programmkern nicht erreichbar'), { label:`${browser} Sitzungslokalität` });
+    await waitFor(async () => (await execute(driver, `return document.getElementById('overall')?.textContent || ''`)).includes('Programmkern nicht erreichbar'), { label:`${browser}: Sitzungslokalität` });
     const afterReload = await execute(driver, `return {
       systemVisible:document.querySelector('[data-workspace-panel="system-status"]').hidden===false,
       toggleChecked:document.querySelector('[data-workspace-toggle="system-status"]').checked===true,
       summary:document.getElementById('workspaceSummary').textContent
     }`);
-    assert(afterReload.systemVisible && afterReload.toggleChecked && afterReload.summary.includes('Standardansicht'), `${browser}: Sichtbarkeit wurde unerlaubt dauerhaft gespeichert.`);
+    assert(afterReload.systemVisible && afterReload.toggleChecked && afterReload.summary.includes('Standardansicht'), `${browser}: Browser-Fallback wurde unerlaubt dauerhaft gespeichert.`);
 
     const contrast = await execute(driver, `
       function rgb(v){const m=v.match(/rgba?\\((\\d+),\\s*(\\d+),\\s*(\\d+)/);return m?[+m[1],+m[2],+m[3]]:null}
