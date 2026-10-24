@@ -5,9 +5,9 @@ import { fileURLToPath } from "node:url";
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const WORKFLOWS = join(ROOT, ".github", "workflows");
 // YAML permits quoted keys and values; these must not bypass the pinning gate.
-const USES = /^\s*(?:-\s*)?(?:uses|"uses"|\'uses\')\s*:\s*(?:"([^"]*)"|\'([^\']*)\'|([^\s#]+))?/gm;
+const USES = /^\s*(?:-\s*)?(?:uses|"uses"|'uses')\s*:\s*(?:"([^"]*)"|'([^']*)'|([^\s#]+))?/gm;
 const PIN = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+(?:\/[A-Za-z0-9_.-]+)*@[0-9a-f]{40}$/;
-const LOCAL = /^\.\/[A-Za-z0-9_.\/-]+$/;
+const LOCAL = /^\.\/[A-Za-z0-9_./-]+$/;
 
 export function inspectWorkflow(source, name = "workflow.yml") {
   const findings = [];
