@@ -54,3 +54,12 @@
 - **Nachweis:** [PR-CI #40091531903](https://github.com/provoware/2026-MultiTool/actions/runs/40091531903) auf `a86b9f4`: SCHNELL **PASS**, TIEF **FAIL** bei `POST /session` in Firefox nach exakt 45 Sekunden. Neue Diagnose erfasst `browser=firefox`, `phase=session-create`, `timeout_ms=45000`; Diagnose-Unit-Test in derselben CI **PASS**. Damit ist der Timeout reproduziert, nicht bloß vermutet.
 - **Reparatur:** Firefox-Sessionstart erhält ein **endliches Limit von 90 Sekunden**, Chromium bleibt bei 15 Sekunden. Grenzwerte sind durch Regression festgelegt; kein erneuter Testversuch, keine übersprungene Assertion. Bei Fehlern zusätzlich nur gefilterte Treiberstatusmerkmale ohne Rohlogs.
 - **Status:** Änderung implementiert (Code-HEAD `b3365dfdc9b3fe32eb900f8fb7984586dc889ecb`); vollständige GitHub-Gates für den nachfolgenden finalen HEAD erneut erforderlich. Ob 90 Sekunden den CI-Engpass tatsächlich beseitigen, ist bis zum neuen TIEF-Ergebnis **UNBESTÄTIGT**.
+
+### Tatsächliche GitHub-Nachprüfung des reparierten Codes (24.10.2026)
+
+- **Getesteter HEAD:** `8f783163bbc7507dffdd38dcd40872ea025be157` auf `feature/p05b-workspace-persistence-20261024`.
+- [Push-CI #40091904291](https://github.com/provoware/2026-MultiTool/actions/runs/40091904291): **SCHNELL PASS**, **TIEF PASS**, FREIGABE nicht gestartet.
+- [PR-CI #40091908039](https://github.com/provoware/2026-MultiTool/actions/runs/40091908039): **SCHNELL PASS**, **TIEF PASS**, FREIGABE nicht gestartet.
+- Enthaltene Prüfungen: neue Diagnoseregression, Firefox/Chrome-Browsermatrix einschließlich 800 × 600 und hoher Skalierung, Rust-Integration und nativer Tauri-E2E. Der zuvor reproduzierte 45-Sekunden-Fehler trat in diesen beiden Läufen nicht erneut auf. **Einzelne erfolgreiche Läufe sind kein Beleg für dauerhaft behobene Sporadik.**
+- **Verbleibend:** wiederholte CI-Lastläufe zur Stabilität, PR #40 (unabhängige Sicherheitsarbeit), Integration und gesamte offene Release-Matrix einschließlich frischem Pakettest. Persönliche Endabnahme ausschließlich am vollständig eingefrorenen Release-Kandidaten.
+- **Wichtig:** Dieser Dokumentationsnachtrag erzeugt einen neuen HEAD; die genannten CI-Nachweise gehören ausschließlich zum oben genannten Code-HEAD, nicht automatisch zum Dokumentations-HEAD.
