@@ -68,6 +68,8 @@ Drag-and-Drop-Layouts | Panels flexibel verschiebbar/skalierbar machen, Einstell
 - [ ] Neuen HEAD durch GitHub-SCHNELL und TIEF einschließlich Browser und nativer Tauri-Tests prüfen.
 - [x] Firefox-WebDriver-Sitzungsstart in GitHub-TIEF nach 45 Sekunden reproduziert (PR-CI #40091531903); Diagnose meldet exakte Phase und Zeitlimit.
 - [x] Firefox-Startlimit begrenzt auf 90 Sekunden erhöht, Chromium bleibt bei 15 Sekunden; Grenzwerte durch Regression abgesichert.
-- [ ] Mit neuer GitHub-TIEF-Prüfung nachweisen, ob der Sitzungsaufbau innerhalb 90 Sekunden gelingt; bei weiterem Fehler Ursache anhand sicherer Statusmerkmale eingrenzen. Keine Assertions überspringen.
+- [x] Reparierten Code-HEAD 8f783163 in GitHub-Push #40091904291 und PR #40091908039 vollständig prüfen: SCHNELL/TIEF jeweils PASS, Firefox-Sitzungsstart erfolgreich.
+- [ ] Sporadische Firefox-Sitzungsstartprobleme mit wiederholten CI-Lastläufen weiter eingrenzen; keine Assertions überspringen.
+- [ ] Dokumentations-HEAD nach Aktualisierung der Release-Pflichtmatrix erneut in GitHub-SCHNELL/TIEF prüfen.
 - [ ] PR #41 und unabhängigen Sicherheits-PR #40 nach vollständigen grünen Gates konfliktfrei integrieren.
 - [ ] Gesamte Release-Pflichtmatrix abarbeiten; Paket-/Kubuntu-/Sicht-Endabnahme ausschließlich vor Veröffentlichung.
