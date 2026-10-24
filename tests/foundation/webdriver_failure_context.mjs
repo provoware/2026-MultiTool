@@ -17,3 +17,9 @@ export function formatWebDriverDiagnostic({ browser, version, phase, viewport, r
     + ' request=' + token(request?.method, 8) + ' ' + path
     + ' timeout_ms=' + timeout;
 }
+
+// Zeitlimit ist endlich und browserspezifisch. Firefox brauchte am 24.10.2026
+// in GitHub-CI beim Sitzungsaufbau länger als das vorherige 45-Sekunden-Limit.
+export function sessionStartupTimeoutMs(browser) {
+  return browser === 'firefox' ? 90000 : 15000;
+}
