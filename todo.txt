@@ -60,3 +60,12 @@ Drag-and-Drop-Layouts | Panels flexibel verschiebbar/skalierbar machen, Einstell
 - [ ] README/Projektstatus mit dem tatsächlichen Tauri-Stand vereinheitlichen; historische Foundation-Angaben als solche kennzeichnen.
 - [ ] Vollständige Fachmodule, Daten-Recovery, Installations-/Paketnachweis, Lasttests, Bedienbarkeit und Release-FREIGABE abschließen. Persönliche Kubuntu-/Sicht-Endabnahme erst unmittelbar vor Veröffentlichung.
 - Matrix: `docs/RELEASE_PFLICHTMATRIX_20261024.md`; Kandidat-Commit `cc7d09a`; PR https://github.com/provoware/2026-MultiTool/pull/41.
+
+# Releasepflicht CI-Stabilität · Issue #42 · 24.10.2026
+- [x] Im Browser-Sichttest sichere WebDriver-Diagnose (Browser/Version/Phase/Viewport/Operation/Timeout) ergänzen.
+- [x] Eigenen Browser-Treiber bei fehlgeschlagenem Start/Sitzungsaufbau kontrolliert beenden.
+- [x] Diagnoseregression gegen geheime HTTP-Inhalte und Sitzungskennungen ergänzen; in SCHNELL/TIEF einbinden.
+- [ ] Neuen HEAD durch GitHub-SCHNELL und TIEF einschließlich Browser und nativer Tauri-Tests prüfen.
+- [ ] Sporadische WebDriver-Zeitüberschreitung unter CI-Last reproduzieren bzw. mit wiederholten Läufen eingrenzen; nur technische Transportfehler begrenzt wiederholen, niemals Assertions überspringen.
+- [ ] PR #41 und unabhängigen Sicherheits-PR #40 nach vollständigen grünen Gates konfliktfrei integrieren.
+- [ ] Gesamte Release-Pflichtmatrix abarbeiten; Paket-/Kubuntu-/Sicht-Endabnahme ausschließlich vor Veröffentlichung.
