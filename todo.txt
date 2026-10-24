@@ -66,6 +66,8 @@ Drag-and-Drop-Layouts | Panels flexibel verschiebbar/skalierbar machen, Einstell
 - [x] Eigenen Browser-Treiber bei fehlgeschlagenem Start/Sitzungsaufbau kontrolliert beenden.
 - [x] Diagnoseregression gegen geheime HTTP-Inhalte und Sitzungskennungen ergänzen; in SCHNELL/TIEF einbinden.
 - [ ] Neuen HEAD durch GitHub-SCHNELL und TIEF einschließlich Browser und nativer Tauri-Tests prüfen.
-- [ ] Sporadische WebDriver-Zeitüberschreitung unter CI-Last reproduzieren bzw. mit wiederholten Läufen eingrenzen; nur technische Transportfehler begrenzt wiederholen, niemals Assertions überspringen.
+- [x] Firefox-WebDriver-Sitzungsstart in GitHub-TIEF nach 45 Sekunden reproduziert (PR-CI #40091531903); Diagnose meldet exakte Phase und Zeitlimit.
+- [x] Firefox-Startlimit begrenzt auf 90 Sekunden erhöht, Chromium bleibt bei 15 Sekunden; Grenzwerte durch Regression abgesichert.
+- [ ] Mit neuer GitHub-TIEF-Prüfung nachweisen, ob der Sitzungsaufbau innerhalb 90 Sekunden gelingt; bei weiterem Fehler Ursache anhand sicherer Statusmerkmale eingrenzen. Keine Assertions überspringen.
 - [ ] PR #41 und unabhängigen Sicherheits-PR #40 nach vollständigen grünen Gates konfliktfrei integrieren.
 - [ ] Gesamte Release-Pflichtmatrix abarbeiten; Paket-/Kubuntu-/Sicht-Endabnahme ausschließlich vor Veröffentlichung.
