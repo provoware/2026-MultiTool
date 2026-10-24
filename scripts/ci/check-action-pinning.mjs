@@ -4,17 +4,22 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const WORKFLOWS = join(ROOT, ".github", "workflows");
-const USES = /^\s*(?:-\s*)?uses:\s*([^\s#]+)/gm;
-const PIN = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+(?:\/[^@\s]+)?@[0-9a-f]{40}$/;
+// YAML permits quoted keys and values; these must not bypass the pinning gate.
+const USES = /^\s*(?:-\s*)?(?:uses|"uses"|\'uses\')\s*:\s*(?:"([^"]*)"|\'([^\']*)\'|([^\s#]+))?/gm;
+const PIN = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+(?:\/[A-Za-z0-9_.-]+)*@[0-9a-f]{40}$/;
+const LOCAL = /^\.\/[A-Za-z0-9_.\/-]+$/;
 
 export function inspectWorkflow(source, name = "workflow.yml") {
   const findings = [];
   let found = 0;
   for (const match of source.matchAll(USES)) {
     found += 1;
-    if (!PIN.test(match[1])) {
+    const ref = match[1] ?? match[2] ?? match[3] ?? "";
+    // Local repository actions need no external SHA, but may not traverse upward.
+    const local = LOCAL.test(ref) && !ref.split("/").slice(1).includes("..");
+    if (!PIN.test(ref) && !local) {
       const line = source.slice(0, match.index).split("\n").length;
-      findings.push(`${name}:${line}: unveränderliche 40-stellige Action-Commitkennung fehlt: ${match[1]}`);
+      findings.push(`${name}:${line}: unveränderliche 40-stellige Action-Commitkennung fehlt: ${ref || "(leer)"}`);
     }
   }
   return { found, findings };
