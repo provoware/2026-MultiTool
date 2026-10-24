@@ -48,3 +48,9 @@
 **Bewertung:** Ein erfolgreiches erneutes CI-Gate bestätigt die technische Integration der Diagnose, nicht die Beseitigung der vermuteten sporadischen Ursache. Vorherige grüne Läufe von PR #41 beziehen sich auf den alten HEAD und werden nicht auf diesen Patch übertragen.
 
 **Nächster zulässiger Schritt:** Neue SCHNELL-/TIEF-Gates am finalen HEAD auswerten; danach wiederholte Firefox-/Chromium-Läufe mit technischen Phasenbelegen prüfen und Issue #42 erst nach belastbarem Nachweis schließen.
+
+### Reproduzierter Fehler und gezielte Korrektur (24.10.2026)
+
+- **Nachweis:** [PR-CI #40091531903](https://github.com/provoware/2026-MultiTool/actions/runs/40091531903) auf `a86b9f4`: SCHNELL **PASS**, TIEF **FAIL** bei `POST /session` in Firefox nach exakt 45 Sekunden. Neue Diagnose erfasst `browser=firefox`, `phase=session-create`, `timeout_ms=45000`; Diagnose-Unit-Test in derselben CI **PASS**. Damit ist der Timeout reproduziert, nicht bloß vermutet.
+- **Reparatur:** Firefox-Sessionstart erhält ein **endliches Limit von 90 Sekunden**, Chromium bleibt bei 15 Sekunden. Grenzwerte sind durch Regression festgelegt; kein erneuter Testversuch, keine übersprungene Assertion. Bei Fehlern zusätzlich nur gefilterte Treiberstatusmerkmale ohne Rohlogs.
+- **Status:** Änderung implementiert (Code-HEAD `b3365dfdc9b3fe32eb900f8fb7984586dc889ecb`); vollständige GitHub-Gates für den nachfolgenden finalen HEAD erneut erforderlich. Ob 90 Sekunden den CI-Engpass tatsächlich beseitigen, ist bis zum neuen TIEF-Ergebnis **UNBESTÄTIGT**.
