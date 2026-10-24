@@ -91,16 +91,22 @@ async function startDriver(browser) {
   let output = '';
   child.stdout.on('data', (chunk) => { output += chunk.toString(); });
   child.stderr.on('data', (chunk) => { output += chunk.toString(); });
-  const base = `http://127.0.0.1:${port}`;
-  trace.phase = 'driver-ready';
-  await waitFor(async () => (await fetch(`${base}/status`, { signal: AbortSignal.timeout(500) })).ok, { label:`${browser} WebDriver` });
-  const alwaysMatch = browser === 'firefox'
-    ? { browserName:'firefox', 'moz:firefoxOptions':{ args:['-headless'], prefs:{ 'ui.prefersReducedMotion':1 } } }
-    : { browserName:'chrome', 'goog:chromeOptions':{ args:['--headless=new','--no-sandbox','--disable-dev-shm-usage','--force-prefers-reduced-motion'] } };
-  trace.phase = 'session-create';
-  const created = await wd(base, 'POST', '/session', { capabilities:{ alwaysMatch } }, browser === 'firefox' ? 45000 : 15000);
-  trace.version = created.capabilities?.browserVersion ?? 'unknown';
-  return { browser, child, base, sessionId:created.sessionId, output:() => output, capabilities:created.capabilities ?? {} };
+  try {
+    const base = `http://127.0.0.1:${port}`;
+    trace.phase = 'driver-ready';
+    await waitFor(async () => (await fetch(`${base}/status`, { signal: AbortSignal.timeout(500) })).ok, { label:`${browser} WebDriver` });
+    const alwaysMatch = browser === 'firefox'
+      ? { browserName:'firefox', 'moz:firefoxOptions':{ args:['-headless'], prefs:{ 'ui.prefersReducedMotion':1 } } }
+      : { browserName:'chrome', 'goog:chromeOptions':{ args:['--headless=new','--no-sandbox','--disable-dev-shm-usage','--force-prefers-reduced-motion'] } };
+    trace.phase = 'session-create';
+    const created = await wd(base, 'POST', '/session', { capabilities:{ alwaysMatch } }, browser === 'firefox' ? 45000 : 15000);
+    trace.version = created.capabilities?.browserVersion ?? 'unknown';
+    return { browser, child, base, sessionId:created.sessionId, output:() => output, capabilities:created.capabilities ?? {} };
+  } catch (error) {
+    // Bei gescheiterter Readiness oder Session-Erstellung keinen Testtreiber zurücklassen.
+    if (child.exitCode === null) child.kill('SIGTERM');
+    throw error;
+  }
 }
 
 async function stopDriver(driver) {
