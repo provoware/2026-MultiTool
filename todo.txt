@@ -51,3 +51,12 @@ Gemeinsame UI-Basis | Zentrales CSS/JS für Buttons, Panels, Kontrast- und Fokus
 Mehrere Farb-Themes | Mindestens zwei AA-konforme Themes definieren und in Tools auswählbar machen | mittel | open
 Import/Export pro Tool | Klartext- und JSON-Export/Import für alle Datensichten bereitstellen | mittel | open
 Drag-and-Drop-Layouts | Panels flexibel verschiebbar/skalierbar machen, Einstellungen persistieren | niedrig | open
+
+
+# Vorrelease-Pflichten – aktueller Nachweis (24.10.2026)
+- [x] P0.5b: Arbeitsflächen-Sichtbarkeit über Tauri/SQLite lokal speichern, nach Neustart wiederherstellen, Reset dauerhaft speichern; JavaScript-/Rust-/Browser-/native Regression am Code-HEAD `cc7d09a375ce0b8e7f309d902ecae8bafea54fb8` durch GitHub-SCHNELL/TIEF bestätigt (Push #40047226252, PR #40047237782).
+- [ ] PR #41 auf `feature/p05b-workspace-persistence-20261024` nach aktuellen grünen Gates kontrolliert bewerten und integrieren; keine Veröffentlichung.
+- [ ] Offene Sicherheitspflicht aus PR #40 (GitHub-Actions-SHA-Pinning) unabhängig prüfen und integrieren.
+- [ ] README/Projektstatus mit dem tatsächlichen Tauri-Stand vereinheitlichen; historische Foundation-Angaben als solche kennzeichnen.
+- [ ] Vollständige Fachmodule, Daten-Recovery, Installations-/Paketnachweis, Lasttests, Bedienbarkeit und Release-FREIGABE abschließen. Persönliche Kubuntu-/Sicht-Endabnahme erst unmittelbar vor Veröffentlichung.
+- Matrix: `docs/RELEASE_PFLICHTMATRIX_20261024.md`; Kandidat-Commit `cc7d09a`; PR https://github.com/provoware/2026-MultiTool/pull/41.
