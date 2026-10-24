@@ -30,3 +30,35 @@ test("eine fremde bewegliche Action zwischen sicheren Referenzen bleibt sichtbar
   assert.equal(c.found, 2);
   assert.equal(c.findings.length, 1);
 });
+
+test("zitierte YAML-Schlüssel und Werte können die SHA-Prüfung nicht umgehen", () => {
+  for (const line of [
+    "- 'uses': actions/checkout@v7",
+    '- "uses": "actions/checkout@main"',
+    "- uses: 'actions/checkout@v7'"
+  ]) {
+    const result = inspectWorkflow(`${line}\n`);
+    assert.equal(result.found, 1, line);
+    assert.equal(result.findings.length, 1, line);
+  }
+  assert.deepEqual(inspectWorkflow(`- "uses": "actions/checkout@${sha}"\n`).findings, []);
+});
+
+test("lokale Repository-Aktionen sind zulässig, Pfad-Ausbrüche nicht", () => {
+  assert.deepEqual(inspectWorkflow("- uses: ./.github/actions/build\n").findings, []);
+  assert.equal(inspectWorkflow("- uses: ./../outside\n").findings.length, 1);
+});
+
+test("leere, dynamische und veränderliche Docker-Referenzen werden abgewiesen", () => {
+  for (const line of ["- uses: # fehlt", "- uses: ${{ inputs.action }}", "- uses: docker://ubuntu:latest"]) {
+    const result = inspectWorkflow(`${line}\n`);
+    assert.equal(result.found, 1, line);
+    assert.equal(result.findings.length, 1, line);
+  }
+});
+
+test("externes wiederverwendbares Workflow-Ziel braucht ebenfalls vollen SHA", () => {
+  const path = "owner/repo/.github/workflows/build.yml";
+  assert.deepEqual(inspectWorkflow(`uses: ${path}@${sha}\n`).findings, []);
+  assert.equal(inspectWorkflow(`uses: ${path}@main\n`).findings.length, 1);
+});
