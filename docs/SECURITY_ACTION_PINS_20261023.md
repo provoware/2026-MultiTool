@@ -24,3 +24,11 @@ Die Tag-Refs wurden mit GitHub-API `GET /repos/actions/<action>/git/ref/tags/<ve
 - **Restrisiko:** 40-stellige Referenzen schützen vor nachträglichem Tag-Verschieben, nicht vor einem bereits kompromittierten ausgewählten Commit. Vertrauenswürdige Herausgeber, Reviews und künftige Updates bleiben erforderlich.
 - **Scope:** Sicherheit der CI-Ladekette, keine Anwendungslaufzeit, Datenmigration, Installation oder Veröffentlichung.
 - **Basis:** `32cb69fc4e23b2f20c89d817ed589d05c7aaaf0b`; **Branch:** `security/pin-actions-to-verified-sha-20261023`.
+
+## Nachhärtung am 24.10.2026 – Umgehung durch YAML-Schreibweisen
+
+**Reproduzierter Befund:** Der ursprüngliche zeilenbasierte Scanner erkannte gültige zitierte YAML-Schlüssel wie `'uses': actions/checkout@v7` nicht. Ein beweglicher externer Action-Verweis konnte deshalb trotz vorhandener Sicherheitsprüfung unbemerkt bleiben. Außerdem wurden zulässige lokale Repository-Aktionen (`./.github/actions/...`) fälschlich als externe ungesicherte Verweise behandelt.
+
+**Korrektur:** Zitierte und unzitierte `uses`-Schlüssel sowie zitierte Werte werden einheitlich geprüft. Externe Aktionen und wiederverwendbare Workflows erfordern weiterhin eine vollständige 40-stellige Commitkennung. Lokale Aktionen bleiben ohne externen SHA zulässig, aber Pfadausbrüche über `..` werden abgewiesen. Leere und dynamische Verweise gelten als unsicher. Vier neue Regressionstests prüfen die Varianten; die bisherige Schutzregel wurde nicht abgeschwächt.
+
+**Nachweisstatus:** Implementierung auf Entwicklungszweig; `SCHNELL` und `TIEF` müssen auf dem neuen HEAD erneut erfolgreich laufen. Gesamtprojekt nicht vorrelease-fertig. PR bleibt Entwurf, keine Freigabe, kein Merge, keine Veröffentlichung. Als nächste Pflicht sind GitHub-Gates am finalen Commit zu prüfen; danach die Integration mit PR #41 konfliktfrei vorbereiten.
