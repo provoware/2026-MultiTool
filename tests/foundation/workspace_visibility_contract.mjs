@@ -5,12 +5,13 @@ import {
   resetWorkspaceVisibility,
   setWorkspacePanelVisibility,
   visibleWorkspaceCount,
+  workspaceVisibilityFromBackend,
 } from '../../src/ui/workspace-visibility.mjs';
 
 assert.deepEqual(
   WORKSPACE_PANELS.map((panel) => panel.id),
   ['today', 'system-status', 'storage', 'tools'],
-  'P0.5a darf nur die vier festgelegten Bereiche steuern.',
+  'P0.5 darf nur die vier festgelegten Bereiche steuern.',
 );
 
 const defaults = defaultWorkspaceVisibility();
@@ -36,4 +37,15 @@ assert.throws(
   'Unbekannte Bereiche dürfen nicht still akzeptiert werden.',
 );
 
-console.log('🟢 Flexible Arbeitsfläche: VISIBLE/HIDDEN und Reset sind deterministisch und rein sitzungslokal definiert.');
+assert.deepEqual(
+  workspaceVisibilityFromBackend({ storage:false, tools:false, fremd:false }),
+  { today:true, 'system-status':true, storage:false, tools:false },
+  'Backend-Zustand darf nur bekannte boolesche Bereichswerte übernehmen.',
+);
+assert.deepEqual(
+  workspaceVisibilityFromBackend({ storage:0, today:'false' }),
+  defaults,
+  'Ungültige Backend-Werte müssen sicher auf sichtbar zurückfallen.',
+);
+
+console.log('🟢 Flexible Arbeitsfläche: Sichtbarkeit, Reset und sichere Backend-Übernahme sind deterministisch definiert.');

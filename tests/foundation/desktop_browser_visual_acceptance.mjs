@@ -3,11 +3,13 @@ import { spawn } from 'node:child_process';
 import { access, mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { constants as fsConstants } from 'node:fs';
 import { extname, join, normalize, resolve } from 'node:path';
+import { formatWebDriverDiagnostic, sessionStartupTimeoutMs } from './webdriver_failure_context.mjs';
 
 const ROOT = resolve(new URL('../..', import.meta.url).pathname);
 const PUBLIC = resolve(ROOT, 'src/ui');
 const EVIDENCE = resolve(ROOT, 'runtime/browser-acceptance');
 const browsers = ['firefox', 'chrome'];
+const trace = { browser:'unknown', version:'unknown', phase:'initial', viewport:null, request:null };
 const types = { '.html':'text/html; charset=utf-8', '.css':'text/css; charset=utf-8', '.mjs':'text/javascript; charset=utf-8' };
 
 const assert = (condition, message) => { if (!condition) throw new Error(message); };
@@ -64,6 +66,9 @@ async function startStaticServer() {
 }
 
 async function wd(base, method, path, body, timeoutMs = 10000) {
+  // Nur der letzte fehlgeschlagene Transportaufruf wird protokolliert.
+  // Weder Session-IDs noch Anfragedaten gehören in den Fehlernachweis.
+  trace.request = { method, path, timeoutMs };
   const response = await fetch(`${base}${path}`, {
     method,
     headers: body === undefined ? undefined : { 'content-type':'application/json' },
@@ -73,6 +78,7 @@ async function wd(base, method, path, body, timeoutMs = 10000) {
   const text = await response.text();
   const payload = text ? JSON.parse(text) : null;
   if (!response.ok || payload?.value?.error) throw new Error(payload?.value?.message ?? text ?? `${response.status}`);
+  trace.request = null;
   return payload?.value ?? payload;
 }
 
@@ -85,13 +91,24 @@ async function startDriver(browser) {
   let output = '';
   child.stdout.on('data', (chunk) => { output += chunk.toString(); });
   child.stderr.on('data', (chunk) => { output += chunk.toString(); });
-  const base = `http://127.0.0.1:${port}`;
-  await waitFor(async () => (await fetch(`${base}/status`, { signal: AbortSignal.timeout(500) })).ok, { label:`${browser} WebDriver` });
-  const alwaysMatch = browser === 'firefox'
-    ? { browserName:'firefox', 'moz:firefoxOptions':{ args:['-headless'], prefs:{ 'ui.prefersReducedMotion':1 } } }
-    : { browserName:'chrome', 'goog:chromeOptions':{ args:['--headless=new','--no-sandbox','--disable-dev-shm-usage','--force-prefers-reduced-motion'] } };
-  const created = await wd(base, 'POST', '/session', { capabilities:{ alwaysMatch } }, browser === 'firefox' ? 45000 : 15000);
-  return { browser, child, base, sessionId:created.sessionId, output:() => output, capabilities:created.capabilities ?? {} };
+  try {
+    const base = `http://127.0.0.1:${port}`;
+    trace.phase = 'driver-ready';
+    await waitFor(async () => (await fetch(`${base}/status`, { signal: AbortSignal.timeout(500) })).ok, { label:`${browser} WebDriver` });
+    const alwaysMatch = browser === 'firefox'
+      ? { browserName:'firefox', 'moz:firefoxOptions':{ args:['-headless'], prefs:{ 'ui.prefersReducedMotion':1 } } }
+      : { browserName:'chrome', 'goog:chromeOptions':{ args:['--headless=new','--no-sandbox','--disable-dev-shm-usage','--force-prefers-reduced-motion'] } };
+    trace.phase = 'session-create';
+    const created = await wd(base, 'POST', '/session', { capabilities:{ alwaysMatch } }, sessionStartupTimeoutMs(browser));
+    trace.version = created.capabilities?.browserVersion ?? 'unknown';
+    return { browser, child, base, sessionId:created.sessionId, output:() => output, capabilities:created.capabilities ?? {} };
+  } catch (error) {
+    // Nur technische Statusmerkmale ausgeben, niemals Treiber-Logzeilen oder Nutzdaten.
+    console.error(`[WebDriver start-status] browser=${browser} driver_exit=${child.exitCode ?? 'running'} output_bytes=${Buffer.byteLength(output)} marionette_seen=${/Marionette/i.test(output)}`);
+    // Bei gescheiterter Readiness oder Session-Erstellung keinen Testtreiber zurücklassen.
+    if (child.exitCode === null) child.kill('SIGTERM');
+    throw error;
+  }
 }
 
 async function stopDriver(driver) {
@@ -118,6 +135,8 @@ async function verifySongEditorSmallViewport(driver, url) {
   await wd(driver.base, 'POST', `/session/${driver.sessionId}/window/rect`, { width:1000, height:800 });
   const results = [];
   for (const item of matrix) {
+    trace.phase = 'song-editor-layout';
+    trace.viewport = item;
     const frameScript = [
       "document.getElementById('songTestFrame')?.remove();",
       "const frame=document.createElement('iframe');",
@@ -162,8 +181,15 @@ async function verifySongEditorSmallViewport(driver, url) {
 }
 
 async function runBrowser(browser, url) {
-  const driver = await startDriver(browser);
+  trace.browser = browser;
+  trace.version = 'unknown';
+  trace.phase = 'driver-start';
+  trace.viewport = null;
+  trace.request = null;
+  let driver;
   try {
+    driver = await startDriver(browser);
+    trace.phase = 'safe-state';
     await wd(driver.base, 'POST', `/session/${driver.sessionId}/url`, { url });
     await waitFor(async () => (await execute(driver, `return document.getElementById('overall')?.textContent || ''`)).includes('Programmkern nicht erreichbar'), { label:`${browser} sicherer Browserzustand` });
 
@@ -177,6 +203,7 @@ async function runBrowser(browser, url) {
     assert(safety.disabled, `${browser}: Aktionen sind ohne nativen Programmkern nicht gesperrt.`);
     assert(safety.live === 'polite', `${browser}: ARIA-Live-Region fehlt.`);
 
+    trace.phase = 'workspace-visibility';
     const workspaceInitial = await execute(driver, `return {
       toggles:[...document.querySelectorAll('[data-workspace-toggle]')].map(e=>({id:e.dataset.workspaceToggle,checked:e.checked,label:document.querySelector('label[for="'+e.id+'"]')?.textContent.trim()||''})),
       panels:[...document.querySelectorAll('[data-workspace-panel]')].map(e=>({id:e.dataset.workspacePanel,hidden:e.hidden})),
@@ -186,43 +213,40 @@ async function runBrowser(browser, url) {
     assert(workspaceInitial.panels.length === 4 && workspaceInitial.panels.every((item) => item.hidden === false), `${browser}: Standardansicht zeigt nicht alle Bereiche.`);
     assert(workspaceInitial.summary.includes('Standardansicht'), `${browser}: Standardstatus der Arbeitsfläche fehlt.`);
 
-    const hiddenStorage = await execute(driver, `
-      document.querySelector('[data-workspace-toggle="storage"]').click();
-      return {
-        hidden:document.querySelector('[data-workspace-panel="storage"]').hidden,
-        checked:document.querySelector('[data-workspace-toggle="storage"]').checked,
-        summary:document.getElementById('workspaceSummary').textContent,
-        live:document.getElementById('live').textContent
-      };
-    `);
-    assert(hiddenStorage.hidden === true && hiddenStorage.checked === false, `${browser}: Speicherbereich lässt sich nicht ausblenden.`);
-    assert(hiddenStorage.summary.includes('3 von 4'), `${browser}: Sichtbarkeitsstatus wird nicht verständlich aktualisiert.`);
-    assert(hiddenStorage.live.includes('Speicherübersicht') && hiddenStorage.live.includes('ausgeblendet'), `${browser}: Screenreader-Rückmeldung beim Ausblenden fehlt.`);
+    await execute(driver, `document.querySelector('[data-workspace-toggle="storage"]').click(); return true;`);
+    await waitFor(async () => (await execute(driver, `return document.getElementById('live').textContent`)).includes('ausgeblendet'), { label:`${browser}: Speicherbereich ausgeblendet` });
+    const hiddenStorage = await execute(driver, `return {
+      hidden:document.querySelector('[data-workspace-panel="storage"]').hidden,
+      checked:document.querySelector('[data-workspace-toggle="storage"]').checked,
+      summary:document.getElementById('workspaceSummary').textContent,
+      help:document.getElementById('workspaceHelp').textContent
+    }`);
+    assert(hiddenStorage.hidden && !hiddenStorage.checked && hiddenStorage.summary.includes('3 von 4'), `${browser}: Speicherbereich nicht korrekt ausgeblendet.`);
+    assert(hiddenStorage.help.includes('Sitzung'), `${browser}: Browser-Fallback ohne nativen Kern nicht erklärt.`);
 
-    const resetWorkspace = await execute(driver, `
-      document.querySelector('[data-workspace-toggle="tools"]').click();
-      document.getElementById('workspaceResetBtn').click();
-      return {
-        allVisible:[...document.querySelectorAll('[data-workspace-panel]')].every(e=>e.hidden===false),
-        allChecked:[...document.querySelectorAll('[data-workspace-toggle]')].every(e=>e.checked===true),
-        summary:document.getElementById('workspaceSummary').textContent,
-        live:document.getElementById('live').textContent
-      };
-    `);
-    assert(resetWorkspace.allVisible && resetWorkspace.allChecked, `${browser}: Ansicht zurücksetzen stellt die Standardansicht nicht wieder her.`);
-    assert(resetWorkspace.summary.includes('Standardansicht'), `${browser}: Reset-Status fehlt.`);
-    assert(resetWorkspace.live.includes('Standardansicht'), `${browser}: Screenreader-Rückmeldung beim Reset fehlt.`);
+    await execute(driver, `document.querySelector('[data-workspace-toggle="tools"]').click();return true;`);
+    await waitFor(async () => (await execute(driver, `return document.getElementById('live').textContent`)).includes('Werkzeug-Zentrale'), { label:`${browser}: Werkzeug-Zentrale ausgeblendet` });
+    await execute(driver, `document.getElementById('workspaceResetBtn').click();return true;`);
+    await waitFor(async () => (await execute(driver, `return document.getElementById('live').textContent`)).includes('Standardansicht'), { label:`${browser}: Ansicht zurückgesetzt` });
+    const resetWorkspace = await execute(driver, `return {
+      allVisible:[...document.querySelectorAll('[data-workspace-panel]')].every(e=>e.hidden===false),
+      allChecked:[...document.querySelectorAll('[data-workspace-toggle]')].every(e=>e.checked===true),
+      summary:document.getElementById('workspaceSummary').textContent
+    }`);
+    assert(resetWorkspace.allVisible && resetWorkspace.allChecked && resetWorkspace.summary.includes('Standardansicht'), `${browser}: Reset unvollständig.`);
 
     await execute(driver, `document.querySelector('[data-workspace-toggle="system-status"]').click(); return true;`);
+    await waitFor(async () => (await execute(driver, `return document.getElementById('live').textContent`)).includes('Systemstatus'), { label:`${browser}: Systemstatus ausgeblendet` });
     await wd(driver.base, 'POST', `/session/${driver.sessionId}/url`, { url });
-    await waitFor(async () => (await execute(driver, `return document.getElementById('overall')?.textContent || ''`)).includes('Programmkern nicht erreichbar'), { label:`${browser} Sitzungslokalität` });
+    await waitFor(async () => (await execute(driver, `return document.getElementById('overall')?.textContent || ''`)).includes('Programmkern nicht erreichbar'), { label:`${browser}: Sitzungslokalität` });
     const afterReload = await execute(driver, `return {
       systemVisible:document.querySelector('[data-workspace-panel="system-status"]').hidden===false,
       toggleChecked:document.querySelector('[data-workspace-toggle="system-status"]').checked===true,
       summary:document.getElementById('workspaceSummary').textContent
     }`);
-    assert(afterReload.systemVisible && afterReload.toggleChecked && afterReload.summary.includes('Standardansicht'), `${browser}: Sichtbarkeit wurde unerlaubt dauerhaft gespeichert.`);
+    assert(afterReload.systemVisible && afterReload.toggleChecked && afterReload.summary.includes('Standardansicht'), `${browser}: Browser-Fallback wurde unerlaubt dauerhaft gespeichert.`);
 
+    trace.phase = 'contrast-motion';
     const contrast = await execute(driver, `
       function rgb(v){const m=v.match(/rgba?\\((\\d+),\\s*(\\d+),\\s*(\\d+)/);return m?[+m[1],+m[2],+m[3]]:null}
       function lum(c){return c.map(v=>{v/=255;return v<=.04045?v/12.92:Math.pow((v+.055)/1.055,2.4)}).reduce((a,v,i)=>a+v*[.2126,.7152,.0722][i],0)}
@@ -237,6 +261,8 @@ async function runBrowser(browser, url) {
       [1280,800,100], [1024,640,125], [853,533,150], [731,457,175], [640,400,200], [760,720,100], [380,360,200]
     ];
     for (const [width,height,zoom] of matrix) {
+      trace.phase = 'responsive-layout';
+      trace.viewport = { width, height, zoom };
       await wd(driver.base, 'POST', `/session/${driver.sessionId}/window/rect`, { width, height });
       const metrics = await execute(driver, `const ids=['overall','workspaceResetBtn','checkpointBtn','refreshBtn','shutdownBtn']; return {w:innerWidth,sw:document.documentElement.scrollWidth,els:ids.map(id=>{const e=document.getElementById(id),r=e.getBoundingClientRect();return{id,left:r.left,right:r.right,width:r.width,height:r.height,display:getComputedStyle(e).display}})}`);
       assert(metrics.sw <= metrics.w + 2, `${browser}@${zoom}%: horizontales Ueberlaufen.`);
@@ -249,6 +275,9 @@ async function runBrowser(browser, url) {
 
     const songEditorViewports = await verifySongEditorSmallViewport(driver, url);
     return { browser, version:driver.capabilities.browserVersion ?? 'unknown', safeWithoutNativeCore:'PASS', workspaceVisibility:'PASS', workspaceSessionOnly:'PASS', contrast:'PASS', reducedMotion:'PASS', layoutLevels:matrix.length, songEditorViewports, driverTail:driver.output().slice(-300) };
+  } catch (error) {
+    console.error(formatWebDriverDiagnostic({ ...trace, error }));
+    throw error;
   } finally {
     await stopDriver(driver);
   }
