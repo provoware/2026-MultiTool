@@ -3,7 +3,7 @@ import { spawn } from 'node:child_process';
 import { access, mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { constants as fsConstants } from 'node:fs';
 import { extname, join, normalize, resolve } from 'node:path';
-import { formatWebDriverDiagnostic } from './webdriver_failure_context.mjs';
+import { formatWebDriverDiagnostic, sessionStartupTimeoutMs } from './webdriver_failure_context.mjs';
 
 const ROOT = resolve(new URL('../..', import.meta.url).pathname);
 const PUBLIC = resolve(ROOT, 'src/ui');
@@ -99,10 +99,12 @@ async function startDriver(browser) {
       ? { browserName:'firefox', 'moz:firefoxOptions':{ args:['-headless'], prefs:{ 'ui.prefersReducedMotion':1 } } }
       : { browserName:'chrome', 'goog:chromeOptions':{ args:['--headless=new','--no-sandbox','--disable-dev-shm-usage','--force-prefers-reduced-motion'] } };
     trace.phase = 'session-create';
-    const created = await wd(base, 'POST', '/session', { capabilities:{ alwaysMatch } }, browser === 'firefox' ? 45000 : 15000);
+    const created = await wd(base, 'POST', '/session', { capabilities:{ alwaysMatch } }, sessionStartupTimeoutMs(browser));
     trace.version = created.capabilities?.browserVersion ?? 'unknown';
     return { browser, child, base, sessionId:created.sessionId, output:() => output, capabilities:created.capabilities ?? {} };
   } catch (error) {
+    // Nur technische Statusmerkmale ausgeben, niemals Treiber-Logzeilen oder Nutzdaten.
+    console.error(`[WebDriver start-status] browser=${browser} driver_exit=${child.exitCode ?? 'running'} output_bytes=${Buffer.byteLength(output)} marionette_seen=${/Marionette/i.test(output)}`);
     // Bei gescheiterter Readiness oder Session-Erstellung keinen Testtreiber zurücklassen.
     if (child.exitCode === null) child.kill('SIGTERM');
     throw error;
